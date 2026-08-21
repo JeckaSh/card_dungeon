@@ -1,28 +1,57 @@
 import '../models/event_card.dart';
 
 const List<EventCard> allEvents = [
+  // debag cards
+  EventCard(
+    id: 'debag1',
+    type: EventType.monster,
+    title: 'Дебаг монстр',
+    description: 'Дебаг монстр',
+    leftChoice: CardChoice(label: 'Бежать'),
+    rightChoice: CardChoice(label: 'Драться', attackDelta: -100),
+  ),
+  EventCard(
+    id: 'debag2',
+    type: EventType.treasure,
+    title: 'Дебаг сокровище',
+    description: 'Дебаг сокровище',
+    leftChoice: CardChoice(label: 'Взять'),
+    rightChoice: CardChoice(label: 'Не брать', coinsDelta: -100),
+  ),
+
   EventCard(
     id: 'goblin',
     type: EventType.monster,
     title: 'Гоблин-разбойник',
-    description: 'Из тени выскакивает вооружённый гоблин и требует плату за проход.',
-    leftChoice: CardChoice(label: 'Сражаться', healthDelta: -3, attackDelta: 1),
-    rightChoice: CardChoice(label: 'Отдать золото', healthDelta: -1, attackDelta: -1),
+    description:
+        'Из тени выскакивает вооружённый гоблин и требует плату за проход.',
+    leftChoice: CardChoice(label: 'Сражаться', attackDelta: -2),
+    rightChoice: CardChoice(
+      label: 'Отдать золото',
+      healthDelta: -1,
+      attackDelta: 1,
+      coinsDelta: -5,
+    ),
   ),
   EventCard(
     id: 'spikes',
     type: EventType.trap,
     title: 'Шипастая ловушка',
-    description: 'Пол под ногами скрипит подозрительно. Кажется, здесь спрятана ловушка.',
-    leftChoice: CardChoice(label: 'Осторожно обойти', healthDelta: -1),
-    rightChoice: CardChoice(label: 'Прыгнуть через', healthDelta: -3, attackDelta: 1),
+    description:
+        'Пол под ногами скрипит подозрительно. Кажется, здесь спрятана ловушка.',
+    leftChoice: CardChoice(label: 'Осторожно обойти'),
+    rightChoice: CardChoice(
+      label: 'Прыгнуть через',
+      healthDelta: -2,
+      attackDelta: 1,
+    ),
   ),
   EventCard(
     id: 'chest',
     type: EventType.treasure,
     title: 'Сундук с сокровищами',
     description: 'Перед вами старый сундук, покрытый пылью веков.',
-    leftChoice: CardChoice(label: 'Открыть', healthDelta: -2, attackDelta: 2),
+    leftChoice: CardChoice(label: 'Открыть', coinsDelta: 15),
     rightChoice: CardChoice(label: 'Игнорировать'),
   ),
   EventCard(
@@ -30,8 +59,12 @@ const List<EventCard> allEvents = [
     type: EventType.monster,
     title: 'Скелет-страж',
     description: 'Живой мертвец блокирует коридор, поднимая ржавый меч.',
-    leftChoice: CardChoice(label: 'Атаковать', healthDelta: -4, attackDelta: 2),
-    rightChoice: CardChoice(label: 'Отступить', healthDelta: -2),
+    leftChoice: CardChoice(
+      label: 'Атаковать',
+      healthDelta: -1,
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(label: 'Отступить', healthDelta: 1),
   ),
   EventCard(
     id: 'fountain',
@@ -39,31 +72,47 @@ const List<EventCard> allEvents = [
     title: 'Магический источник',
     description: 'В тёмном зале бьёт источник с мягким голубым светом.',
     leftChoice: CardChoice(label: 'Выпить воды', healthDelta: 3),
-    rightChoice: CardChoice(label: 'Наполнить флягу', healthDelta: 2, attackDelta: 1),
+    rightChoice: CardChoice(label: 'Наполнить флягу', attackDelta: 3),
   ),
   EventCard(
     id: 'merchant',
     type: EventType.merchant,
     title: 'Странствующий торговец',
     description: 'Торговец предлагает зелье силы или амулет исцеления.',
-    leftChoice: CardChoice(label: 'Купить зелье', healthDelta: -2, attackDelta: 2),
-    rightChoice: CardChoice(label: 'Купить амулет', healthDelta: 2, attackDelta: -1),
+    leftChoice: CardChoice(
+      label: 'Купить зелье',
+      healthDelta: 2,
+      coinsDelta: -8,
+    ),
+    rightChoice: CardChoice(
+      label: 'Купить амулет',
+      attackDelta: 2,
+      coinsDelta: -8,
+    ),
   ),
   EventCard(
     id: 'pit',
     type: EventType.trap,
     title: 'Пропасть',
     description: 'Коридор обрывается в глубокую бездну. Как перебраться?',
-    leftChoice: CardChoice(label: 'Перепрыгнуть', healthDelta: -3, attackDelta: 1),
-    rightChoice: CardChoice(label: 'Обойти', healthDelta: -2),
+    leftChoice: CardChoice(label: 'Перепрыгнуть', healthDelta: -2),
+    rightChoice: CardChoice(label: 'Обойти', healthDelta: 1),
   ),
   EventCard(
     id: 'dark_altar',
     type: EventType.mystery,
     title: 'Тёмный алтарь',
     description: 'Алтарь пульсирует тёмной энергией. Что-то шепчет вам.',
-    leftChoice: CardChoice(label: 'Прикоснуться', healthDelta: -4, attackDelta: 3),
-    rightChoice: CardChoice(label: 'Разрушить', healthDelta: -2, attackDelta: 1),
+    leftChoice: CardChoice(
+      label: 'Прикоснуться',
+      healthDelta: -3,
+      attackDelta: 3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Разрушить',
+      healthDelta: 1,
+      attackDelta: -1,
+    ),
   ),
   EventCard(
     id: 'wolf',
@@ -71,15 +120,20 @@ const List<EventCard> allEvents = [
     title: 'Голодный волк',
     description: 'Из-за колонны выходит худая, но злая тварь.',
     leftChoice: CardChoice(label: 'Бросить еду', healthDelta: -2),
-    rightChoice: CardChoice(label: 'Сразиться', healthDelta: -5, attackDelta: 2),
+    rightChoice: CardChoice(label: 'Сразиться', attackDelta: -2),
   ),
   EventCard(
     id: 'gold_pile',
     type: EventType.treasure,
     title: 'Куча золота',
-    description: 'На полу лежит блестящая куча монет. Слишком хорошо, чтобы быть правдой?',
-    leftChoice: CardChoice(label: 'Собрать', healthDelta: -4, attackDelta: 2),
-    rightChoice: CardChoice(label: 'Не трогать', attackDelta: 1),
+    description:
+        'На полу лежит блестящая куча монет. Слишком хорошо, чтобы быть правдой?',
+    leftChoice: CardChoice(label: 'Собрать', healthDelta: -3, coinsDelta: 30),
+    rightChoice: CardChoice(
+      label: 'Не трогать',
+      healthDelta: 1,
+      attackDelta: 1,
+    ),
   ),
   EventCard(
     id: 'campfire',
@@ -87,16 +141,21 @@ const List<EventCard> allEvents = [
     title: 'Заброшенный костёр',
     description: 'Кто-то недавно был здесь. Угли ещё тёплые.',
     leftChoice: CardChoice(label: 'Отдохнуть', healthDelta: 2),
-    rightChoice: CardChoice(label: 'Разжечь костёр', healthDelta: 1, attackDelta: 1),
+    rightChoice: CardChoice(
+      label: 'Разжечь костёр',
+      healthDelta: 1,
+      attackDelta: 1,
+    ),
   ),
   EventCard(
     id: 'poison_dart',
     type: EventType.trap,
     title: 'Отравленные стрелы',
     description: 'Из стены вылетает залп стрел!',
-    leftChoice: CardChoice(label: 'Укрыться', healthDelta: -2),
-    rightChoice: CardChoice(label: 'Блокировать щитом', healthDelta: -4, attackDelta: 1),
+    leftChoice: CardChoice(label: 'Укрыться', healthDelta: -1),
+    rightChoice: CardChoice(label: 'Блокировать щитом', attackDelta: -2),
   ),
+  // TODO: дальше нужно балансить карты
   EventCard(
     id: 'ghost',
     type: EventType.mystery,
@@ -110,8 +169,18 @@ const List<EventCard> allEvents = [
     type: EventType.treasure,
     title: 'Заброшенная оружейная',
     description: 'На стенах висят старые, но крепкие клинки.',
-    leftChoice: CardChoice(label: 'Взять меч', attackDelta: 2, healthDelta: -1),
-    rightChoice: CardChoice(label: 'Взять броню', healthDelta: 2, attackDelta: -1),
+    leftChoice: CardChoice(
+      label: 'Взять меч',
+      attackDelta: 2,
+      healthDelta: -1,
+      coinsDelta: 10,
+    ),
+    rightChoice: CardChoice(
+      label: 'Взять броню',
+      healthDelta: 2,
+      attackDelta: -1,
+      coinsDelta: 10,
+    ),
   ),
   EventCard(
     id: 'slime',
@@ -134,8 +203,16 @@ const List<EventCard> allEvents = [
     type: EventType.monster,
     title: 'Засада разбойников',
     description: 'Трое бандитов перекрывают узкий проход.',
-    leftChoice: CardChoice(label: 'Прорваться', healthDelta: -4, attackDelta: 1),
-    rightChoice: CardChoice(label: 'Договориться', healthDelta: -3, attackDelta: -1),
+    leftChoice: CardChoice(
+      label: 'Прорваться',
+      healthDelta: -4,
+      attackDelta: 1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Договориться',
+      healthDelta: -3,
+      attackDelta: -1,
+    ),
   ),
   EventCard(
     id: 'healing_herbs',

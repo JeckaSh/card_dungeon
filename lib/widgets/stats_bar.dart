@@ -7,12 +7,14 @@ class StatsBar extends StatelessWidget {
     required this.attack,
     required this.cardsPassed,
     required this.cardsTotal,
+    required this.coins,
   });
 
   final int health;
   final int attack;
   final int cardsPassed;
   final int cardsTotal;
+  final int coins;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,6 @@ class StatsBar extends StatelessWidget {
                 color: const Color(0xFFE94560),
                 label: 'Здоровье',
                 value: health,
-                maxValue: 12,
               )),
               const SizedBox(width: 16),
               Expanded(child: _StatItem(
@@ -41,6 +42,13 @@ class StatsBar extends StatelessWidget {
                 color: const Color(0xFFF5A623),
                 label: 'Атака',
                 value: attack,
+              )),
+              const SizedBox(width: 16),
+              Expanded(child: _StatItem(
+                icon: Icons.monetization_on,
+                color: const Color(0xFFFFD700),
+                label: 'Монеты',
+                value: coins,
               )),
             ],
           ),
@@ -81,7 +89,6 @@ class _StatItem extends StatelessWidget {
     required this.color,
     required this.label,
     required this.value,
-    this.maxValue,
   });
 
   final IconData icon;
@@ -89,7 +96,6 @@ class _StatItem extends StatelessWidget {
   final Color labelColor = const Color(0xFFFFFFFF);
   final String label;
   final int value;
-  final int? maxValue;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +114,7 @@ class _StatItem extends StatelessWidget {
               ),
             ),
             Text(
-              maxValue != null ? '$value / $maxValue' : '$value',
+              '$value',
               style: TextStyle(
                 color: labelColor,
                 fontSize: 24,

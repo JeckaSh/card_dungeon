@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'glossary_screen.dart';
 import 'game_screen.dart';
+import 'inventory_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -75,6 +76,17 @@ class MenuScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const GlossaryScreen()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _MenuButton(
+                    label: 'Инвентарь',
+                    icon: Icons.backpack_outlined,
+                    isSecondary: true,
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const InventoryScreen()),
                       );
                     },
                   ),

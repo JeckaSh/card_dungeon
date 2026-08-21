@@ -41,7 +41,11 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   @override
   Widget build(BuildContext context) {
     final discovered = DiscoveredEventsService.instance;
-    final discoveredCount = allEvents.where((e) => discovered.isDiscovered(e.id)).length;
+    final discoveredCount =
+        allEvents.where((e) => discovered.isDiscovered(e.id)).length;
+
+    // Группируем по категориям в том же порядке, что задан в enum
+    final categories = EventType.values;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -52,59 +56,154 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
         elevation: 0,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFE94560)))
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Открыто: $discoveredCount / ${allEvents.length}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 14,
-                        ),
-                      ),
-                      const Spacer(),
-                      SizedBox(
-                        width: 100,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: discoveredCount / allEvents.length,
-                            backgroundColor: Colors.white.withValues(alpha: 0.1),
-                            valueColor: const AlwaysStoppedAnimation(Color(0xFFE94560)),
-                            minHeight: 6,
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFE94560)),
+            )
+          : CustomScrollView(
+              slivers: [
+                // Прогресс-бар открытия
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Открыто: $discoveredCount / ${allEvents.length}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 14,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 0.72,
+                        const Spacer(),
+                        SizedBox(
+                          width: 100,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: discoveredCount / allEvents.length,
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.1),
+                              valueColor: const AlwaysStoppedAnimation(
+                                Color(0xFFE94560),
+                              ),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    itemCount: allEvents.length,
-                    itemBuilder: (context, index) {
-                      final event = allEvents[index];
-                      final isDiscovered = discovered.isDiscovered(event.id);
-                      return GlossaryCard(
-                        event: event,
-                        isDiscovered: isDiscovered,
-                        onTap: () => _showCardDetails(event),
-                      );
-                    },
                   ),
                 ),
+                // Секции по категориям
+                for (final type in categories) ...[
+                  _CategoryHeader(type: type, discovered: discovered),
+                  _CategoryRow(
+                    type: type,
+                    discovered: discovered,
+                    onTap: _showCardDetails,
+                  ),
+                ],
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
               ],
             ),
+    );
+  }
+}
+
+/// Заголовок категории
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({required this.type, required this.discovered});
+
+  final EventType type;
+  final DiscoveredEventsService discovered;
+
+  @override
+  Widget build(BuildContext context) {
+    final events = allEvents.where((e) => e.type == type).toList();
+    final discoveredCount =
+        events.where((e) => discovered.isDiscovered(e.id)).length;
+    final color = eventTypeColor(type);
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(eventTypeIcon(type), color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              eventTypeLabel(type),
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                '$discoveredCount / ${events.length}',
+                style: TextStyle(color: color, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Горизонтальный ряд карточек категории
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.type,
+    required this.discovered,
+    required this.onTap,
+  });
+
+  final EventType type;
+  final DiscoveredEventsService discovered;
+  final void Function(EventCard) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final events = allEvents.where((e) => e.type == type).toList();
+
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 190,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            final event = events[index];
+            final isDiscovered = discovered.isDiscovered(event.id);
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GlossaryCard(
+                event: event,
+                isDiscovered: isDiscovered,
+                onTap: () => onTap(event),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -163,9 +262,15 @@ class _CardDetailSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _DetailChoice(label: '← ${event.leftChoice.label}', choice: event.leftChoice),
+          _DetailChoice(
+            label: '← ${event.leftChoice.label}',
+            choice: event.leftChoice,
+          ),
           const SizedBox(height: 12),
-          _DetailChoice(label: '${event.rightChoice.label} →', choice: event.rightChoice),
+          _DetailChoice(
+            label: '${event.rightChoice.label} →',
+            choice: event.rightChoice,
+          ),
         ],
       ),
     );
@@ -190,12 +295,21 @@ class _DetailChoice extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          if (choice.healthDelta != 0 || choice.attackDelta != 0) ...[
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
             const SizedBox(height: 6),
             Text(
               _formatDeltas(),
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
+              ),
             ),
           ],
         ],
@@ -210,6 +324,9 @@ class _DetailChoice extends StatelessWidget {
     }
     if (choice.attackDelta != 0) {
       parts.add('⚡ ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}');
+    }
+    if (choice.coinsDelta != 0) {
+      parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
     }
     return parts.join('  ');
   }

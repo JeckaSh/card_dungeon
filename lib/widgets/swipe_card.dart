@@ -9,10 +9,14 @@ class SwipeCard extends StatefulWidget {
   const SwipeCard({
     super.key,
     required this.event,
+    required this.currentCoins,
+    required this.currentAttack,
     required this.onSwipe,
   });
 
   final EventCard event;
+  final int currentCoins;
+  final int currentAttack;
   final void Function(bool isRight) onSwipe;
 
   @override
@@ -57,10 +61,27 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
 
     if (_dragOffset.dx.abs() > _swipeThreshold) {
       final isRight = _dragOffset.dx > 0;
-      _animateOffScreen(isRight);
+      final choice = isRight ? widget.event.rightChoice : widget.event.leftChoice;
+      final blocked = _blockedReason(choice) != null;
+      if (blocked) {
+        _animateBack();
+      } else {
+        _animateOffScreen(isRight);
+      }
     } else {
       _animateBack();
     }
+  }
+
+  /// Возвращает причину блокировки или null, если действие доступно.
+  String? _blockedReason(CardChoice choice) {
+    if (choice.coinsDelta < 0 && widget.currentCoins < choice.coinsDelta.abs()) {
+      return 'Монеты';
+    }
+    if (choice.attackDelta < 0 && widget.currentAttack < choice.attackDelta.abs()) {
+      return 'Атака';
+    }
+    return null;
   }
 
   void _animateOffScreen(bool isRight) {
@@ -98,6 +119,11 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
     final leftOpacity = (-_dragOffset.dx / _swipeThreshold).clamp(0.0, 1.0);
     final rightOpacity = (_dragOffset.dx / _swipeThreshold).clamp(0.0, 1.0);
 
+    final leftChoice = widget.event.leftChoice;
+    final rightChoice = widget.event.rightChoice;
+    final leftBlockedReason = _blockedReason(leftChoice);
+    final rightBlockedReason = _blockedReason(rightChoice);
+
     return GestureDetector(
       onPanStart: _onPanStart,
       onPanUpdate: _onPanUpdate,
@@ -108,7 +134,11 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
           angle: rotation,
           child: Stack(
             children: [
-              _EventCardContent(event: widget.event),
+              _EventCardContent(
+                event: widget.event,
+                currentCoins: widget.currentCoins,
+                currentAttack: widget.currentAttack,
+              ),
               if (_isDragging || _dragOffset.dx != 0) ...[
                 Positioned(
                   top: 40,
@@ -118,6 +148,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
                     child: _ChoiceHint(
                       choice: widget.event.leftChoice,
                       isLeft: true,
+                      blockedReason: leftBlockedReason,
                     ),
                   ),
                 ),
@@ -129,6 +160,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
                     child: _ChoiceHint(
                       choice: widget.event.rightChoice,
                       isLeft: false,
+                      blockedReason: rightBlockedReason,
                     ),
                   ),
                 ),
@@ -142,9 +174,16 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
 }
 
 class _EventCardContent extends StatelessWidget {
-  const _EventCardContent({required this.event});
+  const _EventCardContent({
+    required this.event,
+    required this.currentCoins,
+    required this.currentAttack,
+  });
 
   final EventCard event;
+  final int currentCoins;
+  final int currentAttack;
+
 
   @override
   Widget build(BuildContext context) {
@@ -221,25 +260,6 @@ class _EventCardContent extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ChoiceButton(
-                          label: event.leftChoice.label,
-                          icon: Icons.arrow_back,
-                          alignment: Alignment.centerLeft,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _ChoiceButton(
-                          label: event.rightChoice.label,
-                          icon: Icons.arrow_forward,
-                          alignment: Alignment.centerRight,
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -250,82 +270,93 @@ class _EventCardContent extends StatelessWidget {
   }
 }
 
-class _ChoiceButton extends StatelessWidget {
-  const _ChoiceButton({
-    required this.label,
-    required this.icon,
-    required this.alignment,
-  });
-
-  final String label;
-  final IconData icon;
-  final Alignment alignment;
-
-  @override
-  Widget build(BuildContext context) {
-    final isLeft = alignment == Alignment.centerLeft;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
-        children: [
-          if (isLeft) Icon(icon, color: Colors.white54, size: 18),
-          if (isLeft) const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-              textAlign: isLeft ? TextAlign.left : TextAlign.right,
-            ),
-          ),
-          if (!isLeft) const SizedBox(width: 6),
-          if (!isLeft) Icon(icon, color: Colors.white54, size: 18),
-        ],
-      ),
-    );
-  }
-}
 
 class _ChoiceHint extends StatelessWidget {
-  const _ChoiceHint({required this.choice, required this.isLeft});
+  const _ChoiceHint({
+    required this.choice,
+    required this.isLeft,
+    required this.blockedReason,
+  });
 
   final CardChoice choice;
   final bool isLeft;
+  // null — не заблокировано; 'Монеты' или 'Атака' — причина блокировки
+  final String? blockedReason;
+
+  bool get _isBlocked => blockedReason != null;
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = _isBlocked
+        ? const Color(0xFF6B0000)
+        : (isLeft ? Colors.red : Colors.green);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: (isLeft ? Colors.red : Colors.green).withValues(alpha: 0.85),
+        color: bgColor.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(
+          color: _isBlocked ? const Color(0xFFFF6B6B) : Colors.white,
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
-          Text(
-            choice.label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+          if (_isBlocked) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.lock, color: Color(0xFFFF6B6B), size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Нет ${blockedReason!.toLowerCase()}',
+                  style: const TextStyle(
+                    color: Color(0xFFFF6B6B),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
             ),
-          ),
-          if (choice.healthDelta != 0 || choice.attackDelta != 0) ...[
             const SizedBox(height: 4),
             Text(
-              _formatDeltas(choice),
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              _requiredText(),
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 12,
+              ),
             ),
+          ] else ...[
+            Text(
+              choice.label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                _formatDeltas(choice),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
           ],
         ],
       ),
     );
+  }
+
+  String _requiredText() {
+    if (blockedReason == 'Монеты') {
+      return 'Нужно: ${choice.coinsDelta.abs()} 🪙';
+    }
+    if (blockedReason == 'Атака') {
+      return 'Нужно: ${choice.attackDelta.abs()} ⚡';
+    }
+    return '';
   }
 
   String _formatDeltas(CardChoice choice) {
@@ -335,6 +366,9 @@ class _ChoiceHint extends StatelessWidget {
     }
     if (choice.attackDelta != 0) {
       parts.add('⚡ ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}');
+    }
+    if (choice.coinsDelta != 0) {
+      parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
     }
     return parts.join('  ');
   }
