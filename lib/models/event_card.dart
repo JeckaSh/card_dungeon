@@ -13,12 +13,14 @@ class CardChoice {
     this.healthDelta = 0,
     this.attackDelta = 0,
     this.coinsDelta = 0,
+    this.givesRandomItem = false,
   });
 
   final String label;
   final int healthDelta;
   final int attackDelta;
   final int coinsDelta;
+  final bool givesRandomItem;
 }
 
 class EventCard {

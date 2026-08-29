@@ -6,14 +6,12 @@ class StatsBar extends StatelessWidget {
     required this.health,
     required this.attack,
     required this.cardsPassed,
-    required this.cardsTotal,
     required this.coins,
   });
 
   final int health;
   final int attack;
   final int cardsPassed;
-  final int cardsTotal;
   final int coins;
 
   @override
@@ -30,49 +28,69 @@ class StatsBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: _StatItem(
-                icon: Icons.favorite,
-                color: const Color(0xFFE94560),
-                label: 'Здоровье',
-                value: health,
-              )),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.favorite,
+                  color: const Color(0xFFE94560),
+                  label: 'Здоровье',
+                  value: health,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _StatItem(
-                icon: Icons.flash_on,
-                color: const Color(0xFFF5A623),
-                label: 'Атака',
-                value: attack,
-              )),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.flash_on,
+                  color: const Color(0xFFF5A623),
+                  label: 'Атака',
+                  value: attack,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _StatItem(
-                icon: Icons.monetization_on,
-                color: const Color(0xFFFFD700),
-                label: 'Монеты',
-                value: coins,
-              )),
+              Expanded(
+                child: _StatItem(
+                  icon: Icons.monetization_on,
+                  color: const Color(0xFFFFD700),
+                  label: 'Монеты',
+                  value: coins,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
+              Icon(Icons.layers_outlined, size: 16, color: Colors.white.withValues(alpha: 0.5)),
+              const SizedBox(width: 6),
               Text(
-                'Карточки: $cardsPassed / $cardsTotal',
+                'Пройдено событий: $cardsPassed',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               const Spacer(),
-              SizedBox(
-                width: 120,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: cardsPassed / cardsTotal,
-                    backgroundColor: Colors.white.withValues(alpha: 0.1),
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFF0F3460)),
-                    minHeight: 6,
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.all_inclusive, size: 14, color: Color(0xFFE94560)),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Бесконечность',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -101,27 +119,36 @@ class _StatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: color, size: 28),
+        Icon(icon, color: color, size: 26),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 12,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 12,
+                ),
               ),
-            ),
-            Text(
-              '$value',
-              style: TextStyle(
-                color: labelColor,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '$value',
+                  style: TextStyle(
+                    color: labelColor,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

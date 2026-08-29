@@ -75,6 +75,21 @@ const List<EventCard> allEvents = [
     rightChoice: CardChoice(label: 'Наполнить флягу', attackDelta: 3),
   ),
   EventCard(
+    id: 'item_merchant',
+    type: EventType.merchant,
+    title: 'Торговец реликвиями',
+    description:
+        'Таинственный торговец открывает сумку с магическими зельями и свитками.',
+    leftChoice: CardChoice(
+      label: 'Купить предмет',
+      coinsDelta: -10,
+      givesRandomItem: true,
+    ),
+    rightChoice: CardChoice(
+      label: 'Идти дальше',
+    ),
+  ),
+  EventCard(
     id: 'merchant',
     type: EventType.merchant,
     title: 'Странствующий торговец',

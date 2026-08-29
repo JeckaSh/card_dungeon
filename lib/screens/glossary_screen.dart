@@ -30,11 +30,20 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   void _showCardDetails(EventCard event) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A2E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 540),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF1A1A2E),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: _CardDetailSheet(event: event),
+          ),
+        ),
       ),
-      builder: (context) => _CardDetailSheet(event: event),
     );
   }
 
@@ -59,52 +68,57 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFE94560)),
             )
-          : CustomScrollView(
-              slivers: [
-                // Прогресс-бар открытия
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Открыто: $discoveredCount / ${allEvents.length}',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: 100,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: discoveredCount / allEvents.length,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.1),
-                              valueColor: const AlwaysStoppedAnimation(
-                                Color(0xFFE94560),
+          : Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: CustomScrollView(
+                  slivers: [
+                    // Прогресс-бар открытия
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Открыто: $discoveredCount / ${allEvents.length}',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 14,
                               ),
-                              minHeight: 6,
                             ),
-                          ),
+                            const Spacer(),
+                            SizedBox(
+                              width: 100,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: discoveredCount / allEvents.length,
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: 0.1),
+                                  valueColor: const AlwaysStoppedAnimation(
+                                    Color(0xFFE94560),
+                                  ),
+                                  minHeight: 6,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    // Секции по категориям событий
+                    for (final type in categories) ...[
+                      _CategoryHeader(type: type, discovered: discovered),
+                      _CategoryGrid(
+                        type: type,
+                        discovered: discovered,
+                        onTap: _showCardDetails,
+                      ),
+                    ],
+                    const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                  ],
                 ),
-                // Секции по категориям
-                for (final type in categories) ...[
-                  _CategoryHeader(type: type, discovered: discovered),
-                  _CategoryRow(
-                    type: type,
-                    discovered: discovered,
-                    onTap: _showCardDetails,
-                  ),
-                ],
-                const SliverToBoxAdapter(child: SizedBox(height: 32)),
-              ],
+              ),
             ),
     );
   }
@@ -126,7 +140,7 @@ class _CategoryHeader extends StatelessWidget {
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
         child: Row(
           children: [
             Container(
@@ -167,9 +181,9 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-/// Горизонтальный ряд карточек категории
-class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
+/// Сетка карточек категории
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({
     required this.type,
     required this.discovered,
     required this.onTap,
@@ -183,25 +197,26 @@ class _CategoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final events = allEvents.where((e) => e.type == type).toList();
 
-    return SliverToBoxAdapter(
-      child: SizedBox(
-        height: 190,
-        child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: events.length,
-          itemBuilder: (context, index) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 180,
+          childAspectRatio: 0.72,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
             final event = events[index];
             final isDiscovered = discovered.isDiscovered(event.id);
-            return Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GlossaryCard(
-                event: event,
-                isDiscovered: isDiscovered,
-                onTap: () => onTap(event),
-              ),
+            return GlossaryCard(
+              event: event,
+              isDiscovered: isDiscovered,
+              onTap: () => onTap(event),
             );
           },
+          childCount: events.length,
         ),
       ),
     );

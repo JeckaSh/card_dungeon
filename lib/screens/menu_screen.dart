@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'glossary_screen.dart';
 import 'game_screen.dart';
 import 'inventory_screen.dart';
+import 'shop_screen.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -20,77 +21,91 @@ class MenuScreen extends StatelessWidget {
         ),
         child: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.castle,
-                    size: 80,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Подземелье',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 42,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.castle,
+                      size: 80,
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Карточное приключение',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 16,
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Подземелье',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 42,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 48),
-                  Text(
-                    'Старт: 10 HP и 3 атаки. Пройди 10 событий,\nне опустив здоровье до нуля.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 14,
-                      height: 1.6,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Карточное приключение',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 48),
-                  _MenuButton(
-                    label: 'В подземелье',
-                    icon: Icons.explore,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const GameScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _MenuButton(
-                    label: 'Глоссарий',
-                    icon: Icons.menu_book,
-                    isSecondary: true,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const GlossaryScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _MenuButton(
-                    label: 'Инвентарь',
-                    icon: Icons.backpack_outlined,
-                    isSecondary: true,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const InventoryScreen()),
-                      );
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 40),
+                    Text(
+                      'Старт: 10 HP и 3 атаки. Продержись как можно\nдольше и собери максимум золота!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 14,
+                        height: 1.6,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    _MenuButton(
+                      label: 'В подземелье',
+                      icon: Icons.explore,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const GameScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _MenuButton(
+                      label: 'Магазин',
+                      icon: Icons.shopping_bag_outlined,
+                      isSecondary: true,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const ShopScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _MenuButton(
+                      label: 'Инвентарь',
+                      icon: Icons.backpack_outlined,
+                      isSecondary: true,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const InventoryScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _MenuButton(
+                      label: 'Глоссарий',
+                      icon: Icons.menu_book,
+                      isSecondary: true,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const GlossaryScreen()),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
