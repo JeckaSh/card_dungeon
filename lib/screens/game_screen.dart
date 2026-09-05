@@ -22,6 +22,18 @@ const _maxDungeonLevel = 3;
 
 enum GameResult { playing, gameOver }
 
+/// Запись в дневнике героя — одно примечательное событие за забег.
+class JournalEntry {
+  JournalEntry({
+    required this.emoji,
+    required this.text,
+    required this.cardNumber,
+  });
+  final String emoji;
+  final String text;
+  final int cardNumber;
+}
+
 class _TurnSnapshot {
   const _TurnSnapshot({
     required this.health,
@@ -77,6 +89,7 @@ class _GameScreenState extends State<GameScreen> {
   int _greedMagnetTurns = 0;
   bool _thornmailActive = false;
   _TurnSnapshot? _lastTurnSnapshot;
+  final List<JournalEntry> _journal = [];
 
   // ─── Геттеры ────────────────────────────────
 
@@ -121,8 +134,10 @@ class _GameScreenState extends State<GameScreen> {
     _greedMagnetTurns = 0;
     _thornmailActive = false;
     _lastTurnSnapshot = null;
+    _journal.clear();
     _rebuildDeck();
     _discoverCurrentCard();
+    _addJournalEntry('🗡️', 'Герой вошёл в подземелье');
   }
 
   Future<void> _loadData() async {
@@ -158,6 +173,16 @@ class _GameScreenState extends State<GameScreen> {
     DiscoveredEventsService.instance.markDiscovered(_currentCard.id);
   }
 
+  /// Добавляет запись в дневник героя (максимум 12 записей).
+  void _addJournalEntry(String emoji, String text) {
+    if (_journal.length >= 12) _journal.removeAt(0);
+    _journal.add(JournalEntry(
+      emoji: emoji,
+      text: text,
+      cardNumber: _cardsPassed + 1,
+    ));
+  }
+
   /// Переходит к следующей карточке.
   /// [wasBoss] — была ли текущая карточка боссом (для повышения уровня).
   void _advanceCard({bool wasBoss = false}) {
@@ -168,6 +193,7 @@ class _GameScreenState extends State<GameScreen> {
       if (_dungeonLevel < _maxDungeonLevel) {
         _dungeonLevel++;
         _rebuildDeck();
+        _addJournalEntry('🏰', 'Достигнут уровень подземелья $_dungeonLevel');
       }
       // На максимальном уровне просто перемешиваем колоду
       else {
@@ -197,6 +223,7 @@ class _GameScreenState extends State<GameScreen> {
     if (choice.givesRandomItem && UnlockedItemsService.instance.count == 0) return;
 
     // Сохраняем снимок для возможного отката (Песочные часы)
+    final cardTitle = _currentCard.title;
     _lastTurnSnapshot = _TurnSnapshot(
       health: _health,
       attack: _attack,
@@ -259,6 +286,30 @@ class _GameScreenState extends State<GameScreen> {
       _health = (_health + effectiveHealthDelta).clamp(0, 999);
       _attack = (_attack + effectiveAttackDelta).clamp(0, 99);
       _coins = (_coins + effectiveCoinsDelta).clamp(0, 999999);
+
+      // ── Дневник героя ────────────────────────────────────────────
+      if (wasBoss) {
+        _addJournalEntry(
+          isRight ? '🏃' : '⚔',
+          isRight ? 'Сбежал от $cardTitle' : 'Сразился с $cardTitle',
+        );
+      }
+      if (receivedItem != null) {
+        _addJournalEntry('🎒', 'Получен артефакт: ${receivedItem.title}');
+      }
+      if (effectiveHealthDelta <= -4) {
+        _addJournalEntry('💀', '$cardTitle нанёс $effectiveHealthDelta HP');
+      } else if (effectiveHealthDelta >= 3 && !wasBoss) {
+        _addJournalEntry('💚', '${choice.label}: +$effectiveHealthDelta HP');
+      }
+      if (effectiveCoinsDelta >= 25 && !wasBoss) {
+        _addJournalEntry('💰', '${choice.label}: +$effectiveCoinsDelta монет');
+      }
+      if (effectiveAttackDelta >= 3 && !wasBoss) {
+        _addJournalEntry('⚡', '${choice.label}: атака +$effectiveAttackDelta');
+      }
+      // ─────────────────────────────────────────────────────────────
+
       _lastFeedback = _buildFeedback(
         choice,
         receivedItem: receivedItem,
@@ -270,6 +321,7 @@ class _GameScreenState extends State<GameScreen> {
 
       if (_health <= 0) {
         _result = GameResult.gameOver;
+        _addJournalEntry('☠️', 'Герой пал — убит $cardTitle');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
       }
     });
@@ -349,6 +401,7 @@ class _GameScreenState extends State<GameScreen> {
             _lastTurnSnapshot = null;
             _discoverCurrentCard();
             _lastFeedback = 'Время отмотано назад! ⏳';
+            _addJournalEntry('⏳', 'Песочные часы: время отмотано назад');
           } else {
             _health = (_health + 3).clamp(0, 999);
             _lastFeedback = 'Песочные часы восстановили +3 ❤ (нет прошлого хода)';
@@ -366,6 +419,7 @@ class _GameScreenState extends State<GameScreen> {
             _attack = (_attack + bundles).clamp(0, 99);
             _health = (_health + bundles * 2).clamp(0, 999);
             _lastFeedback = 'Алхимия: -$usedCoins 🪙 → +$bundles ⚡, +${bundles * 2} ❤ ⚗️';
+            _addJournalEntry('⚗️', 'Алхимия: $usedCoins🪙 → +$bundles⚡ +${bundles * 2}❤');
           } else {
             _lastFeedback = 'Недостаточно монет (нужно 10 🪙)!';
           }
@@ -382,6 +436,7 @@ class _GameScreenState extends State<GameScreen> {
           if (shadowItem != null) _inventoryItems.add(shadowItem);
           _lastFeedback =
               'Пакт: -$hpLoss ❤, +$bonusCoins 🪙${shadowItem != null ? ', +${shadowItem.title}' : ''} 📜';
+          _addJournalEntry('📜', 'Теневой пакт: -$hpLoss❤ → +$bonusCoins🪙');
           break;
         case ItemEffectType.greedMagnet:
           _greedMagnetTurns += 3;
@@ -407,6 +462,7 @@ class _GameScreenState extends State<GameScreen> {
             _attack = (_attack + 2).clamp(0, 99);
             _coins = (_coins + 25).clamp(0, 999999);
             _lastFeedback = '🎲 Кубик [$roll]: ДЖЕКПОТ! +5 ❤, +2 ⚡, +25 🪙 🎉';
+            _addJournalEntry('🎲', 'Кубик судьбы: ДЖЕКПОТ! +5❤ +2⚡ +25🪙');
           }
           break;
         case ItemEffectType.smokeBomb:
@@ -600,6 +656,7 @@ class _GameScreenState extends State<GameScreen> {
                               totalCoins: PlayerCoinsService.instance.balance,
                               onRestart: _startNewGame,
                               onMenu: () => Navigator.of(context).pop(),
+                              journal: List.of(_journal),
                             ),
                     ),
                   ),
@@ -821,6 +878,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.totalCoins,
     required this.onRestart,
     required this.onMenu,
+    required this.journal,
   });
 
   final int cardsPassed;
@@ -831,6 +889,7 @@ class _ResultOverlay extends StatelessWidget {
   final int totalCoins;
   final VoidCallback onRestart;
   final VoidCallback onMenu;
+  final List<JournalEntry> journal;
 
   @override
   Widget build(BuildContext context) {
@@ -886,7 +945,86 @@ class _ResultOverlay extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 32),
+              // ── Дневник героя ──────────────────────────────────
+              if (journal.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.auto_stories, size: 14,
+                              color: Colors.white.withValues(alpha: 0.4)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Хроника похода',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: journal
+                                .map(
+                                  (e) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(e.emoji,
+                                            style: const TextStyle(fontSize: 15)),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            e.text,
+                                            style: TextStyle(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.72),
+                                              fontSize: 12.5,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '#${e.cardNumber}',
+                                          style: TextStyle(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.25),
+                                            fontSize: 10,
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              // ────────────────────────────────────────────────────
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
