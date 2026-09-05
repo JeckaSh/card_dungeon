@@ -16,6 +16,9 @@ class GlossaryScreen extends StatefulWidget {
 class _GlossaryScreenState extends State<GlossaryScreen> {
   bool _loading = true;
 
+  // Все карточки для глоссария (обычные + боссы)
+  static List<EventCard> get _allForGlossary => [...allEvents, ...allBossCards];
+
   @override
   void initState() {
     super.initState();
@@ -50,11 +53,12 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   @override
   Widget build(BuildContext context) {
     final discovered = DiscoveredEventsService.instance;
-    final discoveredCount =
-        allEvents.where((e) => discovered.isDiscovered(e.id)).length;
+    final all = _allForGlossary;
+    final discoveredCount = all.where((e) => discovered.isDiscovered(e.id)).length;
 
-    // Группируем по категориям в том же порядке, что задан в enum
-    final categories = EventType.values;
+    // Категории без boss (он показывается отдельной секцией в конце)
+    final regularCategories =
+        EventType.values.where((t) => t != EventType.boss).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -80,7 +84,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'Открыто: $discoveredCount / ${allEvents.length}',
+                              'Открыто: $discoveredCount / ${all.length}',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 14,
@@ -92,12 +96,9 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
-                                  value: discoveredCount / allEvents.length,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.1),
-                                  valueColor: const AlwaysStoppedAnimation(
-                                    Color(0xFFE94560),
-                                  ),
+                                  value: discoveredCount / all.length,
+                                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                                  valueColor: const AlwaysStoppedAnimation(Color(0xFFE94560)),
                                   minHeight: 6,
                                 ),
                               ),
@@ -106,15 +107,22 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                         ),
                       ),
                     ),
-                    // Секции по категориям событий
-                    for (final type in categories) ...[
-                      _CategoryHeader(type: type, discovered: discovered),
+                    // Обычные категории событий
+                    for (final type in regularCategories) ...[
+                      _CategoryHeader(type: type, discovered: discovered, events: allEvents),
                       _CategoryGrid(
-                        type: type,
+                        events: allEvents.where((e) => e.type == type).toList(),
                         discovered: discovered,
                         onTap: _showCardDetails,
                       ),
                     ],
+                    // Секция боссов
+                    _BossHeader(discovered: discovered),
+                    _CategoryGrid(
+                      events: allBossCards,
+                      discovered: discovered,
+                      onTap: _showCardDetails,
+                    ),
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   ],
                 ),
@@ -124,18 +132,22 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   }
 }
 
-/// Заголовок категории
+/// Заголовок обычной категории
 class _CategoryHeader extends StatelessWidget {
-  const _CategoryHeader({required this.type, required this.discovered});
+  const _CategoryHeader({
+    required this.type,
+    required this.discovered,
+    required this.events,
+  });
 
   final EventType type;
   final DiscoveredEventsService discovered;
+  final List<EventCard> events;
 
   @override
   Widget build(BuildContext context) {
-    final events = allEvents.where((e) => e.type == type).toList();
-    final discoveredCount =
-        events.where((e) => discovered.isDiscovered(e.id)).length;
+    final typeEvents = events.where((e) => e.type == type).toList();
+    final discoveredCount = typeEvents.where((e) => discovered.isDiscovered(e.id)).length;
     final color = eventTypeColor(type);
 
     return SliverToBoxAdapter(
@@ -170,7 +182,7 @@ class _CategoryHeader extends StatelessWidget {
                 border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
               child: Text(
-                '$discoveredCount / ${events.length}',
+                '$discoveredCount / ${typeEvents.length}',
                 style: TextStyle(color: color, fontSize: 12),
               ),
             ),
@@ -181,22 +193,85 @@ class _CategoryHeader extends StatelessWidget {
   }
 }
 
-/// Сетка карточек категории
+/// Заголовок секции боссов
+class _BossHeader extends StatelessWidget {
+  const _BossHeader({required this.discovered});
+
+  final DiscoveredEventsService discovered;
+
+  @override
+  Widget build(BuildContext context) {
+    final discoveredCount =
+        allBossCards.where((e) => discovered.isDiscovered(e.id)).length;
+    const color = Color(0xFFEF5350);
+
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+              ),
+              child: const Icon(Icons.crisis_alert, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Боссы',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'Появляются каждую 20-ю карточку',
+                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                ),
+              ],
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                '$discoveredCount / ${allBossCards.length}',
+                style: const TextStyle(color: color, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Сетка карточек
 class _CategoryGrid extends StatelessWidget {
   const _CategoryGrid({
-    required this.type,
+    required this.events,
     required this.discovered,
     required this.onTap,
   });
 
-  final EventType type;
+  final List<EventCard> events;
   final DiscoveredEventsService discovered;
   final void Function(EventCard) onTap;
 
   @override
   Widget build(BuildContext context) {
-    final events = allEvents.where((e) => e.type == type).toList();
-
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       sliver: SliverGrid(
@@ -230,6 +305,9 @@ class _CardDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isBoss = event.isBoss;
+    final color = isBoss ? const Color(0xFFEF5350) : eventTypeColor(event.type);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
       child: Column(
@@ -247,24 +325,54 @@ class _CardDetailSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: eventTypeColor(event.type).withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              eventTypeLabel(event.type),
-              style: TextStyle(color: eventTypeColor(event.type), fontSize: 12),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(20),
+                  border: isBoss
+                      ? Border.all(color: color.withValues(alpha: 0.5))
+                      : null,
+                ),
+                child: Text(
+                  isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isBoss ? 'Уровень ${event.level}' : 'Уровень ${event.level}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Text(
             event.title,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
+              shadows: isBoss
+                  ? [Shadow(color: color.withValues(alpha: 0.4), blurRadius: 8)]
+                  : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -312,19 +420,13 @@ class _DetailChoice extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
             const SizedBox(height: 6),
             Text(
               _formatDeltas(),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
             ),
           ],
         ],

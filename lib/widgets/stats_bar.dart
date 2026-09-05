@@ -7,12 +7,18 @@ class StatsBar extends StatelessWidget {
     required this.attack,
     required this.cardsPassed,
     required this.coins,
+    required this.dungeonLevel,
+    this.nextBossIn,
   });
 
   final int health;
   final int attack;
   final int cardsPassed;
   final int coins;
+  final int dungeonLevel;
+
+  /// Сколько карточек до следующего босса (null — не показывать).
+  final int? nextBossIn;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +68,7 @@ class StatsBar extends StatelessWidget {
               Icon(Icons.layers_outlined, size: 16, color: Colors.white.withValues(alpha: 0.5)),
               const SizedBox(width: 6),
               Text(
-                'Пройдено событий: $cardsPassed',
+                'Пройдено: $cardsPassed',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -70,6 +76,34 @@ class StatsBar extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              // Счётчик до босса
+              if (nextBossIn != null) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB71C1C).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFB71C1C).withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.crisis_alert, size: 13, color: Color(0xFFEF5350)),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Босс через $nextBossIn',
+                        style: const TextStyle(
+                          color: Color(0xFFEF5350),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Уровень подземелья
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                 decoration: BoxDecoration(
@@ -80,12 +114,12 @@ class StatsBar extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.all_inclusive, size: 14, color: Color(0xFFE94560)),
+                    const Icon(Icons.castle_outlined, size: 14, color: Color(0xFF9C27B0)),
                     const SizedBox(width: 5),
                     Text(
-                      'Бесконечность',
+                      'Уровень $dungeonLevel',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),

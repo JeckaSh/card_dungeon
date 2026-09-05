@@ -10,6 +10,7 @@ Color eventTypeColor(EventType type) {
     EventType.merchant => const Color(0xFF2E5090),
     EventType.rest => const Color(0xFF1B5E20),
     EventType.mystery => const Color(0xFF4A148C),
+    EventType.boss => const Color(0xFF7B0000),
   };
 }
 
@@ -21,6 +22,7 @@ IconData eventTypeIcon(EventType type) {
     EventType.merchant => Icons.storefront,
     EventType.rest => Icons.local_fire_department,
     EventType.mystery => Icons.auto_awesome,
+    EventType.boss => Icons.crisis_alert,
   };
 }
 
@@ -32,5 +34,6 @@ String eventTypeLabel(EventType type) {
     EventType.merchant => 'Торговец',
     EventType.rest => 'Привал',
     EventType.mystery => 'Тайна',
+    EventType.boss => 'БОСС',
   };
 }

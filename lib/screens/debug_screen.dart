@@ -44,7 +44,7 @@ class _DebugScreenState extends State<DebugScreen> {
   void _refresh() => setState(() {});
 
   Future<void> _unlockAllEvents() async {
-    final ids = allEvents.map((e) => e.id).toList();
+    final ids = [...allEvents, ...allBossCards].map((e) => e.id).toList();
     await DiscoveredEventsService.instance.unlockAll(ids);
     _showSnack('✅ Все события открыты (${ids.length})');
     _refresh();
@@ -152,7 +152,7 @@ class _DebugScreenState extends State<DebugScreen> {
                         icon: Icons.auto_stories,
                         title: 'Карточки событий',
                         subtitle:
-                            'Открыто: ${DiscoveredEventsService.instance.count} / ${allEvents.length}',
+                            'Открыто: ${DiscoveredEventsService.instance.count} / ${allEvents.length + allBossCards.length}',
                         color: const Color(0xFFE94560),
                       ),
                       const SizedBox(height: 12),

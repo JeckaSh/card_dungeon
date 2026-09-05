@@ -28,22 +28,26 @@ class GlossaryCard extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: isDiscovered
-                  ? [
-                      eventTypeColor(event.type),
-                      eventTypeColor(event.type).withValues(alpha: 0.6),
-                    ]
-                  : [
-                      const Color(0xFF2A2A3E),
-                      const Color(0xFF1A1A2E),
-                    ],
+                  ? event.isBoss
+                      ? [const Color(0xFF4A0000), const Color(0xFF1A0000)]
+                      : [
+                          eventTypeColor(event.type),
+                          eventTypeColor(event.type).withValues(alpha: 0.6),
+                        ]
+                  : [const Color(0xFF2A2A3E), const Color(0xFF1A1A2E)],
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
+                color: isDiscovered && event.isBoss
+                    ? const Color(0xFFEF5350).withValues(alpha: 0.3)
+                    : Colors.black.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
             ],
+            border: isDiscovered && event.isBoss
+                ? Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.5), width: 1.5)
+                : null,
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
@@ -64,13 +68,14 @@ class _KnownContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
+        // Фоновый значок
         Positioned(
           top: -20,
           right: -20,
           child: Icon(
             eventTypeIcon(event.type),
             size: 90,
-            color: Colors.white.withValues(alpha: 0.08),
+            color: Colors.white.withValues(alpha: event.isBoss ? 0.06 : 0.08),
           ),
         ),
         Padding(
@@ -78,15 +83,25 @@ class _KnownContent extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Верхний тег
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: event.isBoss
+                      ? const Color(0xFFEF5350).withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
+                  border: event.isBoss
+                      ? Border.all(color: const Color(0xFFEF5350).withValues(alpha: 0.5))
+                      : null,
                 ),
                 child: Text(
-                  eventTypeLabel(event.type),
-                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                  event.isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
+                  style: TextStyle(
+                    color: event.isBoss ? const Color(0xFFEF5350) : Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -112,6 +127,29 @@ class _KnownContent extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              // Бейдж уровня + мини-выборы
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      event.isBoss ? 'Босс' : 'Ур. ${event.level}',
+                      style: TextStyle(
+                        color: event.isBoss
+                            ? const Color(0xFFEF5350)
+                            : Colors.white.withValues(alpha: 0.6),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(child: _MiniChoice(choice: event.leftChoice, isLeft: true)),

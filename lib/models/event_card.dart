@@ -5,6 +5,7 @@ enum EventType {
   merchant,
   rest,
   mystery,
+  boss,
 }
 
 class CardChoice {
@@ -31,6 +32,7 @@ class EventCard {
     required this.description,
     required this.leftChoice,
     required this.rightChoice,
+    this.level = 1,
   });
 
   final String id;
@@ -39,4 +41,10 @@ class EventCard {
   final String description;
   final CardChoice leftChoice;
   final CardChoice rightChoice;
+
+  /// Уровень подземелья, на котором встречается карточка (1-3).
+  /// Для боссов — номер уровня, на котором они появляются.
+  final int level;
+
+  bool get isBoss => type == EventType.boss;
 }
