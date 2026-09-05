@@ -30,6 +30,12 @@ class UnlockedItemsService {
     return true; // Впервые открыта
   }
 
+  Future<void> unlockAll(List<String> ids) async {
+    _unlockedIds.addAll(ids);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_key, _unlockedIds.toList());
+  }
+
   Future<void> reset() async {
     _unlockedIds.clear();
     final prefs = await SharedPreferences.getInstance();

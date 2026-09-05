@@ -25,6 +25,19 @@ class DiscoveredEventsService {
     await prefs.setStringList(_storageKey, _discovered.toList());
   }
 
+  Future<void> unlockAll(List<String> eventIds) async {
+    await load();
+    _discovered.addAll(eventIds);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_storageKey, _discovered.toList());
+  }
+
+  Future<void> resetAll() async {
+    _discovered.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_storageKey);
+  }
+
   bool isDiscovered(String eventId) => _discovered.contains(eventId);
 
   int get count => _discovered.length;
