@@ -13,19 +13,22 @@ class SwipeCard extends StatefulWidget {
     required this.currentAttack,
     required this.onSwipe,
     this.hasUnlockedItems = true,
+    this.isRevealingChoices = false,
   });
 
   final EventCard event;
   final int currentCoins;
   final int currentAttack;
   final bool hasUnlockedItems;
+  final bool isRevealingChoices;
   final void Function(bool isRight) onSwipe;
 
   @override
   State<SwipeCard> createState() => _SwipeCardState();
 }
 
-class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMixin {
+class _SwipeCardState extends State<SwipeCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   Offset _dragOffset = Offset.zero;
   bool _isDragging = false;
@@ -63,7 +66,9 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
 
     if (_dragOffset.dx.abs() > _swipeThreshold) {
       final isRight = _dragOffset.dx > 0;
-      final choice = isRight ? widget.event.rightChoice : widget.event.leftChoice;
+      final choice = isRight
+          ? widget.event.rightChoice
+          : widget.event.leftChoice;
       final blocked = _blockedReason(choice) != null;
       if (blocked) {
         _animateBack();
@@ -80,10 +85,12 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
     if (choice.givesRandomItem && !widget.hasUnlockedItems) {
       return 'Карты';
     }
-    if (choice.coinsDelta < 0 && widget.currentCoins < choice.coinsDelta.abs()) {
+    if (choice.coinsDelta < 0 &&
+        widget.currentCoins < choice.coinsDelta.abs()) {
       return 'Монеты';
     }
-    if (choice.attackDelta < 0 && widget.currentAttack < choice.attackDelta.abs()) {
+    if (choice.attackDelta < 0 &&
+        widget.currentAttack < choice.attackDelta.abs()) {
       return 'Атака';
     }
     return null;
@@ -166,12 +173,12 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
                     height: cardHeight,
                     scale: scale,
                   ),
-                  if (_isDragging || _dragOffset.dx != 0) ...[
+                  if (_isDragging || _dragOffset.dx != 0 || widget.isRevealingChoices) ...[
                     Positioned(
                       top: 30 * scale,
                       left: 20 * scale,
                       child: Opacity(
-                        opacity: leftOpacity,
+                        opacity: widget.isRevealingChoices ? 0.9 : leftOpacity,
                         child: _ChoiceHint(
                           choice: widget.event.leftChoice,
                           isLeft: true,
@@ -184,7 +191,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
                       top: 30 * scale,
                       right: 20 * scale,
                       child: Opacity(
-                        opacity: rightOpacity,
+                        opacity: widget.isRevealingChoices ? 0.9 : rightOpacity,
                         child: _ChoiceHint(
                           choice: widget.event.rightChoice,
                           isLeft: false,
@@ -344,7 +351,9 @@ class _ChoiceHint extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: [
           if (_isBlocked) ...[
             Row(
@@ -385,7 +394,9 @@ class _ChoiceHint extends StatelessWidget {
                 fontSize: (16 * scale).clamp(13.0, 20.0),
               ),
             ),
-            if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
+            if (choice.healthDelta != 0 ||
+                choice.attackDelta != 0 ||
+                choice.coinsDelta != 0) ...[
               SizedBox(height: 4 * scale),
               Text(
                 _formatDeltas(choice),

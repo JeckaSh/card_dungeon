@@ -31,6 +31,41 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _showItemDetails(ItemCard item) {
+    // Helper getters duplicated from ItemCardWidget
+    String categoryLabel() => switch (item.effectType) {
+          ItemEffectType.heal => 'Исцеление',
+          ItemEffectType.attack => 'Усиление',
+          ItemEffectType.skip => 'Свиток',
+          ItemEffectType.shield => 'Защита',
+          ItemEffectType.invertNext => 'Искажение',
+          ItemEffectType.revealChoice => 'Провидение',
+          ItemEffectType.rewind => 'Время',
+          ItemEffectType.thornmail => 'Контратака',
+          ItemEffectType.transmute => 'Алхимия',
+          ItemEffectType.shadowPact => 'Тёмная сделка',
+          ItemEffectType.greedMagnet => 'Экономика',
+          ItemEffectType.diceOfFate => 'Удача',
+          ItemEffectType.smokeBomb => 'Побег',
+          ItemEffectType.bribery => 'Дипломатия',
+        };
+
+    String effectBadge() => switch (item.effectType) {
+          ItemEffectType.heal => '+${item.value} ❤',
+          ItemEffectType.attack => '+${item.value} ⚡',
+          ItemEffectType.skip => 'Пропуск',
+          ItemEffectType.shield => '🛡 ×${item.value}',
+          ItemEffectType.invertNext => '🪞 Инверсия',
+          ItemEffectType.revealChoice => '👁 Видение',
+          ItemEffectType.rewind => '⏳ Откат',
+          ItemEffectType.thornmail => '🌵 Шипы',
+          ItemEffectType.transmute => '⚗ Алхимия',
+          ItemEffectType.shadowPact => '📜 Пакт',
+          ItemEffectType.greedMagnet => '🧲 x2 монеты',
+          ItemEffectType.diceOfFate => '🎲 Кубик',
+          ItemEffectType.smokeBomb => '💨 Побег',
+          ItemEffectType.bribery => '💰 Подкуп',
+        };
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -59,27 +94,47 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(item.icon, size: 16, color: item.color),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Активная карта',
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: item.color.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(item.icon, size: 14, color: item.color),
+                          const SizedBox(width: 6),
+                          Text(
+                            categoryLabel(),
+                            style: TextStyle(
+                              color: item.color,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        effectBadge(),
                         style: TextStyle(
-                          color: item.color,
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(

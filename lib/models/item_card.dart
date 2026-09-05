@@ -4,6 +4,17 @@ enum ItemEffectType {
   heal,
   attack,
   skip,
+  shield,
+  invertNext,
+  revealChoice,
+  rewind,
+  thornmail,
+  transmute,
+  shadowPact,
+  greedMagnet,
+  diceOfFate,
+  smokeBomb,
+  bribery,
 }
 
 class ItemCard {

@@ -21,6 +21,17 @@ class ItemCardWidget extends StatelessWidget {
       ItemEffectType.heal => 'Исцеление',
       ItemEffectType.attack => 'Усиление',
       ItemEffectType.skip => 'Свиток',
+      ItemEffectType.shield => 'Защита',
+      ItemEffectType.invertNext => 'Искажение',
+      ItemEffectType.revealChoice => 'Провидение',
+      ItemEffectType.rewind => 'Время',
+      ItemEffectType.thornmail => 'Контратака',
+      ItemEffectType.transmute => 'Алхимия',
+      ItemEffectType.shadowPact => 'Тёмная сделка',
+      ItemEffectType.greedMagnet => 'Экономика',
+      ItemEffectType.diceOfFate => 'Удача',
+      ItemEffectType.smokeBomb => 'Побег',
+      ItemEffectType.bribery => 'Дипломатия',
     };
   }
 
@@ -29,6 +40,17 @@ class ItemCardWidget extends StatelessWidget {
       ItemEffectType.heal => '+${item.value} ❤',
       ItemEffectType.attack => '+${item.value} ⚡',
       ItemEffectType.skip => 'Пропуск',
+      ItemEffectType.shield => '🛡️ ×${item.value}',
+      ItemEffectType.invertNext => '🪞 Инверсия',
+      ItemEffectType.revealChoice => '👁️ Видение',
+      ItemEffectType.rewind => '⏳ Откат',
+      ItemEffectType.thornmail => '🌵 Шипы',
+      ItemEffectType.transmute => '⚗️ Алхимия',
+      ItemEffectType.shadowPact => '📜 Пакт',
+      ItemEffectType.greedMagnet => '🧲 x2 монеты',
+      ItemEffectType.diceOfFate => '🎲 Кубик',
+      ItemEffectType.smokeBomb => '💨 Побег',
+      ItemEffectType.bribery => '💰 Подкуп',
     };
   }
 
@@ -44,10 +66,7 @@ class ItemCardWidget extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                item.color,
-                item.color.withValues(alpha: 0.6),
-              ],
+              colors: [item.color, item.color.withValues(alpha: 0.6)],
             ),
             boxShadow: [
               BoxShadow(
@@ -81,34 +100,51 @@ class ItemCardWidget extends StatelessWidget {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.35),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _categoryLabel,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                _categoryLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              _effectBadge,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                _effectBadge,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
