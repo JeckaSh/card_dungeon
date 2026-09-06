@@ -327,43 +327,48 @@ class _EventCardContent extends StatelessWidget {
                   // Верхний тег
                   Row(
                     children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12 * scale,
-                          vertical: 6 * scale,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isBoss
-                              ? const Color(0xFFEF5350).withValues(alpha: 0.25)
-                              : Colors.black.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(20 * scale),
-                          border: isBoss
-                              ? Border.all(
-                                  color: const Color(0xFFEF5350).withValues(alpha: 0.6),
-                                )
-                              : null,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (isBoss) ...[
-                              Icon(
-                                Icons.crisis_alert,
-                                size: (13 * scale).clamp(10.0, 16.0),
-                                color: const Color(0xFFEF5350),
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12 * scale,
+                            vertical: 6 * scale,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isBoss
+                                ? const Color(0xFFEF5350).withValues(alpha: 0.25)
+                                : Colors.black.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(20 * scale),
+                            border: isBoss
+                                ? Border.all(
+                                    color: const Color(0xFFEF5350).withValues(alpha: 0.6),
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isBoss) ...[
+                                Icon(
+                                  Icons.crisis_alert,
+                                  size: (13 * scale).clamp(10.0, 16.0),
+                                  color: const Color(0xFFEF5350),
+                                ),
+                                SizedBox(width: 5 * scale),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  isBoss ? '⚔ БОСС · Уровень $dungeonLevel' : eventTypeLabel(event.type),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isBoss ? const Color(0xFFEF5350) : Colors.white70,
+                                    fontSize: (12 * scale).clamp(10.0, 15.0),
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: isBoss ? 1.0 : 0,
+                                  ),
+                                ),
                               ),
-                              SizedBox(width: 5 * scale),
                             ],
-                            Text(
-                              isBoss ? '⚔ БОСС · Уровень $dungeonLevel' : eventTypeLabel(event.type),
-                              style: TextStyle(
-                                color: isBoss ? const Color(0xFFEF5350) : Colors.white70,
-                                fontSize: (12 * scale).clamp(10.0, 15.0),
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: isBoss ? 1.0 : 0,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ],

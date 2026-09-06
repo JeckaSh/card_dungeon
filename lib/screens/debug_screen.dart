@@ -4,6 +4,7 @@ import '../data/events.dart';
 import '../data/items.dart';
 import '../services/discovered_events.dart';
 import '../services/player_coins_service.dart';
+import '../services/player_stats_service.dart';
 import '../services/unlocked_items_service.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _DebugScreenState extends State<DebugScreen> {
       PlayerCoinsService.instance.load(),
       UnlockedItemsService.instance.load(),
       DiscoveredEventsService.instance.load(),
+      PlayerStatsService.instance.load(),
     ]);
     if (mounted) {
       _coinsController.text = PlayerCoinsService.instance.balance.toString();
@@ -46,68 +48,70 @@ class _DebugScreenState extends State<DebugScreen> {
   Future<void> _unlockAllEvents() async {
     final ids = [...allEvents, ...allBossCards].map((e) => e.id).toList();
     await DiscoveredEventsService.instance.unlockAll(ids);
-    _showSnack('✅ Все события открыты (${ids.length})');
     _refresh();
   }
 
   Future<void> _lockAllEvents() async {
     await DiscoveredEventsService.instance.resetAll();
-    _showSnack('🔒 Все события закрыты');
     _refresh();
   }
 
   Future<void> _unlockAllItems() async {
     final ids = allItemCards.map((i) => i.id).toList();
     await UnlockedItemsService.instance.unlockAll(ids);
-    _showSnack('✅ Все карточки предметов открыты (${ids.length})');
     _refresh();
   }
 
   Future<void> _lockAllItems() async {
     await UnlockedItemsService.instance.reset();
-    _showSnack('🔒 Все карточки предметов закрыты');
     _refresh();
   }
 
   void _addCoins(int amount) {
     PlayerCoinsService.instance.applyDelta(amount);
     _coinsController.text = PlayerCoinsService.instance.balance.toString();
-    _showSnack('🪙 +$amount монет');
     _refresh();
   }
 
   void _removeCoins(int amount) {
     PlayerCoinsService.instance.applyDelta(-amount);
     _coinsController.text = PlayerCoinsService.instance.balance.toString();
-    _showSnack('🪙 -$amount монет');
     _refresh();
   }
 
   void _setCoins() {
     final value = int.tryParse(_coinsController.text);
     if (value == null || value < 0) {
-      _showSnack('⚠️ Введите корректное число');
       return;
     }
     PlayerCoinsService.instance.restoreBalance(value);
-    _showSnack('🪙 Баланс установлен: $value');
     _refresh();
   }
 
-  void _showSnack(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: const Color(0xFF2A2A40),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  void _setHealthLevel(int level) {
+    PlayerStatsService.instance.setHealthLevel(level);
+    _refresh();
+  }
+
+  void _setAttackLevel(int level) {
+    PlayerStatsService.instance.setAttackLevel(level);
+    _refresh();
+  }
+
+  void _resetStats() {
+    PlayerStatsService.instance.resetStats();
+    _refresh();
+  }
+
+  void _maxStats() {
+    PlayerStatsService.instance.setHealthLevel(PlayerStatsService.maxHealthLevel);
+    PlayerStatsService.instance.setAttackLevel(PlayerStatsService.maxAttackLevel);
+    _refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    final stats = PlayerStatsService.instance;
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       appBar: AppBar(
@@ -242,7 +246,6 @@ class _DebugScreenState extends State<DebugScreen> {
                             onPressed: () {
                               PlayerCoinsService.instance.restoreBalance(0);
                               _coinsController.text = '0';
-                              _showSnack('🪙 Монеты обнулены');
                               _refresh();
                             },
                             isNegative: true,
@@ -308,6 +311,60 @@ class _DebugScreenState extends State<DebugScreen> {
                             child: const Text(
                               'Применить',
                               style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+
+                      // === ПРОКАЧКА ХАРАКТЕРИСТИК ===
+                      _SectionHeader(
+                        icon: Icons.upgrade_rounded,
+                        title: 'Прокачка характеристик героя',
+                        subtitle:
+                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡)',
+                        color: const Color(0xFF00E676),
+                      ),
+                      const SizedBox(height: 12),
+                      _StatLevelControllerCard(
+                        title: 'Уровень здоровья',
+                        icon: Icons.favorite,
+                        color: const Color(0xFFE94560),
+                        level: stats.healthLevel,
+                        maxLevel: PlayerStatsService.maxHealthLevel,
+                        startingValue: '${stats.startingHealth} ❤',
+                        bonusText: '+${stats.healthLevel * PlayerStatsService.healthPerLevel} ❤',
+                        onChanged: _setHealthLevel,
+                      ),
+                      const SizedBox(height: 12),
+                      _StatLevelControllerCard(
+                        title: 'Уровень атаки',
+                        icon: Icons.flash_on,
+                        color: const Color(0xFFFFD700),
+                        level: stats.attackLevel,
+                        maxLevel: PlayerStatsService.maxAttackLevel,
+                        startingValue: '${stats.startingAttack} ⚡',
+                        bonusText: '+${stats.attackLevel * PlayerStatsService.attackPerLevel} ⚡',
+                        onChanged: _setAttackLevel,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _DebugButton(
+                              label: 'Сбросить в 0',
+                              icon: Icons.refresh_rounded,
+                              color: const Color(0xFFE94560),
+                              onPressed: _resetStats,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _DebugButton(
+                              label: 'Максимум (10/10)',
+                              icon: Icons.rocket_launch_rounded,
+                              color: const Color(0xFF00E676),
+                              onPressed: _maxStats,
                             ),
                           ),
                         ],
@@ -443,3 +500,201 @@ class _QuickCoinButton extends StatelessWidget {
     );
   }
 }
+
+class _StatLevelControllerCard extends StatelessWidget {
+  const _StatLevelControllerCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.level,
+    required this.maxLevel,
+    required this.startingValue,
+    required this.bonusText,
+    required this.onChanged,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final int level;
+  final int maxLevel;
+  final String startingValue;
+  final String bonusText;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Старт: $startingValue ($bonusText)',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  'Ур. $level / $maxLevel',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                color: level > 0 ? color : Colors.white24,
+                onPressed: level > 0 ? () => onChanged(level - 1) : null,
+                visualDensity: VisualDensity.compact,
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: color,
+                    inactiveTrackColor: Colors.white12,
+                    thumbColor: color,
+                    overlayColor: color.withValues(alpha: 0.2),
+                    valueIndicatorColor: color,
+                    valueIndicatorTextStyle: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  child: Slider(
+                    value: level.toDouble(),
+                    min: 0,
+                    max: maxLevel.toDouble(),
+                    divisions: maxLevel,
+                    label: '$level',
+                    onChanged: (val) => onChanged(val.round()),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                color: level < maxLevel ? color : Colors.white24,
+                onPressed: level < maxLevel ? () => onChanged(level + 1) : null,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _QuickLevelChip(
+                label: 'Мин (0)',
+                isSelected: level == 0,
+                color: color,
+                onTap: () => onChanged(0),
+              ),
+              const SizedBox(width: 8),
+              _QuickLevelChip(
+                label: 'Ур. 5',
+                isSelected: level == 5,
+                color: color,
+                onTap: () => onChanged(5),
+              ),
+              const SizedBox(width: 8),
+              _QuickLevelChip(
+                label: 'Макс ($maxLevel)',
+                isSelected: level == maxLevel,
+                color: color,
+                onTap: () => onChanged(maxLevel),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickLevelChip extends StatelessWidget {
+  const _QuickLevelChip({
+    required this.label,
+    required this.isSelected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isSelected ? color.withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.15),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? color : Colors.white60,
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+

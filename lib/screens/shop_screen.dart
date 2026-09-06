@@ -7,6 +7,7 @@ import '../models/item_card.dart';
 import '../services/player_coins_service.dart';
 import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
+import '../widgets/item_details_sheet.dart';
 
 const int _lootboxPrice = 50;
 const int _duplicateRefund = 20;
@@ -101,7 +102,11 @@ class _ShopScreenState extends State<ShopScreen> {
             children: [
               SizedBox(
                 width: 170,
-                child: ItemCardWidget(item: item),
+                height: 236,
+                child: ItemCardWidget(
+                  item: item,
+                  onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
+                ),
               ),
               const SizedBox(height: 16),
               Text(
@@ -368,7 +373,10 @@ class _ShopScreenState extends State<ShopScreen> {
                             final isUnlocked = unlockedService.isUnlocked(item.id);
 
                             if (isUnlocked) {
-                              return ItemCardWidget(item: item);
+                              return ItemCardWidget(
+                                item: item,
+                                onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
+                              );
                             }
 
                             return _LockedItemCard(item: item);
@@ -395,49 +403,49 @@ class _LockedItemCard extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 0.72,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E1E30),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E1E30),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+                child: Icon(
+                  Icons.lock_outline,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                item.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'В сундуке',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-              child: Icon(
-                Icons.lock_outline,
-                color: Colors.white.withValues(alpha: 0.4),
-                size: 28,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              item.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'В сундуке',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+      );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/item_card.dart';
 import 'item_card_widget.dart';
+import 'item_details_sheet.dart';
 
 class InventorySheet extends StatelessWidget {
   const InventorySheet({
@@ -47,15 +48,18 @@ class InventorySheet extends StatelessWidget {
                 child: const Icon(Icons.backpack_outlined, color: Color(0xFFE94560), size: 22),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Инвентарь забега',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+              const Expanded(
+                child: Text(
+                  'Инвентарь забега',
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -129,6 +133,7 @@ class InventorySheet extends StatelessWidget {
                   final item = items[index];
                   return ItemCardWidget(
                     item: item,
+                    onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
                     actionLabel: 'Применить',
                     onAction: () {
                       Navigator.of(context).pop();

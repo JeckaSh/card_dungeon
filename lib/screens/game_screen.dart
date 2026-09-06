@@ -8,19 +8,18 @@ import '../models/event_card.dart';
 import '../models/item_card.dart';
 import '../services/discovered_events.dart';
 import '../services/player_coins_service.dart';
+import '../services/player_stats_service.dart';
 import '../services/unlocked_items_service.dart';
 import '../widgets/inventory_sheet.dart';
 import '../widgets/stats_bar.dart';
 import '../widgets/swipe_card.dart';
 
-const _initialHealth = 10;
-const _initialAttack = 3;
+int get _initialHealth => PlayerStatsService.instance.startingHealth;
+int get _initialAttack => PlayerStatsService.instance.startingAttack;
 /// Номер карточки (1-indexed), на которой появляется босс
 const _bossEvery = 20;
-/// Максимальный уровень сложности (зацикливаемся на нём)
-const _maxDungeonLevel = 3;
 
-enum GameResult { playing, gameOver }
+enum GameResult { playing, gameOver, victory }
 
 /// Запись в дневнике героя — одно примечательное событие за забег.
 class JournalEntry {
@@ -57,7 +56,16 @@ class _TurnSnapshot {
 }
 
 class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
+  const GameScreen({
+    super.key,
+    this.initialInventory,
+    this.initialDungeonLevel,
+    this.initialCardsPassed,
+  });
+
+  final List<ItemCard>? initialInventory;
+  final int? initialDungeonLevel;
+  final int? initialCardsPassed;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -120,11 +128,14 @@ class _GameScreenState extends State<GameScreen> {
   void _initGame() {
     _health = _initialHealth;
     _attack = _initialAttack;
-    _cardsPassed = 0;
+    _cardsPassed = widget.initialCardsPassed ?? 0;
     _deckPosition = 0;
-    _dungeonLevel = 1;
+    _dungeonLevel = widget.initialDungeonLevel ?? 1;
     _coins = 0;
     _inventoryItems.clear();
+    if (widget.initialInventory != null) {
+      _inventoryItems.addAll(widget.initialInventory!);
+    }
     _result = GameResult.playing;
     _lastFeedback = null;
     _cardKey = 0;
@@ -144,8 +155,16 @@ class _GameScreenState extends State<GameScreen> {
     await Future.wait([
       PlayerCoinsService.instance.load(),
       UnlockedItemsService.instance.load(),
+      PlayerStatsService.instance.load(),
     ]);
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        if (_cardsPassed == 0) {
+          _health = _initialHealth;
+          _attack = _initialAttack;
+        }
+      });
+    }
   }
 
   void _startNewGame() {
@@ -158,8 +177,11 @@ class _GameScreenState extends State<GameScreen> {
 
   /// Строит колоду из карточек текущего уровня и сбрасывает позицию.
   void _rebuildDeck() {
-    final level = _dungeonLevel.clamp(1, _maxDungeonLevel);
-    _deck = allEvents.where((e) => e.level == level).toList()..shuffle(_random);
+    var cards = allEvents.where((e) => e.level == _dungeonLevel).toList();
+    if (cards.isEmpty) {
+      cards = allEvents.toList();
+    }
+    _deck = cards..shuffle(_random);
     _deckPosition = 0;
   }
 
@@ -189,17 +211,19 @@ class _GameScreenState extends State<GameScreen> {
     _cardsPassed++;
     _cardKey++;
     if (wasBoss) {
-      // Победа над боссом → повышаем уровень подземелья
-      if (_dungeonLevel < _maxDungeonLevel) {
-        _dungeonLevel++;
-        _rebuildDeck();
-        _addJournalEntry('🏰', 'Достигнут уровень подземелья $_dungeonLevel');
+      // Победа над боссом → проверяем наличие карточек событий следующего уровня
+      final nextLevel = _dungeonLevel + 1;
+      final hasNextLevelCards = allEvents.any((e) => e.level == nextLevel);
+      if (!hasNextLevelCards) {
+        // Карточек следующего уровня нет — подземелье успешно пройдено!
+        _result = GameResult.victory;
+        _addJournalEntry('🏆', 'Подземелье успешно пройдено!');
+        if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
+        return;
       }
-      // На максимальном уровне просто перемешиваем колоду
-      else {
-        _deck.shuffle(_random);
-        _deckPosition = 0;
-      }
+      _dungeonLevel = nextLevel;
+      _rebuildDeck();
+      _addJournalEntry('🏰', 'Достигнут уровень подземелья $_dungeonLevel');
     } else {
       _deckPosition++;
       if (_deck.isNotEmpty && _deckPosition % _deck.length == 0) {
@@ -317,12 +341,13 @@ class _GameScreenState extends State<GameScreen> {
         wasBoss: wasBoss,
       );
 
-      _advanceCard(wasBoss: wasBoss);
-
       if (_health <= 0) {
+        _cardsPassed++;
         _result = GameResult.gameOver;
         _addJournalEntry('☠️', 'Герой пал — убит $cardTitle');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
+      } else {
+        _advanceCard(wasBoss: wasBoss);
       }
     });
   }
@@ -353,33 +378,58 @@ class _GameScreenState extends State<GameScreen> {
 
   void _useItem(int index, ItemCard item) {
     if (index < 0 || index >= _inventoryItems.length) return;
+    String resultTitle = item.title;
+    String resultDescription = item.description;
+
     setState(() {
       _inventoryItems.removeAt(index);
       switch (item.effectType) {
         case ItemEffectType.heal:
           _health = (_health + item.value).clamp(0, 999);
           _lastFeedback = '${item.title}: +${item.value} ❤';
+          resultTitle = '+${item.value} ❤';
+          resultDescription =
+              'Здоровье героя восстановлено на +${item.value} ❤.\nТекущее здоровье: $_health ❤.';
           break;
         case ItemEffectType.attack:
           _attack = (_attack + item.value).clamp(0, 99);
           _lastFeedback = '${item.title}: +${item.value} ⚡';
+          resultTitle = '+${item.value} ⚡';
+          resultDescription =
+              'Сила удара увеличена на +${item.value} ⚡.\nТекущая атака: $_attack ⚡.';
           break;
         case ItemEffectType.skip:
-          // Пропуск карточки не засчитывается как победа над боссом
-          _advanceCard(wasBoss: false);
-          _lastFeedback = 'Событие пропущено!';
+          final wasBoss = _isCurrentBoss;
+          final skippedCard = _currentCard.title;
+          _advanceCard(wasBoss: wasBoss);
+          _lastFeedback = wasBoss
+              ? '⏩ Пропуск хода: босс обойдён стороной!'
+              : 'Событие пропущено!';
+          resultTitle = wasBoss ? 'Босс пропущен ⏩' : 'Событие пропущено';
+          resultDescription = wasBoss
+              ? 'Магический свиток перенёс вас мимо босса "$skippedCard"! Уровень подземелья успешно пройден без боя и потерь.'
+              : 'Свиток перенёс вас в безопасное место: карта "$skippedCard" успешно обойдена стороной без урона и потерь.';
           break;
         case ItemEffectType.shield:
           _shieldCharges += item.value;
           _lastFeedback = 'Рунический щит активирован! (+${item.value} заряд) 🛡️';
+          resultTitle = 'Щит активирован (+${item.value} 🛡️)';
+          resultDescription =
+              'Рунический щит готов поглотить следующий урон по здоровью.\nВсего зарядов щита: $_shieldCharges.';
           break;
         case ItemEffectType.invertNext:
           _invertNextChoice = true;
           _lastFeedback = 'Зеркало искажения: потери станут выгодой! 🫞';
+          resultTitle = 'Зеркало искажения 🪞';
+          resultDescription =
+              'Искажение активировано! На следующем ходу любые потери здоровья, атаки или монет превратятся в равную выгоду.';
           break;
         case ItemEffectType.revealChoice:
           _isRevealingChoices = true;
           _lastFeedback = 'Око провидца раскрыло тайны карты! 👁️';
+          resultTitle = 'Око провидца 👁️';
+          resultDescription =
+              'Тайны текущей карты раскрыты! Теперь вы можете видеть скрытые последствия каждого решения.';
           break;
         case ItemEffectType.rewind:
           if (_lastTurnSnapshot != null) {
@@ -389,7 +439,6 @@ class _GameScreenState extends State<GameScreen> {
             _cardsPassed = _lastTurnSnapshot!.cardsPassed;
             _cardKey = _lastTurnSnapshot!.cardKey;
             _deckPosition = _lastTurnSnapshot!.deckPosition;
-            // Восстанавливаем уровень и перестраиваем колоду если нужно
             if (_dungeonLevel != _lastTurnSnapshot!.dungeonLevel) {
               _dungeonLevel = _lastTurnSnapshot!.dungeonLevel;
               _rebuildDeck();
@@ -402,14 +451,23 @@ class _GameScreenState extends State<GameScreen> {
             _discoverCurrentCard();
             _lastFeedback = 'Время отмотано назад! ⏳';
             _addJournalEntry('⏳', 'Песочные часы: время отмотано назад');
+            resultTitle = 'Время отмотано ⏳';
+            resultDescription =
+                'Песочные часы вернули вас к состоянию до предыдущего хода.\nЗдоровье: $_health ❤, атака: $_attack ⚡, монеты: $_coins 🪙.';
           } else {
             _health = (_health + 3).clamp(0, 999);
             _lastFeedback = 'Песочные часы восстановили +3 ❤ (нет прошлого хода)';
+            resultTitle = '+3 ❤';
+            resultDescription =
+                'Песочные часы восстановили +3 ❤ (прошлый ход не был сохранён).\nТекущее здоровье: $_health ❤.';
           }
           break;
         case ItemEffectType.thornmail:
           _thornmailActive = true;
           _lastFeedback = 'Шипованная броня готова! 🌵';
+          resultTitle = 'Шипованная броня 🌵';
+          resultDescription =
+              'Шипы наготове! При получении урона на следующем шаге вы нанесёте контратаку и получите x2 золота за каждую единицу потерянного здоровья.';
           break;
         case ItemEffectType.transmute:
           if (_coins >= 10) {
@@ -420,8 +478,14 @@ class _GameScreenState extends State<GameScreen> {
             _health = (_health + bundles * 2).clamp(0, 999);
             _lastFeedback = 'Алхимия: -$usedCoins 🪙 → +$bundles ⚡, +${bundles * 2} ❤ ⚗️';
             _addJournalEntry('⚗️', 'Алхимия: $usedCoins🪙 → +$bundles⚡ +${bundles * 2}❤');
+            resultTitle = 'Трансмутация ⚗️';
+            resultDescription =
+                'Алхимический процесс успешен: $usedCoins 🪙 превращены в +$bundles ⚡ к атаке и +${bundles * 2} ❤ к здоровью!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           } else {
             _lastFeedback = 'Недостаточно монет (нужно 10 🪙)!';
+            resultTitle = 'Недостаточно монет ⚗️';
+            resultDescription =
+                'Для алхимической трансмутации требуется минимум 10 🪙. Монеты не были потрачены.';
           }
           break;
         case ItemEffectType.shadowPact:
@@ -437,10 +501,16 @@ class _GameScreenState extends State<GameScreen> {
           _lastFeedback =
               'Пакт: -$hpLoss ❤, +$bonusCoins 🪙${shadowItem != null ? ', +${shadowItem.title}' : ''} 📜';
           _addJournalEntry('📜', 'Теневой пакт: -$hpLoss❤ → +$bonusCoins🪙');
+          resultTitle = 'Теневой пакт 📜';
+          resultDescription =
+              'Сделка заключена: пожертвовано $hpLoss ❤, взамен получено +$bonusCoins 🪙${shadowItem != null ? ' и артефакт "${shadowItem.title}"' : ''}.\nЗдоровье: $_health ❤, баланс: $_coins 🪙.';
           break;
         case ItemEffectType.greedMagnet:
           _greedMagnetTurns += 3;
           _lastFeedback = 'Магнит жадности: +3 хода удвоения золота! 🧲';
+          resultTitle = 'Магнит жадности 🧲';
+          resultDescription =
+              'Магнит активирован! Всё получаемое за выборы золото будет удваиваться на протяжении 3 ходов (осталось: $_greedMagnetTurns ходов).';
           break;
         case ItemEffectType.diceOfFate:
           final roll = _random.nextInt(6) + 1;
@@ -448,31 +518,51 @@ class _GameScreenState extends State<GameScreen> {
             if (_coins >= 10 && _random.nextBool()) {
               _coins = (_coins - 10).clamp(0, 999999);
               _lastFeedback = '🎲 Кубик [$roll]: Потеряно 10 🪙';
+              resultTitle = 'Кубик [$roll]: Потеря 🎲';
+              resultDescription =
+                  'Неудача! Кубик судьбы забрал 10 🪙.\nТекущий баланс: $_coins 🪙.';
             } else {
               _health = (_health - 3).clamp(1, 999);
               _lastFeedback = '🎲 Кубик [$roll]: Потеряно 3 ❤';
+              resultTitle = 'Кубик [$roll]: Урон 🎲';
+              resultDescription =
+                  'Неудача! Кубик судьбы отнял 3 ❤.\nТекущее здоровье: $_health ❤.';
             }
           } else if (roll <= 4) {
             final diceCard = getRandomUnlockedItemCard(_random, UnlockedItemsService.instance.unlockedIds) ??
                 allItemCards[_random.nextInt(allItemCards.length)];
             _inventoryItems.add(diceCard);
             _lastFeedback = '🎲 Кубик [$roll]: Артефакт "${diceCard.title}"! 🎁';
+            resultTitle = 'Кубик [$roll]: Артефакт 🎁';
+            resultDescription =
+                'Кубик судьбы одарил вас новым предметом: "${diceCard.title}". Он добавлен в ваш инвентарь!';
           } else {
             _health = (_health + 5).clamp(0, 999);
             _attack = (_attack + 2).clamp(0, 99);
             _coins = (_coins + 25).clamp(0, 999999);
             _lastFeedback = '🎲 Кубик [$roll]: ДЖЕКПОТ! +5 ❤, +2 ⚡, +25 🪙 🎉';
             _addJournalEntry('🎲', 'Кубик судьбы: ДЖЕКПОТ! +5❤ +2⚡ +25🪙');
+            resultTitle = 'Кубик [$roll]: ДЖЕКПОТ! 🎉';
+            resultDescription =
+                'Невероятное везение! Вы сорвали куш: +5 ❤ здоровья, +2 ⚡ к атаке и +25 🪙!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           }
           break;
         case ItemEffectType.smokeBomb:
+          final wasBoss = _isCurrentBoss;
           final bestCoins = max(0, max(
             _currentCard.leftChoice.coinsDelta,
             _currentCard.rightChoice.coinsDelta,
           )).toInt();
           if (bestCoins > 0) _coins = (_coins + bestCoins).clamp(0, 999999);
-          _advanceCard(wasBoss: false);
-          _lastFeedback = '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
+          final skippedCard = _currentCard.title;
+          _advanceCard(wasBoss: wasBoss);
+          _lastFeedback = wasBoss
+              ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
+              : '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
+          resultTitle = wasBoss ? 'Побег от босса 💨' : 'Побег в дыму 💨';
+          resultDescription = wasBoss
+              ? 'Вы бросили дымовую шашку и ослепили босса! "$skippedCard" остался позади, а уровень подземелья успешно пройден${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}!'
+              : 'Вы бросили дымовую шашку и скрылись. Опасность "$skippedCard" благополучно пройдена стороной${bestCoins > 0 ? ', а в суматохе подобрано +$bestCoins 🪙' : ''}!';
           break;
         case ItemEffectType.bribery:
           if (_coins >= 15) {
@@ -489,8 +579,9 @@ class _GameScreenState extends State<GameScreen> {
             _health = (_health + max(0, bestChoice.healthDelta).toInt()).clamp(0, 999);
             _attack = (_attack + max(0, bestChoice.attackDelta).toInt()).clamp(0, 99);
             _coins = (_coins + max(0, bestChoice.coinsDelta).toInt()).clamp(0, 999999);
+            ItemCard? bribeItem;
             if (bestChoice.givesRandomItem) {
-              final bribeItem = getRandomUnlockedItemCard(
+              bribeItem = getRandomUnlockedItemCard(
                 _random,
                 UnlockedItemsService.instance.unlockedIds,
               );
@@ -498,12 +589,36 @@ class _GameScreenState extends State<GameScreen> {
             }
             _advanceCard(wasBoss: wasBoss);
             _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
+            resultTitle = 'Подкуп удался (-15 🪙) 💰';
+            resultDescription =
+                'Золото решило вопрос: потрачено 15 🪙, применён лучший исход события без боя и потерь!${bribeItem != null ? ' Также получен предмет: "${bribeItem.title}".' : ''}\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           } else {
             _lastFeedback = 'Недостаточно монет (нужно 15 🪙)!';
+            resultTitle = 'Недостаточно монет 💰';
+            resultDescription =
+                'Для подкупа требуется как минимум 15 🪙. Монеты не были потрачены.';
           }
           break;
       }
     });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _showItemUsedDialog(item, resultTitle, resultDescription);
+      }
+    });
+  }
+
+  void _showItemUsedDialog(ItemCard item, String resultTitle, String resultDescription) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => ItemUsedDialog(
+        item: item,
+        resultTitle: resultTitle,
+        resultDescription: resultDescription,
+      ),
+    );
   }
 
   // ─── UI ─────────────────────────────────────
@@ -647,7 +762,7 @@ class _GameScreenState extends State<GameScreen> {
                               dungeonLevel: _dungeonLevel,
                               onSwipe: _onSwipe,
                             )
-                          : _ResultOverlay(
+                          : ResultOverlay(
                               cardsPassed: _cardsPassed,
                               health: _health,
                               attack: _attack,
@@ -657,6 +772,7 @@ class _GameScreenState extends State<GameScreen> {
                               onRestart: _startNewGame,
                               onMenu: () => Navigator.of(context).pop(),
                               journal: List.of(_journal),
+                              isVictory: _result == GameResult.victory,
                             ),
                     ),
                   ),
@@ -767,13 +883,16 @@ class _BossWarningBanner extends StatelessWidget {
         children: [
           const Icon(Icons.crisis_alert, color: Colors.white, size: 16),
           const SizedBox(width: 8),
-          Text(
-            '⚔ БОСС · Уровень $dungeonLevel — готовься к бою!',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-              letterSpacing: 0.5,
+          Flexible(
+            child: Text(
+              '⚔ БОСС · Уровень $dungeonLevel — готовься к бою!',
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+                letterSpacing: 0.5,
+              ),
             ),
           ),
         ],
@@ -868,8 +987,9 @@ class _BuffChip extends StatelessWidget {
 
 // ─── Экран итогов ───────────────────────────────────────────
 
-class _ResultOverlay extends StatelessWidget {
-  const _ResultOverlay({
+class ResultOverlay extends StatelessWidget {
+  const ResultOverlay({
+    super.key,
     required this.cardsPassed,
     required this.health,
     required this.attack,
@@ -879,6 +999,7 @@ class _ResultOverlay extends StatelessWidget {
     required this.onRestart,
     required this.onMenu,
     required this.journal,
+    this.isVictory = false,
   });
 
   final int cardsPassed;
@@ -890,172 +1011,472 @@ class _ResultOverlay extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onMenu;
   final List<JournalEntry> journal;
+  final bool isVictory;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 480),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                cardsPassed >= 20 ? Icons.emoji_events : Icons.heart_broken,
-                size: 72,
-                color: cardsPassed >= 20 ? const Color(0xFFF5A623) : const Color(0xFFE94560),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isShortScreen = constraints.maxHeight < 680;
+        final isNarrowScreen = constraints.maxWidth < 380;
+        final hPadding = isNarrowScreen ? 16.0 : (isShortScreen ? 20.0 : 28.0);
+        final vPadding = isShortScreen ? 14.0 : 24.0;
+        final iconSize = isShortScreen ? 52.0 : 68.0;
+        final titleSize = isShortScreen ? 24.0 : 28.0;
+        final spacing = isShortScreen ? 12.0 : 18.0;
+
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: 480,
+                minHeight: (constraints.maxHeight - (vPadding * 2)).clamp(0.0, double.infinity),
               ),
-              const SizedBox(height: 24),
-              const Text(
-                'Конец приключения',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Вы выдержали $cardsPassed событий!\nДобрались до уровня: $dungeonLevel',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.65),
-                  fontSize: 16,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: _ResultStat(
-                      label: 'За забег',
-                      value: '+$runCoins 🪙',
-                      color: const Color(0xFFFFD700),
+                  Icon(
+                    isVictory
+                        ? Icons.emoji_events
+                        : (cardsPassed >= 20 ? Icons.emoji_events : Icons.heart_broken),
+                    size: iconSize,
+                    color: isVictory
+                        ? const Color(0xFFFFD700)
+                        : (cardsPassed >= 20 ? const Color(0xFFF5A623) : const Color(0xFFE94560)),
+                  ),
+                  SizedBox(height: isShortScreen ? 10 : 16),
+                  Text(
+                    isVictory ? 'Подземелье пройдено!' : 'Конец приключения',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: isVictory ? const Color(0xFFFFD700) : Colors.white,
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _ResultStat(
-                      label: 'Итого',
-                      value: '$totalCoins 🪙',
-                      color: const Color(0xFFFFD700),
+                  SizedBox(height: isShortScreen ? 6 : 8),
+                  Text(
+                    isVictory
+                        ? 'Поздравляем! Вы успешно прошли подземелье!\nВыдержано $cardsPassed событий · Уровень $dungeonLevel зачищен'
+                        : 'Вы выдержали $cardsPassed событий!\nДобрались до уровня: $dungeonLevel',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: isVictory ? 0.85 : 0.65),
+                      fontSize: isShortScreen ? 14 : 15,
+                      height: 1.4,
                     ),
                   ),
-                ],
-              ),
-              // ── Дневник героя ──────────────────────────────────
-              if (journal.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                Container(
-                  constraints: const BoxConstraints(maxHeight: 240),
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                  SizedBox(height: spacing),
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.auto_stories, size: 14,
-                              color: Colors.white.withValues(alpha: 0.4)),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Хроника похода',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.45),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
+                      Expanded(
+                        child: _ResultStat(
+                          label: 'За забег',
+                          value: '+$runCoins 🪙',
+                          color: const Color(0xFFFFD700),
+                          isCompact: isShortScreen,
+                        ),
                       ),
-                      const SizedBox(height: 10),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: journal
-                                .map(
-                                  (e) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(e.emoji,
-                                            style: const TextStyle(fontSize: 15)),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            e.text,
-                                            style: TextStyle(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.72),
-                                              fontSize: 12.5,
-                                              height: 1.35,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '#${e.cardNumber}',
-                                          style: TextStyle(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.25),
-                                            fontSize: 10,
-                                            fontFamily: 'monospace',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
+                      SizedBox(width: isShortScreen ? 8 : 12),
+                      Expanded(
+                        child: _ResultStat(
+                          label: 'Итого',
+                          value: '$totalCoins 🪙',
+                          color: const Color(0xFFFFD700),
+                          isCompact: isShortScreen,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-              // ────────────────────────────────────────────────────
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: onRestart,
-                  icon: const Icon(Icons.replay),
-                  label: const Text('Снова в бой'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE94560),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  // ── Дневник героя ──────────────────────────────────
+                  if (journal.isNotEmpty) ...[
+                    SizedBox(height: spacing),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.fromLTRB(
+                        isNarrowScreen ? 12 : 14,
+                        12,
+                        isNarrowScreen ? 12 : 14,
+                        12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.auto_stories,
+                                size: 14,
+                                color: Colors.white.withValues(alpha: 0.45),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Хроника похода',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.07),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '${journal.length}',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          ...List.generate(journal.length, (index) {
+                            final e = journal[index];
+                            final isLast = index == journal.length - 1;
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    e.emoji,
+                                    style: TextStyle(
+                                      fontSize: isShortScreen ? 14 : 15,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      e.text,
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.75),
+                                        fontSize: isShortScreen ? 12 : 12.5,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.05),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '#${e.cardNumber}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.35),
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // ────────────────────────────────────────────────────
+                  SizedBox(height: isShortScreen ? 16 : 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onRestart,
+                      icon: Icon(isVictory ? Icons.celebration : Icons.replay),
+                      label: Text(isVictory ? 'Новый поход' : 'Снова в бой'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isVictory ? const Color(0xFF2E7D32) : const Color(0xFFE94560),
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(
+                          vertical: isShortScreen ? 12 : 15,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
                     ),
                   ),
+                  SizedBox(height: isShortScreen ? 8 : 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onMenu,
+                      icon: const Icon(Icons.home_outlined),
+                      label: const Text('В главное меню'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        padding: EdgeInsets.symmetric(
+                          vertical: isShortScreen ? 10 : 13,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ResultStat extends StatelessWidget {
+  const _ResultStat({
+    required this.label,
+    required this.value,
+    required this.color,
+    this.isCompact = false,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final bool isCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 12 : 16,
+        vertical: isCompact ? 8 : 12,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.6),
+              fontSize: isCompact ? 11 : 12,
+            ),
+          ),
+          SizedBox(height: isCompact ? 2 : 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: isCompact ? 17 : 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ItemUsedDialog extends StatelessWidget {
+  const ItemUsedDialog({
+    super.key,
+    required this.item,
+    required this.resultTitle,
+    required this.resultDescription,
+  });
+
+  final ItemCard item;
+  final String resultTitle;
+  final String resultDescription;
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = item.color;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF161626),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: themeColor.withValues(alpha: 0.4),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: themeColor.withValues(alpha: 0.2),
+                blurRadius: 24,
+                spreadRadius: 2,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      themeColor.withValues(alpha: 0.25),
+                      themeColor.withValues(alpha: 0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: themeColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: themeColor.withValues(alpha: 0.6),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(item.icon, color: themeColor, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Карта использована',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20, color: Colors.white54),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onMenu,
-                  icon: const Icon(Icons.home_outlined),
-                  label: const Text('В главное меню'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: themeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: themeColor.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.auto_awesome, color: themeColor, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              resultTitle,
+                              style: TextStyle(
+                                color: themeColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        resultDescription,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13.5,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 42,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text(
+                          'Отлично',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1066,29 +1487,3 @@ class _ResultOverlay extends StatelessWidget {
   }
 }
 
-class _ResultStat extends StatelessWidget {
-  const _ResultStat({required this.label, required this.value, required this.color});
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
-      child: Column(
-        children: [
-          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-}
