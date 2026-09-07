@@ -18,7 +18,7 @@ void main() {
     final coins = PlayerCoinsService.instance;
 
     expect(stats.startingHealth, 10);
-    expect(stats.startingAttack, 3);
+    expect(stats.startingAttack, 5);
     expect(stats.healthLevel, 0);
     expect(stats.attackLevel, 0);
     expect(stats.healthUpgradeCost, 25);
@@ -36,7 +36,7 @@ void main() {
     final upgradedAtk = stats.upgradeAttack();
     expect(upgradedAtk, isTrue);
     expect(stats.attackLevel, 1);
-    expect(stats.startingAttack, 4);
+    expect(stats.startingAttack, 6);
     expect(coins.balance, 45);
     expect(stats.attackUpgradeCost, 60);
 
@@ -61,7 +61,7 @@ void main() {
     expect(find.text('Здоровье'), findsOneWidget);
     expect(find.text('10 ❤'), findsOneWidget);
     expect(find.text('Атака'), findsOneWidget);
-    expect(find.text('3 ⚡'), findsOneWidget);
+    expect(find.text('5 ⚡'), findsOneWidget);
 
     // Tap upgrade health button (+2 ❤ · 25 🪙)
     final hpUpgradeButton = find.text('+2 ❤ · 25 🪙');
@@ -80,7 +80,7 @@ void main() {
     // Give 2 upgrades to HP and 1 to ATK
     PlayerStatsService.instance.upgradeHealth(); // 12 HP
     PlayerStatsService.instance.upgradeHealth(); // 14 HP
-    PlayerStatsService.instance.upgradeAttack(); // 4 ATK
+    PlayerStatsService.instance.upgradeAttack(); // 6 ATK
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -91,6 +91,6 @@ void main() {
 
     // StatsBar should reflect the upgraded starting stats
     expect(find.text('14'), findsOneWidget); // HP
-    expect(find.text('4'), findsOneWidget);  // ATK
+    expect(find.text('6'), findsOneWidget);  // ATK
   });
 }

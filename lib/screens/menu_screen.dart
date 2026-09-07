@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'chronicle_screen.dart';
 import 'debug_screen.dart';
 import 'glossary_screen.dart';
 import 'game_screen.dart';
@@ -104,6 +105,17 @@ class MenuScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => const GlossaryScreen()),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _MenuButton(
+                          label: 'Хроника',
+                          icon: Icons.auto_stories_rounded,
+                          isSecondary: true,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const ChronicleScreen()),
                             );
                           },
                         ),

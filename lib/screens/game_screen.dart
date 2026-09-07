@@ -9,6 +9,7 @@ import '../models/item_card.dart';
 import '../services/discovered_events.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
+import '../services/run_chronicle_service.dart';
 import '../services/unlocked_items_service.dart';
 import '../widgets/inventory_sheet.dart';
 import '../widgets/stats_bar.dart';
@@ -176,13 +177,58 @@ class _GameScreenState extends State<GameScreen> {
   // ─── Работа с колодой ───────────────────────
 
   /// Строит колоду из карточек текущего уровня и сбрасывает позицию.
+  /// Гарантирует ровно [PlayerStatsService.guaranteedMerchants] торговцев
+  /// в первых [_bossEvery]-1 позициях (до встречи с боссом).
+  /// При 0 — торговцы появляются случайно.
   void _rebuildDeck() {
     var cards = allEvents.where((e) => e.level == _dungeonLevel).toList();
     if (cards.isEmpty) {
       cards = allEvents.toList();
     }
-    _deck = cards..shuffle(_random);
+    cards.shuffle(_random);
+
+    final guaranteed = PlayerStatsService.instance.guaranteedMerchants;
+    if (guaranteed > 0) {
+      // Количество карт, которые игрок видит до босса
+      final visibleCount = min(_bossEvery - 1, cards.length);
+
+      // Собираем всех доступных торговцев
+      final allMerchants = allEvents
+          .where((e) => e.type == EventType.merchant)
+          .toList();
+
+      // Сколько торговцев уже есть среди первых visibleCount карт
+      var merchantsInVisible = cards
+          .take(visibleCount)
+          .where((e) => e.type == EventType.merchant)
+          .length;
+
+      // Добавляем недостающих торговцев
+      for (var i = merchantsInVisible; i < guaranteed; i++) {
+        // Берём торговца из хвоста колоды или дублируем из пула
+        final tailIdx = cards
+            .skip(visibleCount)
+            .toList()
+            .indexWhere((e) => e.type == EventType.merchant);
+
+        final EventCard merchantCard;
+        if (tailIdx != -1) {
+          final realIdx = visibleCount + tailIdx;
+          merchantCard = cards.removeAt(realIdx);
+        } else {
+          merchantCard = allMerchants[_random.nextInt(allMerchants.length)];
+        }
+
+        // Вставляем в случайное свободное место среди первых visibleCount позиций
+        final insertPos = _random.nextInt(visibleCount);
+        cards.insert(insertPos, merchantCard);
+        merchantsInVisible++;
+      }
+    }
+
+    _deck = cards;
     _deckPosition = 0;
+
   }
 
   /// Выбирает боссовую карточку по номеру встреченного босса.
@@ -219,6 +265,7 @@ class _GameScreenState extends State<GameScreen> {
         _result = GameResult.victory;
         _addJournalEntry('🏆', 'Подземелье успешно пройдено!');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
+        _saveChronicle(isVictory: true);
         return;
       }
       _dungeonLevel = nextLevel;
@@ -346,10 +393,28 @@ class _GameScreenState extends State<GameScreen> {
         _result = GameResult.gameOver;
         _addJournalEntry('☠️', 'Герой пал — убит $cardTitle');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
+        _saveChronicle(isVictory: false);
       } else {
         _advanceCard(wasBoss: wasBoss);
       }
     });
+  }
+
+  /// Сохраняет текущий забег в хронику.
+  void _saveChronicle({required bool isVictory}) {
+    final journalLines = _journal
+        .map((e) => '${e.emoji} [${e.cardNumber}] ${e.text}')
+        .toList();
+    RunChronicleService.instance.addRecord(
+      RunRecord(
+        endedAt: DateTime.now(),
+        cardsPassed: _cardsPassed,
+        dungeonLevel: _dungeonLevel,
+        coins: _coins,
+        isVictory: isVictory,
+        journal: journalLines,
+      ),
+    );
   }
 
   String _buildFeedback(

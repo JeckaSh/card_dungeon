@@ -139,7 +139,7 @@ void main() {
     expect(find.text('🏆'), findsOneWidget);
   });
 
-  testWidgets('Defeating 2nd boss when level 3 has no cards displays victory screen in GameScreen', (tester) async {
+  testWidgets('Defeating 3rd boss when level 4 has no cards displays victory screen in GameScreen', (tester) async {
     tester.view.physicalSize = const Size(500, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -150,8 +150,8 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: GameScreen(
-          initialDungeonLevel: 2,
-          initialCardsPassed: 39, // Next card (40th) will be 2nd boss
+          initialDungeonLevel: 3,
+          initialCardsPassed: 59, // Next card (60th) will be 3rd boss
         ),
       ),
     );
@@ -159,17 +159,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
-    // 2nd boss is on screen
-    expect(find.text('Проклятый Рыцарь'), findsOneWidget);
+    // 3rd boss is on screen
+    expect(find.text('Архидемон Бездны'), findsOneWidget);
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
-    // Swipe left on the boss to fight ('Принять бой': -6 HP, player has 10 HP, survives with 4 HP)
+    // Swipe left on the boss to fight ('Сразиться': -8 HP, player has 10 HP, survives with 2 HP)
     await tester.drag(find.byType(SwipeCard), const Offset(-300, 0));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
 
-    // Game should transition to victory ResultOverlay because level 3 cards do not exist!
+    // Game should transition to victory ResultOverlay because level 4 cards do not exist!
     expect(find.byType(ResultOverlay), findsOneWidget);
     expect(find.text('Подземелье пройдено!'), findsOneWidget);
     expect(find.textContaining('Вы успешно прошли подземелье'), findsOneWidget);

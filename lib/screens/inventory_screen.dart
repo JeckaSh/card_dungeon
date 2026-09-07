@@ -17,6 +17,7 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   bool _loading = true;
+  bool _isCardsExpanded = true;
 
   @override
   void initState() {
@@ -54,10 +55,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 540),
-              child: Column(
+          child: Column(
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -216,6 +214,27 @@ class _InventoryScreenState extends State<InventoryScreen> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          // ── Прокачка торговцев ───────────────────────────
+                          _StatUpgradeCard(
+                            title: 'Торговцы',
+                            icon: Icons.storefront_rounded,
+                            color: const Color(0xFF26A69A),
+                            currentValue: stats.guaranteedMerchants == 0
+                                ? 'случайно'
+                                : '${stats.guaranteedMerchants} за уровень',
+                            level: stats.merchantLevel,
+                            maxLevel: PlayerStatsService.maxMerchantLevel,
+                            bonusText: '+1 🏪 гарантирован',
+                            cost: stats.merchantUpgradeCost,
+                            isMax: stats.isMerchantMax,
+                            canAfford: coins >= stats.merchantUpgradeCost,
+                            onUpgrade: () {
+                              if (stats.upgradeMerchant()) {
+                                setState(() {});
+                              }
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -227,104 +246,132 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'Открытые карты предметов',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(
-                                    '${unlockedItems.length} / ${allItemCards.length}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFFFD700),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Эти карты могут быть куплены у торговца реликвиями в подземелье.',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.45),
-                                fontSize: 12,
-                                height: 1.4,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (unlockedItems.isEmpty)
-                              Expanded(
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white.withValues(alpha: 0.04),
-                                        ),
-                                        child: Icon(
-                                          Icons.card_giftcard_outlined,
-                                          size: 54,
-                                          color: Colors.white.withValues(alpha: 0.25),
-                                        ),
+                            InkWell(
+                              onTap: () => setState(() => _isCardsExpanded = !_isCardsExpanded),
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      'Открытые карты предметов',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        'Нет открытых карт',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        _isCardsExpanded
+                                            ? Icons.keyboard_arrow_down_rounded
+                                            : Icons.keyboard_arrow_right_rounded,
+                                        color: Colors.white70,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '${unlockedItems.length} / ${allItemCards.length}',
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFD700),
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Открывайте сундуки в магазине,\nчтобы разблокировать карты предметов!',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(alpha: 0.45),
-                                          fontSize: 13,
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            else
-                              Expanded(
-                                child: GridView.builder(
-                                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 170,
-                                    childAspectRatio: 0.72,
-                                    mainAxisSpacing: 12,
-                                    crossAxisSpacing: 12,
-                                  ),
-                                  itemCount: unlockedItems.length,
-                                  itemBuilder: (context, index) {
-                                    final item = unlockedItems[index];
-                                    return ItemCardWidget(
-                                      item: item,
-                                      onTap: () => _showItemDetails(item),
-                                    );
-                                  },
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
+                            if (_isCardsExpanded) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Эти карты могут быть куплены у торговца реликвиями в подземелье.',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.45),
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (unlockedItems.isEmpty)
+                                Expanded(
+                                  child: Center(
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: Colors.white.withValues(alpha: 0.04),
+                                            ),
+                                            child: Icon(
+                                              Icons.card_giftcard_outlined,
+                                              size: 46,
+                                              color: Colors.white.withValues(alpha: 0.25),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Text(
+                                            'Нет открытых карт',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Открывайте сундуки в магазине,\nчтобы разблокировать карты предметов!',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.white.withValues(alpha: 0.45),
+                                              fontSize: 12,
+                                              height: 1.35,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              else
+                                Expanded(
+                                  child: GridView.builder(
+                                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 170,
+                                      childAspectRatio: 0.72,
+                                      mainAxisSpacing: 12,
+                                      crossAxisSpacing: 12,
+                                    ),
+                                    itemCount: unlockedItems.length,
+                                    itemBuilder: (context, index) {
+                                      final item = unlockedItems[index];
+                                      return ItemCardWidget(
+                                        item: item,
+                                        onTap: () => _showItemDetails(item),
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ] else ...[
+                              const Spacer(),
+                            ],
                           ],
                         ),
                       ),
@@ -334,8 +381,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

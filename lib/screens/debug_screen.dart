@@ -98,6 +98,11 @@ class _DebugScreenState extends State<DebugScreen> {
     _refresh();
   }
 
+  void _setMerchantLevel(int level) {
+    PlayerStatsService.instance.setMerchantLevel(level);
+    _refresh();
+  }
+
   void _resetStats() {
     PlayerStatsService.instance.resetStats();
     _refresh();
@@ -106,6 +111,7 @@ class _DebugScreenState extends State<DebugScreen> {
   void _maxStats() {
     PlayerStatsService.instance.setHealthLevel(PlayerStatsService.maxHealthLevel);
     PlayerStatsService.instance.setAttackLevel(PlayerStatsService.maxAttackLevel);
+    PlayerStatsService.instance.setMerchantLevel(PlayerStatsService.maxMerchantLevel);
     _refresh();
   }
 
@@ -322,7 +328,7 @@ class _DebugScreenState extends State<DebugScreen> {
                         icon: Icons.upgrade_rounded,
                         title: 'Прокачка характеристик героя',
                         subtitle:
-                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡)',
+                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡) • Торговцы: ур. ${stats.merchantLevel}',
                         color: const Color(0xFF00E676),
                       ),
                       const SizedBox(height: 12),
@@ -348,6 +354,21 @@ class _DebugScreenState extends State<DebugScreen> {
                         onChanged: _setAttackLevel,
                       ),
                       const SizedBox(height: 12),
+                      _StatLevelControllerCard(
+                        title: 'Уровень торговцев',
+                        icon: Icons.storefront_rounded,
+                        color: const Color(0xFF26A69A),
+                        level: stats.merchantLevel,
+                        maxLevel: PlayerStatsService.maxMerchantLevel,
+                        startingValue: stats.guaranteedMerchants == 0
+                            ? 'случайно'
+                            : '${stats.guaranteedMerchants} 🏪 за уровень',
+                        bonusText: stats.merchantLevel == 0
+                            ? 'нет гарантии'
+                            : '${stats.merchantLevel} торг. гарант.',
+                        onChanged: _setMerchantLevel,
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -361,7 +382,7 @@ class _DebugScreenState extends State<DebugScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _DebugButton(
-                              label: 'Максимум (10/10)',
+                              label: 'Максимум (10/10/2)',
                               icon: Icons.rocket_launch_rounded,
                               color: const Color(0xFF00E676),
                               onPressed: _maxStats,

@@ -9,8 +9,9 @@ import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
+// TODO: ВЫСТАВИТЬ ЦЕНУ ЛУТБОКСОВ
 const int _lootboxPrice = 50;
-const int _duplicateRefund = 20;
+const int _duplicateRefund = 25;
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -23,6 +24,7 @@ class _ShopScreenState extends State<ShopScreen> {
   final _random = Random();
   bool _loading = true;
   bool _isOpening = false;
+  bool _isCollectionExpanded = true;
 
   @override
   void initState() {
@@ -105,14 +107,15 @@ class _ShopScreenState extends State<ShopScreen> {
                 height: 236,
                 child: ItemCardWidget(
                   item: item,
-                  onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
+                  onTap: () =>
+                      showItemDetailsSheet(context, item, isUnlocked: true),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 isNew
-                  ? 'Теперь эту карту можно встретить у торговца в подземелье!'
-                  : 'Эта карта уже доступна для покупки в подземелье.',
+                    ? 'Теперь эту карту можно встретить у торговца в подземелье!'
+                    : 'Эта карта уже доступна для покупки в подземелье.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
@@ -136,9 +139,15 @@ class _ShopScreenState extends State<ShopScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
               ),
-              child: const Text('Отлично', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Отлично',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -165,22 +174,29 @@ class _ShopScreenState extends State<ShopScreen> {
               child: CircularProgressIndicator(color: Color(0xFFE94560)),
             )
           : SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 580),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Баланс монет
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFD700).withValues(alpha: 0.1),
+                            color: const Color(
+                              0xFFFFD700,
+                            ).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                              color: const Color(
+                                0xFFFFD700,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -188,7 +204,9 @@ class _ShopScreenState extends State<ShopScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                                  color: const Color(
+                                    0xFFFFD700,
+                                  ).withValues(alpha: 0.15),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -204,7 +222,9 @@ class _ShopScreenState extends State<ShopScreen> {
                                   Text(
                                     'Ваш баланс',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       fontSize: 13,
                                     ),
                                   ),
@@ -235,12 +255,16 @@ class _ShopScreenState extends State<ShopScreen> {
                             ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFF9C27B0).withValues(alpha: 0.5),
+                              color: const Color(
+                                0xFF9C27B0,
+                              ).withValues(alpha: 0.5),
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF9C27B0).withValues(alpha: 0.2),
+                                color: const Color(
+                                  0xFF9C27B0,
+                                ).withValues(alpha: 0.2),
                                 blurRadius: 16,
                                 offset: const Offset(0, 4),
                               ),
@@ -252,9 +276,13 @@ class _ShopScreenState extends State<ShopScreen> {
                                 padding: const EdgeInsets.all(18),
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFF9C27B0).withValues(alpha: 0.25),
+                                  color: const Color(
+                                    0xFF9C27B0,
+                                  ).withValues(alpha: 0.25),
                                   border: Border.all(
-                                    color: const Color(0xFF9C27B0).withValues(alpha: 0.5),
+                                    color: const Color(
+                                      0xFF9C27B0,
+                                    ).withValues(alpha: 0.5),
                                   ),
                                 ),
                                 child: const Icon(
@@ -287,10 +315,13 @@ class _ShopScreenState extends State<ShopScreen> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
-                                  onPressed: canBuy && !_isOpening ? _openLootbox : null,
+                                  onPressed: canBuy && !_isOpening
+                                      ? _openLootbox
+                                      : null,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF9C27B0),
-                                    disabledBackgroundColor: Colors.white.withValues(alpha: 0.1),
+                                    disabledBackgroundColor: Colors.white
+                                        .withValues(alpha: 0.1),
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
@@ -315,7 +346,9 @@ class _ShopScreenState extends State<ShopScreen> {
                                             fontWeight: FontWeight.bold,
                                             color: canBuy
                                                 ? Colors.white
-                                                : Colors.white.withValues(alpha: 0.4),
+                                                : Colors.white.withValues(
+                                                    alpha: 0.4,
+                                                  ),
                                           ),
                                         ),
                                 ),
@@ -326,67 +359,102 @@ class _ShopScreenState extends State<ShopScreen> {
                         const SizedBox(height: 28),
 
                         // Прогресс коллекции
-                        Row(
-                          children: [
-                            const Text(
-                              'Доступные карты',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-                              ),
-                              child: Text(
-                                'Открыто: ${unlockedService.count} / ${allItemCards.length}',
-                                style: const TextStyle(
-                                  color: Color(0xFFFFD700),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-
-                        // Сетка карт (открытые vs закрытые)
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 170,
-                            childAspectRatio: 0.72,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
+                        InkWell(
+                          onTap: () => setState(
+                            () => _isCollectionExpanded = !_isCollectionExpanded,
                           ),
-                          itemCount: allItemCards.length,
-                          itemBuilder: (context, index) {
-                            final item = allItemCards[index];
-                            final isUnlocked = unlockedService.isUnlocked(item.id);
-
-                            if (isUnlocked) {
-                              return ItemCardWidget(
-                                item: item,
-                                onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
-                              );
-                            }
-
-                            return _LockedItemCard(item: item);
-                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                const Text(
+                                  'Доступные карты',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Icon(
+                                    _isCollectionExpanded
+                                        ? Icons.keyboard_arrow_down_rounded
+                                        : Icons.keyboard_arrow_right_rounded,
+                                    color: Colors.white70,
+                                    size: 18,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Открыто: ${unlockedService.count} / ${allItemCards.length}',
+                                    style: const TextStyle(
+                                      color: Color(0xFFFFD700),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        if (_isCollectionExpanded) ...[
+                          const SizedBox(height: 14),
+                          // Сетка карт (открытые vs закрытые)
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 170,
+                                  childAspectRatio: 0.72,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                ),
+                            itemCount: allItemCards.length,
+                            itemBuilder: (context, index) {
+                              final item = allItemCards[index];
+                              final isUnlocked = unlockedService.isUnlocked(
+                                item.id,
+                              );
+
+                              if (isUnlocked) {
+                                return ItemCardWidget(
+                                  item: item,
+                                  onTap: () => showItemDetailsSheet(
+                                    context,
+                                    item,
+                                    isUnlocked: true,
+                                  ),
+                                );
+                              }
+
+                              return _LockedItemCard(item: item);
+                            },
+                          ),
+                        ],
                         const SizedBox(height: 20),
                       ],
                     ),
-                  ),
-                ),
               ),
             ),
     );
@@ -403,49 +471,49 @@ class _LockedItemCard extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 0.72,
       child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E1E30),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.05),
-                ),
-                child: Icon(
-                  Icons.lock_outline,
-                  color: Colors.white.withValues(alpha: 0.4),
-                  size: 28,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                item.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'В сундуке',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  fontSize: 11,
-                ),
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E30),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-      );
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+              child: Icon(
+                Icons.lock_outline,
+                color: Colors.white.withValues(alpha: 0.4),
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              item.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'В сундуке',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.3),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -15,6 +15,7 @@ class GlossaryScreen extends StatefulWidget {
 
 class _GlossaryScreenState extends State<GlossaryScreen> {
   bool _loading = true;
+  final Set<String> _collapsedCategories = {};
 
   // Все карточки для глоссария (обычные + боссы)
   static List<EventCard> get _allForGlossary => [...allEvents, ...allBossCards];
@@ -28,6 +29,32 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   Future<void> _load() async {
     await DiscoveredEventsService.instance.load();
     if (mounted) setState(() => _loading = false);
+  }
+
+  bool _isCategoryExpanded(String key) => !_collapsedCategories.contains(key);
+
+  void _toggleCategory(String key) {
+    setState(() {
+      if (_collapsedCategories.contains(key)) {
+        _collapsedCategories.remove(key);
+      } else {
+        _collapsedCategories.add(key);
+      }
+    });
+  }
+
+  void _toggleAll(List<EventType> regularCategories) {
+    setState(() {
+      final allKeys = [
+        ...regularCategories.map((t) => t.name),
+        'boss',
+      ];
+      if (_collapsedCategories.isEmpty) {
+        _collapsedCategories.addAll(allKeys);
+      } else {
+        _collapsedCategories.clear();
+      }
+    });
   }
 
   void _showCardDetails(EventCard event) {
@@ -66,16 +93,26 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
         title: const Text('Глоссарий'),
+        actions: [
+          IconButton(
+            tooltip: _collapsedCategories.isEmpty ? 'Свернуть все' : 'Развернуть все',
+            icon: Icon(
+              _collapsedCategories.isEmpty
+                  ? Icons.unfold_less_rounded
+                  : Icons.unfold_more_rounded,
+              color: Colors.white70,
+            ),
+            onPressed: () => _toggleAll(regularCategories),
+          ),
+          const SizedBox(width: 4),
+        ],
         elevation: 0,
       ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFFE94560)),
             )
-          : Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: CustomScrollView(
+          : CustomScrollView(
                   slivers: [
                     // Прогресс-бар открытия
                     SliverToBoxAdapter(
@@ -109,25 +146,35 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                     ),
                     // Обычные категории событий
                     for (final type in regularCategories) ...[
-                      _CategoryHeader(type: type, discovered: discovered, events: allEvents),
+                      _CategoryHeader(
+                        type: type,
+                        discovered: discovered,
+                        events: allEvents,
+                        isExpanded: _isCategoryExpanded(type.name),
+                        onToggle: () => _toggleCategory(type.name),
+                      ),
+                      if (_isCategoryExpanded(type.name))
+                        _CategoryGrid(
+                          events: allEvents.where((e) => e.type == type).toList(),
+                          discovered: discovered,
+                          onTap: _showCardDetails,
+                        ),
+                    ],
+                    // Секция боссов
+                    _BossHeader(
+                      discovered: discovered,
+                      isExpanded: _isCategoryExpanded('boss'),
+                      onToggle: () => _toggleCategory('boss'),
+                    ),
+                    if (_isCategoryExpanded('boss'))
                       _CategoryGrid(
-                        events: allEvents.where((e) => e.type == type).toList(),
+                        events: allBossCards,
                         discovered: discovered,
                         onTap: _showCardDetails,
                       ),
-                    ],
-                    // Секция боссов
-                    _BossHeader(discovered: discovered),
-                    _CategoryGrid(
-                      events: allBossCards,
-                      discovered: discovered,
-                      onTap: _showCardDetails,
-                    ),
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   ],
-                ),
-              ),
-            ),
+        ),
     );
   }
 }
@@ -138,11 +185,15 @@ class _CategoryHeader extends StatelessWidget {
     required this.type,
     required this.discovered,
     required this.events,
+    required this.isExpanded,
+    required this.onToggle,
   });
 
   final EventType type;
   final DiscoveredEventsService discovered;
   final List<EventCard> events;
+  final bool isExpanded;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -152,41 +203,63 @@ class _CategoryHeader extends StatelessWidget {
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(eventTypeIcon(type), color: color, size: 20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(eventTypeIcon(type), color: color, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  eventTypeLabel(type),
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_down_rounded
+                        : Icons.keyboard_arrow_right_rounded,
+                    color: color,
+                    size: 18,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    '$discoveredCount / ${typeEvents.length}',
+                    style: TextStyle(color: color, fontSize: 12),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Text(
-              eventTypeLabel(type),
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-              ),
-            ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                '$discoveredCount / ${typeEvents.length}',
-                style: TextStyle(color: color, fontSize: 12),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -195,9 +268,15 @@ class _CategoryHeader extends StatelessWidget {
 
 /// Заголовок секции боссов
 class _BossHeader extends StatelessWidget {
-  const _BossHeader({required this.discovered});
+  const _BossHeader({
+    required this.discovered,
+    required this.isExpanded,
+    required this.onToggle,
+  });
 
   final DiscoveredEventsService discovered;
+  final bool isExpanded;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -207,51 +286,77 @@ class _BossHeader extends StatelessWidget {
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withValues(alpha: 0.4)),
-              ),
-              child: const Icon(Icons.crisis_alert, color: color, size: 20),
-            ),
-            const SizedBox(width: 12),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
               children: [
-                Text(
-                  'Боссы',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: color.withValues(alpha: 0.4)),
                   ),
+                  child: const Icon(Icons.crisis_alert, color: color, size: 20),
                 ),
-                Text(
-                  'Появляются каждую 20-ю карточку',
-                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Боссы',
+                          style: TextStyle(
+                            color: color,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_down_rounded
+                                : Icons.keyboard_arrow_right_rounded,
+                            color: color,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'Появляются каждую 20-ю карточку',
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(
+                    '$discoveredCount / ${allBossCards.length}',
+                    style: const TextStyle(color: color, fontSize: 12),
+                  ),
                 ),
               ],
             ),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                '$discoveredCount / ${allBossCards.length}',
-                style: const TextStyle(color: color, fontSize: 12),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

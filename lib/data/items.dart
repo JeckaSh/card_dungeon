@@ -59,24 +59,7 @@ const List<ItemCard> allItemCards = [
     icon: Icons.auto_fix_high,
     color: Color(0xFFAB47BC),
   ),
-  ItemCard(
-    id: 'seers_eye',
-    title: 'Око провидца',
-    description: 'Раскрывает исходы текущей карты ещё до выбора.',
-    effectType: ItemEffectType.revealChoice,
-    value: 0,
-    icon: Icons.visibility,
-    color: Color(0xFF26A69A),
-  ),
-  ItemCard(
-    id: 'hourglass',
-    title: 'Песочные часы',
-    description: 'Отматывает время: отменяет последний ход.',
-    effectType: ItemEffectType.rewind,
-    value: 0,
-    icon: Icons.hourglass_top,
-    color: Color(0xFF78909C),
-  ),
+
   ItemCard(
     id: 'thornmail',
     title: 'Шипованная броня',
