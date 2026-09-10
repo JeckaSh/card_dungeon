@@ -76,6 +76,14 @@ class InventorySheet extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white70, size: 22),
+                onPressed: () => Navigator.of(context).pop(),
+                tooltip: 'Закрыть',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
           const SizedBox(height: 18),
@@ -143,6 +151,29 @@ class InventorySheet extends StatelessWidget {
                 },
               ),
             ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE94560),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Закрыть',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

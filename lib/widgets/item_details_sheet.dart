@@ -72,150 +72,190 @@ class ItemDetailsSheet extends StatelessWidget {
         color: Color(0xFF1A1A2E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (isUnlocked ? item.color : Colors.white24).withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Icon(
-                          isUnlocked ? item.icon : Icons.lock_outline,
-                          size: 14,
-                          color: isUnlocked ? item.color : Colors.white70,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: (isUnlocked ? item.color : Colors.white24).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isUnlocked ? item.icon : Icons.lock_outline,
+                                    size: 14,
+                                    color: isUnlocked ? item.color : Colors.white70,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _categoryLabel,
+                                    style: TextStyle(
+                                      color: isUnlocked ? item.color : Colors.white70,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                _effectBadge,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _categoryLabel,
-                          style: TextStyle(
-                            color: isUnlocked ? item.color : Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isUnlocked
+                                ? const Color(0xFF4CAF50).withValues(alpha: 0.15)
+                                : Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isUnlocked
+                                  ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
+                                  : Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          child: Text(
+                            isUnlocked ? 'Открыта' : 'В сундуке',
+                            style: TextStyle(
+                              color: isUnlocked ? const Color(0xFF4CAF50) : Colors.white60,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _effectBadge,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70, size: 22),
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'Закрыть',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isUnlocked
-                      ? const Color(0xFF4CAF50).withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isUnlocked
-                        ? const Color(0xFF4CAF50).withValues(alpha: 0.3)
-                        : Colors.white.withValues(alpha: 0.1),
-                  ),
+              const SizedBox(height: 14),
+              Text(
+                item.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                child: Text(
-                  isUnlocked ? 'Открыта' : 'В сундуке',
-                  style: TextStyle(
-                    color: isUnlocked ? const Color(0xFF4CAF50) : Colors.white60,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                item.description,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isUnlocked ? Icons.info_outline : Icons.lock_outline,
+                      color: isUnlocked ? Colors.white54 : const Color(0xFFE040FB),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isUnlocked
+                            ? 'Эта карта разблокирована и может быть куплена у торговца реликвиями в подземелье.'
+                            : 'Эта карта пока не открыта. Открывайте магические сундуки в магазине, чтобы разблокировать её!',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE94560),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Закрыть',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Text(
-            item.title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            item.description,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 15,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isUnlocked ? Icons.info_outline : Icons.lock_outline,
-                  color: isUnlocked ? Colors.white54 : const Color(0xFFE040FB),
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    isUnlocked
-                        ? 'Эта карта разблокирована и может быть куплена у торговца реликвиями в подземелье.'
-                        : 'Эта карта пока не открыта. Открывайте магические сундуки в магазине, чтобы разблокировать её!',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.65),
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

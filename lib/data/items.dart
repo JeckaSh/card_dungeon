@@ -72,7 +72,7 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'philosophers_stone',
     title: 'Философский камень',
-    description: 'Конвертирует монеты (×10) в атаку (+1) и здоровье (+2).',
+    description: 'Конвертирует монеты (×10, макс. 100🪙) в атаку (+1) и здоровье (+2).',
     effectType: ItemEffectType.transmute,
     value: 0,
     icon: Icons.science,

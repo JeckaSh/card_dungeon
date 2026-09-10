@@ -103,6 +103,11 @@ class _DebugScreenState extends State<DebugScreen> {
     _refresh();
   }
 
+  void _setStartingCardsLevel(int level) {
+    PlayerStatsService.instance.setStartingCardsLevel(level);
+    _refresh();
+  }
+
   void _resetStats() {
     PlayerStatsService.instance.resetStats();
     _refresh();
@@ -112,6 +117,7 @@ class _DebugScreenState extends State<DebugScreen> {
     PlayerStatsService.instance.setHealthLevel(PlayerStatsService.maxHealthLevel);
     PlayerStatsService.instance.setAttackLevel(PlayerStatsService.maxAttackLevel);
     PlayerStatsService.instance.setMerchantLevel(PlayerStatsService.maxMerchantLevel);
+    PlayerStatsService.instance.setStartingCardsLevel(PlayerStatsService.maxStartingCardsLevel);
     _refresh();
   }
 
@@ -328,7 +334,7 @@ class _DebugScreenState extends State<DebugScreen> {
                         icon: Icons.upgrade_rounded,
                         title: 'Прокачка характеристик героя',
                         subtitle:
-                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡) • Торговцы: ур. ${stats.merchantLevel}',
+                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡) • Торговцы: ур. ${stats.merchantLevel} • Карты: ур. ${stats.startingCardsLevel} (${stats.startingCardsCount} шт.)',
                         color: const Color(0xFF00E676),
                       ),
                       const SizedBox(height: 12),
@@ -369,6 +375,21 @@ class _DebugScreenState extends State<DebugScreen> {
                         onChanged: _setMerchantLevel,
                       ),
                       const SizedBox(height: 12),
+                      _StatLevelControllerCard(
+                        title: 'Уровень стартовых карт',
+                        icon: Icons.auto_awesome_motion_rounded,
+                        color: const Color(0xFFAB47BC),
+                        level: stats.startingCardsLevel,
+                        maxLevel: PlayerStatsService.maxStartingCardsLevel,
+                        startingValue: stats.startingCardsCount == 0
+                            ? 'нет карт'
+                            : '${stats.startingCardsCount} карт на старте',
+                        bonusText: stats.startingCardsLevel == 0
+                            ? '0 карт'
+                            : '+${stats.startingCardsLevel} случ. карт',
+                        onChanged: _setStartingCardsLevel,
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
@@ -382,7 +403,7 @@ class _DebugScreenState extends State<DebugScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: _DebugButton(
-                              label: 'Максимум (10/10/2)',
+                              label: 'Максимум (10/10/2/3)',
                               icon: Icons.rocket_launch_rounded,
                               color: const Color(0xFF00E676),
                               onPressed: _maxStats,

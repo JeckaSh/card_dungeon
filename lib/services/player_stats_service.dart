@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'player_coins_service.dart';
+import 'unlocked_items_service.dart';
 
 /// Сервис прокачки постоянных стартовых характеристик персонажа.
 class PlayerStatsService {
@@ -10,6 +11,7 @@ class PlayerStatsService {
   static const _healthLevelKey = 'player_health_upgrade_level';
   static const _attackLevelKey = 'player_attack_upgrade_level';
   static const _merchantLevelKey = 'player_merchant_upgrade_level';
+  static const _startingCardsLevelKey = 'player_starting_cards_upgrade_level';
 
   static const int baseHealth = 10;
   static const int healthPerLevel = 2;
@@ -23,14 +25,23 @@ class PlayerStatsService {
   static const int maxMerchantLevel = 2;
   static const int merchantUpgradeCostBase = 60;
 
+  /// Максимальный уровень навыка стартовых карт
+  static const int maxStartingCardsLevel = 3;
+  static const int startingCardsUpgradeCostBase = 50;
+
+  /// Минимальное количество открытых карт в коллекции для разблокировки прокачки навыка
+  static const int requiredUnlockedCardsForStartingCards = 3;
+
   int _healthLevel = 0;
   int _attackLevel = 0;
   int _merchantLevel = 0;
+  int _startingCardsLevel = 0;
   bool _loaded = false;
 
   int get healthLevel => _healthLevel;
   int get attackLevel => _attackLevel;
   int get merchantLevel => _merchantLevel;
+  int get startingCardsLevel => _startingCardsLevel;
 
   /// Стартовое здоровье персонажа в начале игры
   int get startingHealth => baseHealth + _healthLevel * healthPerLevel;
@@ -38,9 +49,18 @@ class PlayerStatsService {
   /// Стартовая атака персонажа в начале игры
   int get startingAttack => baseAttack + _attackLevel * attackPerLevel;
 
+  /// Количество случайных карт, выдаваемых при старте игры (уровень 1 = 1, уровень 2 = 2, уровень 3 = 3)
+  int get startingCardsCount => _startingCardsLevel;
+
   bool get isHealthMax => _healthLevel >= maxHealthLevel;
   bool get isAttackMax => _attackLevel >= maxAttackLevel;
   bool get isMerchantMax => _merchantLevel >= maxMerchantLevel;
+  bool get isStartingCardsMax => _startingCardsLevel >= maxStartingCardsLevel;
+
+  /// Доступен ли навык стартовых карт для прокачки (требуется минимум 3 открытые карты)
+  bool get isStartingCardsUnlocked =>
+      UnlockedItemsService.instance.count >=
+      requiredUnlockedCardsForStartingCards;
 
   /// Количество гарантированных торговцев за уровень (0 = не гарантировано)
   int get guaranteedMerchants => _merchantLevel;
@@ -54,6 +74,10 @@ class PlayerStatsService {
 
   /// Стоимость следующего уровня торговцев
   int get merchantUpgradeCost => merchantUpgradeCostBase + _merchantLevel * 40;
+
+  /// Стоимость следующего уровня стартовых карт
+  int get startingCardsUpgradeCost =>
+      startingCardsUpgradeCostBase + _startingCardsLevel * 50;
 
   Future<void> load() async {
     if (_loaded) return;
@@ -69,6 +93,10 @@ class PlayerStatsService {
     _merchantLevel = (prefs.getInt(_merchantLevelKey) ?? 0).clamp(
       0,
       maxMerchantLevel,
+    );
+    _startingCardsLevel = (prefs.getInt(_startingCardsLevelKey) ?? 0).clamp(
+      0,
+      maxStartingCardsLevel,
     );
     _loaded = true;
   }
@@ -112,11 +140,25 @@ class PlayerStatsService {
     return true;
   }
 
+  /// Прокачка стартовых карт за монеты (доступна при открытии хотя бы 3 карт)
+  bool upgradeStartingCards() {
+    if (!isStartingCardsUnlocked || isStartingCardsMax) return false;
+    final cost = startingCardsUpgradeCost;
+    final coins = PlayerCoinsService.instance.balance;
+    if (coins < cost) return false;
+
+    PlayerCoinsService.instance.applyDelta(-cost);
+    _startingCardsLevel++;
+    _persistAsync();
+    return true;
+  }
+
   void _persistAsync() {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt(_healthLevelKey, _healthLevel);
       prefs.setInt(_attackLevelKey, _attackLevel);
       prefs.setInt(_merchantLevelKey, _merchantLevel);
+      prefs.setInt(_startingCardsLevelKey, _startingCardsLevel);
     });
   }
 
@@ -138,11 +180,18 @@ class PlayerStatsService {
     _persistAsync();
   }
 
+  /// Прямая установка уровня стартовых карт (для настроек/отладки)
+  void setStartingCardsLevel(int level) {
+    _startingCardsLevel = level.clamp(0, maxStartingCardsLevel);
+    _persistAsync();
+  }
+
   /// Сброс уровней прокачки
   void resetStats() {
     _healthLevel = 0;
     _attackLevel = 0;
     _merchantLevel = 0;
+    _startingCardsLevel = 0;
     _persistAsync();
   }
 
@@ -151,6 +200,7 @@ class PlayerStatsService {
     _healthLevel = 0;
     _attackLevel = 0;
     _merchantLevel = 0;
+    _startingCardsLevel = 0;
     _loaded = true;
   }
 }

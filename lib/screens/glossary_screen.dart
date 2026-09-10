@@ -413,93 +413,129 @@ class _CardDetailSheet extends StatelessWidget {
     final isBoss = event.isBoss;
     final color = isBoss ? const Color(0xFFEF5350) : eventTypeColor(event.type);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: isBoss
-                      ? Border.all(color: color.withValues(alpha: 0.5))
-                      : null,
-                ),
-                child: Text(
-                  isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(20),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(20),
+                      border: isBoss
+                          ? Border.all(color: color.withValues(alpha: 0.5))
+                          : null,
+                    ),
+                    child: Text(
+                      isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isBoss ? 'Уровень ${event.level}' : 'Уровень ${event.level}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70, size: 22),
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'Закрыть',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                event.title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  shadows: isBoss
+                      ? [Shadow(color: color.withValues(alpha: 0.4), blurRadius: 8)]
+                      : null,
                 ),
-                child: Text(
-                  isBoss ? 'Уровень ${event.level}' : 'Уровень ${event.level}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                event.description,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 15,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _DetailChoice(
+                label: '← ${event.leftChoice.label}',
+                choice: event.leftChoice,
+              ),
+              const SizedBox(height: 12),
+              _DetailChoice(
+                label: '${event.rightChoice.label} →',
+                choice: event.rightChoice,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE94560),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    'Закрыть',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            event.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              shadows: isBoss
-                  ? [Shadow(color: color.withValues(alpha: 0.4), blurRadius: 8)]
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            event.description,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 15,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _DetailChoice(
-            label: '← ${event.leftChoice.label}',
-            choice: event.leftChoice,
-          ),
-          const SizedBox(height: 12),
-          _DetailChoice(
-            label: '${event.rightChoice.label} →',
-            choice: event.rightChoice,
-          ),
-        ],
+        ),
       ),
     );
   }

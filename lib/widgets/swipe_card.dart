@@ -31,8 +31,7 @@ class SwipeCard extends StatefulWidget {
   State<SwipeCard> createState() => _SwipeCardState();
 }
 
-class _SwipeCardState extends State<SwipeCard>
-    with TickerProviderStateMixin {
+class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   late AnimationController _swipeController;
   late AnimationController _pulseController;
   Offset _dragOffset = Offset.zero;
@@ -79,7 +78,9 @@ class _SwipeCardState extends State<SwipeCard>
 
     if (_dragOffset.dx.abs() > _swipeThreshold) {
       final isRight = _dragOffset.dx > 0;
-      final choice = isRight ? widget.event.rightChoice : widget.event.leftChoice;
+      final choice = isRight
+          ? widget.event.rightChoice
+          : widget.event.leftChoice;
       final blocked = _blockedReason(choice) != null;
       if (blocked) {
         _animateBack();
@@ -92,9 +93,16 @@ class _SwipeCardState extends State<SwipeCard>
   }
 
   String? _blockedReason(CardChoice choice) {
-    if (choice.givesRandomItem && !widget.hasUnlockedItems) return 'Карты';
-    if (choice.coinsDelta < 0 && widget.currentCoins < choice.coinsDelta.abs()) return 'Монеты';
-    if (choice.attackDelta < 0 && widget.currentAttack < choice.attackDelta.abs()) return 'Атака';
+    if (choice.givesRandomItem && !widget.hasUnlockedItems) {
+      return 'Карты';
+    }
+    if (choice.coinsDelta < 0 && widget.currentCoins < choice.coinsDelta.abs()) {
+      return 'Монеты';
+    }
+    if (choice.attackDelta < 0 &&
+        widget.currentAttack < choice.attackDelta.abs()) {
+      return 'Атака';
+    }
     return null;
   }
 
@@ -115,10 +123,10 @@ class _SwipeCardState extends State<SwipeCard>
   }
 
   void _animateBack() {
-    final animation = Tween<Offset>(
-      begin: _dragOffset,
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.elasticOut));
+    final animation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _swipeController, curve: Curves.elasticOut),
+        );
 
     animation.addListener(() {
       setState(() => _dragOffset = animation.value);
@@ -134,17 +142,31 @@ class _SwipeCardState extends State<SwipeCard>
         final availableWidth = constraints.maxWidth;
         final availableHeight = constraints.maxHeight;
 
-        double cardWidth = (availableWidth - 36).clamp(260.0, 420.0);
+        final mediaQuery = MediaQuery.maybeOf(context);
+        final screenWidth = mediaQuery?.size.width ?? availableWidth;
+        // Мобильные экраны телефонов (ширина < 500)
+        final isSmallScreen = screenWidth < 500;
+
+        // На маленьких экранах (телефонах) карточка увеличена на 10%
+        final widthFactor = isSmallScreen ? 0.46 : 0.80;
+        final minWidth = isSmallScreen ? 154.0 : 260.0;
+        final maxWidth = isSmallScreen ? 220.0 : 380.0;
+
+        double cardWidth = ((availableWidth - 36) * widthFactor).clamp(
+          minWidth,
+          maxWidth,
+        );
         double cardHeight = cardWidth / 0.72;
-        if (cardHeight > availableHeight - 20) {
-          cardHeight = availableHeight - 20;
+
+        if (cardHeight > availableHeight - 16) {
+          cardHeight = availableHeight - 16;
           cardWidth = cardHeight * 0.72;
         }
 
-        _swipeThreshold = (cardWidth * 0.28).clamp(70.0, 120.0);
-        _exitDistance = math.max(availableWidth, 500.0);
+        _swipeThreshold = (cardWidth * 0.28).clamp(40.0, 120.0);
+        _exitDistance = math.max(availableWidth, 450.0);
 
-        final scale = (cardWidth / 340.0).clamp(0.8, 1.25);
+        final scale = (cardWidth / 280.0).clamp(0.55, 1.25);
         final rotation = _dragOffset.dx / (1000 * scale);
         final leftOpacity = (-_dragOffset.dx / _swipeThreshold).clamp(0.0, 1.0);
         final rightOpacity = (_dragOffset.dx / _swipeThreshold).clamp(0.0, 1.0);
@@ -187,7 +209,9 @@ class _SwipeCardState extends State<SwipeCard>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFEF5350).withValues(alpha: 0.25 + pulse * 0.25),
+                                color: const Color(
+                                  0xFFEF5350,
+                                ).withValues(alpha: 0.25 + pulse * 0.25),
                                 blurRadius: 20 + pulse * 15,
                                 spreadRadius: 2 + pulse * 3,
                               ),
@@ -206,10 +230,12 @@ class _SwipeCardState extends State<SwipeCard>
                     isBoss: widget.isBoss,
                     dungeonLevel: widget.dungeonLevel,
                   ),
-                  if (_isDragging || _dragOffset.dx != 0 || widget.isRevealingChoices) ...[
+                  if (_isDragging ||
+                      _dragOffset.dx != 0 ||
+                      widget.isRevealingChoices) ...[
                     Positioned(
-                      top: 30 * scale,
-                      left: 20 * scale,
+                      top: 14 * scale,
+                      left: 10 * scale,
                       child: Opacity(
                         opacity: widget.isRevealingChoices ? 0.9 : leftOpacity,
                         child: _ChoiceHint(
@@ -221,8 +247,8 @@ class _SwipeCardState extends State<SwipeCard>
                       ),
                     ),
                     Positioned(
-                      top: 30 * scale,
-                      right: 20 * scale,
+                      top: 14 * scale,
+                      right: 10 * scale,
                       child: Opacity(
                         opacity: widget.isRevealingChoices ? 0.9 : rightOpacity,
                         child: _ChoiceHint(
@@ -277,18 +303,14 @@ class _EventCardContent extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isBoss
-              ? [
-                  const Color(0xFF4A0000),
-                  const Color(0xFF1A0000),
-                ]
-              : [
-                  baseColor,
-                  baseColor.withValues(alpha: 0.6),
-                ],
+              ? [const Color(0xFF4A0000), const Color(0xFF1A0000)]
+              : [baseColor, baseColor.withValues(alpha: 0.6)],
         ),
         boxShadow: [
           BoxShadow(
-            color: (isBoss ? const Color(0xFFEF5350) : baseColor).withValues(alpha: 0.4),
+            color: (isBoss ? const Color(0xFFEF5350) : baseColor).withValues(
+              alpha: 0.4,
+            ),
             blurRadius: 20 * scale,
             offset: Offset(0, 10 * scale),
           ),
@@ -320,7 +342,7 @@ class _EventCardContent extends StatelessWidget {
                 ),
               ),
             Padding(
-              padding: EdgeInsets.all((26 * scale).clamp(16.0, 32.0)),
+              padding: EdgeInsets.all((20 * scale).clamp(12.0, 28.0)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -330,17 +352,21 @@ class _EventCardContent extends StatelessWidget {
                       Flexible(
                         child: Container(
                           padding: EdgeInsets.symmetric(
-                            horizontal: 12 * scale,
-                            vertical: 6 * scale,
+                            horizontal: (12 * scale).clamp(8.0, 16.0),
+                            vertical: (5 * scale).clamp(3.0, 8.0),
                           ),
                           decoration: BoxDecoration(
                             color: isBoss
-                                ? const Color(0xFFEF5350).withValues(alpha: 0.25)
+                                ? const Color(
+                                    0xFFEF5350,
+                                  ).withValues(alpha: 0.25)
                                 : Colors.black.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(20 * scale),
                             border: isBoss
                                 ? Border.all(
-                                    color: const Color(0xFFEF5350).withValues(alpha: 0.6),
+                                    color: const Color(
+                                      0xFFEF5350,
+                                    ).withValues(alpha: 0.6),
                                   )
                                 : null,
                           ),
@@ -357,11 +383,15 @@ class _EventCardContent extends StatelessWidget {
                               ],
                               Flexible(
                                 child: Text(
-                                  isBoss ? '⚔ БОСС · Уровень $dungeonLevel' : eventTypeLabel(event.type),
+                                  isBoss
+                                      ? '⚔ БОСС · Уровень $dungeonLevel'
+                                      : eventTypeLabel(event.type),
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: isBoss ? const Color(0xFFEF5350) : Colors.white70,
-                                    fontSize: (12 * scale).clamp(10.0, 15.0),
+                                    color: isBoss
+                                        ? const Color(0xFFEF5350)
+                                        : Colors.white70,
+                                    fontSize: (12 * scale).clamp(9.5, 15.0),
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: isBoss ? 1.0 : 0,
                                   ),
@@ -373,33 +403,47 @@ class _EventCardContent extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Text(
-                    event.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: (26 * scale).clamp(20.0, 34.0),
-                      fontWeight: FontWeight.bold,
-                      shadows: isBoss
-                          ? [
-                              Shadow(
-                                color: const Color(0xFFEF5350).withValues(alpha: 0.5),
-                                blurRadius: 8,
-                              ),
-                            ]
-                          : null,
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          event.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: (22 * scale).clamp(15.0, 32.0),
+                            fontWeight: FontWeight.bold,
+                            shadows: isBoss
+                                ? [
+                                    Shadow(
+                                      color: const Color(
+                                        0xFFEF5350,
+                                      ).withValues(alpha: 0.5),
+                                      blurRadius: 8,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                        ),
+                        SizedBox(height: (8 * scale).clamp(4.0, 12.0)),
+                        Text(
+                          event.description,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: (13.5 * scale).clamp(10.5, 17.0),
+                            height: 1.35,
+                          ),
+                        ),
+                        SizedBox(height: (4 * scale).clamp(2.0, 8.0)),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 12 * scale),
-                  Text(
-                    event.description,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: (15 * scale).clamp(12.0, 18.0),
-                      height: 1.45,
-                    ),
-                  ),
-                  const Spacer(),
                 ],
               ),
             ),
@@ -432,8 +476,8 @@ class _ChoiceHint extends StatelessWidget {
         : (isLeft ? Colors.red : Colors.green);
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: (16 * scale).clamp(12.0, 20.0),
-        vertical: (10 * scale).clamp(8.0, 14.0),
+        horizontal: (14 * scale).clamp(10.0, 20.0),
+        vertical: (8 * scale).clamp(6.0, 14.0),
       ),
       decoration: BoxDecoration(
         color: bgColor.withValues(alpha: 0.9),
@@ -444,20 +488,28 @@ class _ChoiceHint extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: isLeft ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+        crossAxisAlignment: isLeft
+            ? CrossAxisAlignment.start
+            : CrossAxisAlignment.end,
         children: [
           if (_isBlocked) ...[
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock, color: const Color(0xFFFF6B6B), size: (16 * scale).clamp(14.0, 20.0)),
-                SizedBox(width: 6 * scale),
+                Icon(
+                  Icons.lock,
+                  color: const Color(0xFFFF6B6B),
+                  size: (16 * scale).clamp(13.0, 20.0),
+                ),
+                SizedBox(width: 5 * scale),
                 Text(
-                  blockedReason == 'Карты' ? 'Нет доступных карт' : 'Нет ${blockedReason!.toLowerCase()}',
+                  blockedReason == 'Карты'
+                      ? 'Нет доступных карт'
+                      : 'Нет ${blockedReason!.toLowerCase()}',
                   style: TextStyle(
                     color: const Color(0xFFFF6B6B),
                     fontWeight: FontWeight.bold,
-                    fontSize: (15 * scale).clamp(12.0, 18.0),
+                    fontSize: (14 * scale).clamp(11.0, 18.0),
                   ),
                 ),
               ],
@@ -467,7 +519,7 @@ class _ChoiceHint extends StatelessWidget {
               _requiredText(),
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: (12 * scale).clamp(10.0, 15.0),
+                fontSize: (12 * scale).clamp(9.0, 15.0),
               ),
             ),
           ] else ...[
@@ -476,10 +528,12 @@ class _ChoiceHint extends StatelessWidget {
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
-                fontSize: (16 * scale).clamp(13.0, 20.0),
+                fontSize: (15 * scale).clamp(11.0, 20.0),
               ),
             ),
-            if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
+            if (choice.healthDelta != 0 ||
+                choice.attackDelta != 0 ||
+                choice.coinsDelta != 0) ...[
               SizedBox(height: 4 * scale),
               Text(
                 _formatDeltas(choice),
@@ -496,18 +550,32 @@ class _ChoiceHint extends StatelessWidget {
   }
 
   String _requiredText() {
-    if (blockedReason == 'Карты') return 'нет доступных для покупки карточек';
-    if (blockedReason == 'Монеты') return 'Нужно: ${choice.coinsDelta.abs()} 🪙';
-    if (blockedReason == 'Атака') return 'Нужно: ${choice.attackDelta.abs()} ⚡';
+    if (blockedReason == 'Карты') {
+      return 'нет доступных для покупки карточек';
+    }
+    if (blockedReason == 'Монеты') {
+      return 'Нужно: ${choice.coinsDelta.abs()} 🪙';
+    }
+    if (blockedReason == 'Атака') {
+      return 'Нужно: ${choice.attackDelta.abs()} ⚡';
+    }
     return '';
   }
 
   String _formatDeltas(CardChoice choice) {
     final parts = <String>[];
-    if (choice.healthDelta != 0) parts.add('❤ ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}');
-    if (choice.attackDelta != 0) parts.add('⚡ ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}');
-    if (choice.coinsDelta != 0) parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
-    if (choice.givesRandomItem) parts.add('🎒 +1 карта');
+    if (choice.healthDelta != 0) {
+      parts.add('❤ ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}');
+    }
+    if (choice.attackDelta != 0) {
+      parts.add('⚡ ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}');
+    }
+    if (choice.coinsDelta != 0) {
+      parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
+    }
+    if (choice.givesRandomItem) {
+      parts.add('🎒 +1 карта');
+    }
     return parts.join('  ');
   }
 }

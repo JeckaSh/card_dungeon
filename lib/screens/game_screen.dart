@@ -62,11 +62,13 @@ class GameScreen extends StatefulWidget {
     this.initialInventory,
     this.initialDungeonLevel,
     this.initialCardsPassed,
+    this.initialCoins,
   });
 
   final List<ItemCard>? initialInventory;
   final int? initialDungeonLevel;
   final int? initialCardsPassed;
+  final int? initialCoins;
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -126,16 +128,31 @@ class _GameScreenState extends State<GameScreen> {
     _loadData();
   }
 
+  void _grantStartingCards() {
+    final count = PlayerStatsService.instance.startingCardsCount;
+    for (int i = 0; i < count; i++) {
+      final card = getRandomUnlockedItemCard(
+        _random,
+        UnlockedItemsService.instance.unlockedIds,
+      );
+      if (card != null) {
+        _inventoryItems.add(card);
+      }
+    }
+  }
+
   void _initGame() {
     _health = _initialHealth;
     _attack = _initialAttack;
     _cardsPassed = widget.initialCardsPassed ?? 0;
     _deckPosition = 0;
     _dungeonLevel = widget.initialDungeonLevel ?? 1;
-    _coins = 0;
+    _coins = widget.initialCoins ?? 0;
     _inventoryItems.clear();
     if (widget.initialInventory != null) {
       _inventoryItems.addAll(widget.initialInventory!);
+    } else {
+      _grantStartingCards();
     }
     _result = GameResult.playing;
     _lastFeedback = null;
@@ -150,6 +167,10 @@ class _GameScreenState extends State<GameScreen> {
     _rebuildDeck();
     _discoverCurrentCard();
     _addJournalEntry('🗡️', 'Герой вошёл в подземелье');
+    if (widget.initialInventory == null && _inventoryItems.isNotEmpty) {
+      final names = _inventoryItems.map((e) => e.title).join(', ');
+      _addJournalEntry('🎒', 'Стартовое снаряжение: $names');
+    }
   }
 
   Future<void> _loadData() async {
@@ -163,6 +184,15 @@ class _GameScreenState extends State<GameScreen> {
         if (_cardsPassed == 0) {
           _health = _initialHealth;
           _attack = _initialAttack;
+          if (widget.initialInventory == null &&
+              _inventoryItems.isEmpty &&
+              PlayerStatsService.instance.startingCardsCount > 0) {
+            _grantStartingCards();
+            if (_inventoryItems.isNotEmpty) {
+              final names = _inventoryItems.map((e) => e.title).join(', ');
+              _addJournalEntry('🎒', 'Стартовое снаряжение: $names');
+            }
+          }
         }
       });
     }
@@ -241,14 +271,33 @@ class _GameScreenState extends State<GameScreen> {
     DiscoveredEventsService.instance.markDiscovered(_currentCard.id);
   }
 
-  /// Добавляет запись в дневник героя (максимум 12 записей).
+  /// Добавляет запись в дневник героя.
   void _addJournalEntry(String emoji, String text) {
-    if (_journal.length >= 12) _journal.removeAt(0);
+    if (_journal.length >= 500) _journal.removeAt(0);
     _journal.add(JournalEntry(
       emoji: emoji,
       text: text,
       cardNumber: _cardsPassed + 1,
     ));
+  }
+
+  String _eventActionEmoji(EventType type, int healthDelta) {
+    switch (type) {
+      case EventType.monster:
+        return healthDelta < 0 ? '🗡️' : '⚔️';
+      case EventType.trap:
+        return healthDelta < 0 ? '💥' : '🪤';
+      case EventType.treasure:
+        return '💰';
+      case EventType.merchant:
+        return '🏪';
+      case EventType.rest:
+        return '🏕️';
+      case EventType.mystery:
+        return '🔮';
+      case EventType.boss:
+        return '⚔️';
+    }
   }
 
   /// Переходит к следующей карточке.
@@ -358,26 +407,33 @@ class _GameScreenState extends State<GameScreen> {
       _attack = (_attack + effectiveAttackDelta).clamp(0, 99);
       _coins = (_coins + effectiveCoinsDelta).clamp(0, 999999);
 
-      // ── Дневник героя ────────────────────────────────────────────
-      if (wasBoss) {
-        _addJournalEntry(
-          isRight ? '🏃' : '⚔',
-          isRight ? 'Сбежал от $cardTitle' : 'Сразился с $cardTitle',
-        );
+      // ── Дневник героя (запись каждого действия) ───────────────────
+      final actionEmoji = wasBoss
+          ? (isRight ? '🏃' : '⚔️')
+          : _eventActionEmoji(_currentCard.type, effectiveHealthDelta);
+
+      final details = <String>[];
+      if (effectiveHealthDelta != 0) {
+        details.add('${effectiveHealthDelta > 0 ? '+' : ''}$effectiveHealthDelta ❤');
+      }
+      if (effectiveAttackDelta != 0) {
+        details.add('${effectiveAttackDelta > 0 ? '+' : ''}$effectiveAttackDelta ⚡');
+      }
+      if (effectiveCoinsDelta != 0) {
+        details.add('${effectiveCoinsDelta > 0 ? '+' : ''}$effectiveCoinsDelta 🪙');
       }
       if (receivedItem != null) {
-        _addJournalEntry('🎒', 'Получен артефакт: ${receivedItem.title}');
+        details.add('🎒 ${receivedItem.title}');
       }
-      if (effectiveHealthDelta <= -4) {
-        _addJournalEntry('💀', '$cardTitle нанёс $effectiveHealthDelta HP');
-      } else if (effectiveHealthDelta >= 3 && !wasBoss) {
-        _addJournalEntry('💚', '${choice.label}: +$effectiveHealthDelta HP');
+      if (triggeredBuffs.isNotEmpty) {
+        details.addAll(triggeredBuffs);
       }
-      if (effectiveCoinsDelta >= 25 && !wasBoss) {
-        _addJournalEntry('💰', '${choice.label}: +$effectiveCoinsDelta монет');
-      }
-      if (effectiveAttackDelta >= 3 && !wasBoss) {
-        _addJournalEntry('⚡', '${choice.label}: атака +$effectiveAttackDelta');
+
+      final detailsStr = details.isNotEmpty ? ' (${details.join(', ')})' : '';
+      _addJournalEntry(actionEmoji, '$cardTitle: ${choice.label}$detailsStr');
+
+      if (wasBoss && !isRight && _health > 0) {
+        _addJournalEntry('👑', 'Босс $cardTitle повержен!');
       }
       // ─────────────────────────────────────────────────────────────
 
@@ -452,6 +508,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.heal:
           _health = (_health + item.value).clamp(0, 999);
           _lastFeedback = '${item.title}: +${item.value} ❤';
+          _addJournalEntry('🧪', 'Использовано ${item.title}: +${item.value} ❤');
           resultTitle = '+${item.value} ❤';
           resultDescription =
               'Здоровье героя восстановлено на +${item.value} ❤.\nТекущее здоровье: $_health ❤.';
@@ -459,6 +516,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.attack:
           _attack = (_attack + item.value).clamp(0, 99);
           _lastFeedback = '${item.title}: +${item.value} ⚡';
+          _addJournalEntry('⚡', 'Использован ${item.title}: +${item.value} ⚡');
           resultTitle = '+${item.value} ⚡';
           resultDescription =
               'Сила удара увеличена на +${item.value} ⚡.\nТекущая атака: $_attack ⚡.';
@@ -470,6 +528,7 @@ class _GameScreenState extends State<GameScreen> {
           _lastFeedback = wasBoss
               ? '⏩ Пропуск хода: босс обойдён стороной!'
               : 'Событие пропущено!';
+          _addJournalEntry('⏩', 'Использован ${item.title}: пропущено "$skippedCard"');
           resultTitle = wasBoss ? 'Босс пропущен ⏩' : 'Событие пропущено';
           resultDescription = wasBoss
               ? 'Магический свиток перенёс вас мимо босса "$skippedCard"! Уровень подземелья успешно пройден без боя и потерь.'
@@ -478,6 +537,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.shield:
           _shieldCharges += item.value;
           _lastFeedback = 'Рунический щит активирован! (+${item.value} заряд) 🛡️';
+          _addJournalEntry('🛡️', 'Использован ${item.title}: +${item.value} 🛡️ (всего $_shieldCharges)');
           resultTitle = 'Щит активирован (+${item.value} 🛡️)';
           resultDescription =
               'Рунический щит готов поглотить следующий урон по здоровью.\nВсего зарядов щита: $_shieldCharges.';
@@ -485,6 +545,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.invertNext:
           _invertNextChoice = true;
           _lastFeedback = 'Зеркало искажения: потери станут выгодой! 🫞';
+          _addJournalEntry('🪞', 'Использовано ${item.title}: искажение активировано');
           resultTitle = 'Зеркало искажения 🪞';
           resultDescription =
               'Искажение активировано! На следующем ходу любые потери здоровья, атаки или монет превратятся в равную выгоду.';
@@ -492,6 +553,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.revealChoice:
           _isRevealingChoices = true;
           _lastFeedback = 'Око провидца раскрыло тайны карты! 👁️';
+          _addJournalEntry('👁️', 'Использовано ${item.title}: тайны карты раскрыты');
           resultTitle = 'Око провидца 👁️';
           resultDescription =
               'Тайны текущей карты раскрыты! Теперь вы можете видеть скрытые последствия каждого решения.';
@@ -522,6 +584,7 @@ class _GameScreenState extends State<GameScreen> {
           } else {
             _health = (_health + 3).clamp(0, 999);
             _lastFeedback = 'Песочные часы восстановили +3 ❤ (нет прошлого хода)';
+            _addJournalEntry('⏳', 'Песочные часы: +3 ❤ (нет прошлого хода)');
             resultTitle = '+3 ❤';
             resultDescription =
                 'Песочные часы восстановили +3 ❤ (прошлый ход не был сохранён).\nТекущее здоровье: $_health ❤.';
@@ -530,13 +593,15 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.thornmail:
           _thornmailActive = true;
           _lastFeedback = 'Шипованная броня готова! 🌵';
+          _addJournalEntry('🌵', 'Использована ${item.title}: шипы активированы');
           resultTitle = 'Шипованная броня 🌵';
           resultDescription =
               'Шипы наготове! При получении урона на следующем шаге вы нанесёте контратаку и получите x2 золота за каждую единицу потерянного здоровья.';
           break;
         case ItemEffectType.transmute:
           if (_coins >= 10) {
-            final bundles = _coins ~/ 10;
+            final maxBundles = 10; // Ограничение: максимум 100 монет (10 * 10)
+            final bundles = min(_coins ~/ 10, maxBundles);
             final usedCoins = bundles * 10;
             _coins -= usedCoins;
             _attack = (_attack + bundles).clamp(0, 99);
@@ -547,10 +612,11 @@ class _GameScreenState extends State<GameScreen> {
             resultDescription =
                 'Алхимический процесс успешен: $usedCoins 🪙 превращены в +$bundles ⚡ к атаке и +${bundles * 2} ❤ к здоровью!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           } else {
+            _inventoryItems.insert(index, item);
             _lastFeedback = 'Недостаточно монет (нужно 10 🪙)!';
             resultTitle = 'Недостаточно монет ⚗️';
             resultDescription =
-                'Для алхимической трансмутации требуется минимум 10 🪙. Монеты не были потрачены.';
+                'Для алхимической трансмутации требуется минимум 10 🪙. Предмет сохранён в инвентаре.';
           }
           break;
         case ItemEffectType.shadowPact:
@@ -573,6 +639,7 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.greedMagnet:
           _greedMagnetTurns += 3;
           _lastFeedback = 'Магнит жадности: +3 хода удвоения золота! 🧲';
+          _addJournalEntry('🧲', 'Использован ${item.title}: x2 золото на 3 хода');
           resultTitle = 'Магнит жадности 🧲';
           resultDescription =
               'Магнит активирован! Всё получаемое за выборы золото будет удваиваться на протяжении 3 ходов (осталось: $_greedMagnetTurns ходов).';
@@ -583,12 +650,14 @@ class _GameScreenState extends State<GameScreen> {
             if (_coins >= 10 && _random.nextBool()) {
               _coins = (_coins - 10).clamp(0, 999999);
               _lastFeedback = '🎲 Кубик [$roll]: Потеряно 10 🪙';
+              _addJournalEntry('🎲', 'Кубик судьбы [$roll]: потеряно 10 🪙');
               resultTitle = 'Кубик [$roll]: Потеря 🎲';
               resultDescription =
                   'Неудача! Кубик судьбы забрал 10 🪙.\nТекущий баланс: $_coins 🪙.';
             } else {
               _health = (_health - 3).clamp(1, 999);
               _lastFeedback = '🎲 Кубик [$roll]: Потеряно 3 ❤';
+              _addJournalEntry('🎲', 'Кубик судьбы [$roll]: потеряно 3 ❤');
               resultTitle = 'Кубик [$roll]: Урон 🎲';
               resultDescription =
                   'Неудача! Кубик судьбы отнял 3 ❤.\nТекущее здоровье: $_health ❤.';
@@ -598,6 +667,7 @@ class _GameScreenState extends State<GameScreen> {
                 allItemCards[_random.nextInt(allItemCards.length)];
             _inventoryItems.add(diceCard);
             _lastFeedback = '🎲 Кубик [$roll]: Артефакт "${diceCard.title}"! 🎁';
+            _addJournalEntry('🎲', 'Кубик судьбы [$roll]: получен артефакт "${diceCard.title}"');
             resultTitle = 'Кубик [$roll]: Артефакт 🎁';
             resultDescription =
                 'Кубик судьбы одарил вас новым предметом: "${diceCard.title}". Он добавлен в ваш инвентарь!';
@@ -624,6 +694,7 @@ class _GameScreenState extends State<GameScreen> {
           _lastFeedback = wasBoss
               ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
               : '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
+          _addJournalEntry('💨', 'Дымовая шашка: побег от "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}');
           resultTitle = wasBoss ? 'Побег от босса 💨' : 'Побег в дыму 💨';
           resultDescription = wasBoss
               ? 'Вы бросили дымовую шашку и ослепили босса! "$skippedCard" остался позади, а уровень подземелья успешно пройден${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}!'
@@ -652,16 +723,19 @@ class _GameScreenState extends State<GameScreen> {
               );
               if (bribeItem != null) _inventoryItems.add(bribeItem);
             }
+            final skippedCard = _currentCard.title;
             _advanceCard(wasBoss: wasBoss);
             _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
+            _addJournalEntry('💰', 'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}');
             resultTitle = 'Подкуп удался (-15 🪙) 💰';
             resultDescription =
                 'Золото решило вопрос: потрачено 15 🪙, применён лучший исход события без боя и потерь!${bribeItem != null ? ' Также получен предмет: "${bribeItem.title}".' : ''}\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           } else {
+            _inventoryItems.insert(index, item);
             _lastFeedback = 'Недостаточно монет (нужно 15 🪙)!';
             resultTitle = 'Недостаточно монет 💰';
             resultDescription =
-                'Для подкупа требуется как минимум 15 🪙. Монеты не были потрачены.';
+                'Для подкупа требуется как минимум 15 🪙. Предмет сохранён в инвентаре.';
           }
           break;
       }
@@ -748,6 +822,8 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     if (confirmed == true && mounted) {
+      _addJournalEntry('🏳️', 'Герой сдался и покинул подземелье');
+      _saveChronicle(isVictory: false);
       Navigator.of(context).pop();
     }
   }

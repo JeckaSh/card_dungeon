@@ -1,0 +1,261 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:kki_cardgame/data/items.dart';
+import 'package:kki_cardgame/screens/game_screen.dart';
+import 'package:kki_cardgame/services/player_coins_service.dart';
+import 'package:kki_cardgame/services/player_stats_service.dart';
+import 'package:kki_cardgame/services/unlocked_items_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    PlayerStatsService.instance.resetForTest();
+    PlayerCoinsService.instance.restoreBalance(100);
+    await UnlockedItemsService.instance.reset();
+  });
+
+  Future<void> openInventoryAndUse(WidgetTester tester) async {
+    final inventoryButton =
+        find.widgetWithIcon(OutlinedButton, Icons.backpack_outlined);
+    await tester.tap(inventoryButton);
+    await tester.pumpAndSettle();
+
+    final useButton = find.text('Применить');
+    expect(useButton, findsOneWidget);
+    await tester.tap(useButton);
+    await tester.pumpAndSettle();
+
+    // Dismiss ItemUsedDialog
+    final dismissButton = find.text('Отлично');
+    expect(dismissButton, findsOneWidget);
+    await tester.tap(dismissButton);
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('potion_heal and elixir_life restore health correctly', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final potionHeal = allItemCards.firstWhere((i) => i.id == 'potion_heal');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [potionHeal])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('10'), findsOneWidget);
+    await openInventoryAndUse(tester);
+    expect(find.text('12'), findsOneWidget);
+  });
+
+  testWidgets('elixir_life restores +4 health correctly', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final elixir = allItemCards.firstWhere((i) => i.id == 'elixir_life');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [elixir])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('10'), findsOneWidget);
+    await openInventoryAndUse(tester);
+    expect(find.text('14'), findsOneWidget);
+  });
+
+  testWidgets('potion_attack increases attack correctly', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final potionAttack = allItemCards.firstWhere((i) => i.id == 'potion_attack');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [potionAttack])),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('5'), findsOneWidget);
+    await openInventoryAndUse(tester);
+    expect(find.text('7'), findsOneWidget);
+  });
+
+  testWidgets('runic_shield activates shield charge', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final shield = allItemCards.firstWhere((i) => i.id == 'runic_shield');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [shield])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('Щит ×1'), findsOneWidget);
+  });
+
+  testWidgets('mirror_distortion activates inversion buff', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final mirror = allItemCards.firstWhere((i) => i.id == 'mirror_distortion');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [mirror])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.text('🪞 Зеркало'), findsOneWidget);
+  });
+
+  testWidgets('thornmail activates thorn buff', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final thorn = allItemCards.firstWhere((i) => i.id == 'thornmail');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [thorn])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('Шипы'), findsOneWidget);
+  });
+
+  testWidgets('greed_magnet activates 2x coins buff', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final magnet = allItemCards.firstWhere((i) => i.id == 'greed_magnet');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [magnet])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('x2 монеты'), findsOneWidget);
+  });
+
+  testWidgets('shadow_pact sacrifices half health and doubles coins', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final shadowPact = allItemCards.firstWhere((i) => i.id == 'shadow_pact');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [shadowPact])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    // HP was 10, halved -> 5
+    expect(find.textContaining('5 ❤'), findsWidgets);
+  });
+
+  testWidgets('dice_of_fate executes and shows dialog', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final dice = allItemCards.firstWhere((i) => i.id == 'dice_of_fate');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [dice])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+  });
+
+  testWidgets('smoke_bomb escapes encounter', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final bomb = allItemCards.firstWhere((i) => i.id == 'smoke_bomb');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [bomb])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+  });
+
+  testWidgets('philosophers_stone converts coins to attack and health, preserves card when < 10 coins', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final stone = allItemCards.firstWhere((i) => i.id == 'philosophers_stone');
+
+    // Player has 0 coins (< 10)
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [stone])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+
+    // Item should NOT be consumed, still in inventory!
+    final inventoryButton = find.widgetWithIcon(OutlinedButton, Icons.backpack_outlined);
+    await tester.tap(inventoryButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Применить'), findsOneWidget);
+    expect(find.text('Философский камень'), findsOneWidget);
+  });
+
+  testWidgets('gold_bribe retains item when player has < 15 coins', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final bribe = allItemCards.firstWhere((i) => i.id == 'gold_bribe');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [bribe])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+
+    // Card is retained in inventory!
+    final inventoryButton = find.widgetWithIcon(OutlinedButton, Icons.backpack_outlined);
+    await tester.tap(inventoryButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Применить'), findsOneWidget);
+    expect(find.text('Золотой подкуп'), findsOneWidget);
+  });
+
+  testWidgets('philosophers_stone caps conversion at 100 coins (max 10 bundles)', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final stone = allItemCards.firstWhere((i) => i.id == 'philosophers_stone');
+
+    // Player starts with 150 coins, initial HP 10, initial ATK 2
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [stone], initialCoins: 150)),
+    );
+    await tester.pumpAndSettle();
+
+    // Stats before: 10 HP, 5 ATK, 150 Coins
+    expect(find.text('10'), findsOneWidget);
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('150'), findsOneWidget);
+
+    await openInventoryAndUse(tester);
+
+    // After transmutation: capped at 100 coins (10 bundles)
+    // Health: 10 + 20 = 30, Attack: 5 + 10 = 15, Coins: 150 - 100 = 50
+    expect(find.text('30'), findsOneWidget);
+    expect(find.text('15'), findsOneWidget);
+    expect(find.text('50'), findsOneWidget);
+  });
+}
