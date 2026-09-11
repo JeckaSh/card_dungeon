@@ -58,7 +58,7 @@ class RunChronicleService {
   static final RunChronicleService instance = RunChronicleService._();
 
   static const _storageKey = 'run_chronicle';
-  static const maxRuns = 5;
+  static const maxRuns = 10;
 
   final List<RunRecord> _records = [];
   bool _loaded = false;

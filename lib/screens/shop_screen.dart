@@ -9,9 +9,8 @@ import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
-// TODO: ВЫСТАВИТЬ ЦЕНУ ЛУТБОКСОВ
-const int _lootboxPrice = 50;
-const int _duplicateRefund = 25;
+const int _baseLootboxPrice = 50;
+const int _lootboxPriceStep = 25;
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -25,6 +24,13 @@ class _ShopScreenState extends State<ShopScreen> {
   bool _loading = true;
   bool _isOpening = false;
   bool _isCollectionExpanded = true;
+
+  int get _currentLootboxPrice =>
+      _baseLootboxPrice +
+      (UnlockedItemsService.instance.count * _lootboxPriceStep);
+
+  bool get _allCardsUnlocked =>
+      UnlockedItemsService.instance.count >= allItemCards.length;
 
   @override
   void initState() {
@@ -41,60 +47,49 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Future<void> _openLootbox() async {
+    final unlockedService = UnlockedItemsService.instance;
+    final price = _currentLootboxPrice;
     final balance = PlayerCoinsService.instance.balance;
-    if (balance < _lootboxPrice || _isOpening) return;
+
+    if (_allCardsUnlocked || balance < price || _isOpening) return;
+
+    final item = getRandomLockedItemCard(_random, unlockedService.unlockedIds);
+    if (item == null) return;
 
     setState(() => _isOpening = true);
 
     // Списываем золото
-    PlayerCoinsService.instance.applyDelta(-_lootboxPrice);
+    PlayerCoinsService.instance.applyDelta(-price);
 
-    // Выбираем случайную карту
-    final item = getRandomItemCard(_random);
-    final isNew = await UnlockedItemsService.instance.unlock(item.id);
-
-    // Если дубликат — начисляем небольшую компенсацию
-    if (!isNew) {
-      PlayerCoinsService.instance.applyDelta(_duplicateRefund);
-    }
+    // Разблокируем новую карту
+    await unlockedService.unlock(item.id);
 
     if (!mounted) return;
     setState(() => _isOpening = false);
 
-    // Показываем диалог с анимацией выпавшей карты
-    _showRewardDialog(item, isNew: isNew);
+    // Показываем диалог с выпавшей картой
+    _showRewardDialog(item);
   }
 
-  void _showRewardDialog(ItemCard item, {required bool isNew}) {
+  void _showRewardDialog(ItemCard item) {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Column(
+        title: const Column(
           children: [
             Text(
-              isNew ? '🎉 НОВАЯ КАРТА!' : '✨ КАРТА ИЗ СУНДУКА',
+              '🎉 НОВАЯ КАРТА!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isNew ? const Color(0xFFFFD700) : Colors.white70,
+                color: Color(0xFFFFD700),
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
             ),
-            if (!isNew)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Уже есть в коллекции (+$_duplicateRefund 🪙)',
-                  style: const TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontSize: 12,
-                  ),
-                ),
-              ),
           ],
         ),
         content: SizedBox(
@@ -113,9 +108,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                isNew
-                    ? 'Теперь эту карту можно встретить у торговца в подземелье!'
-                    : 'Эта карта уже доступна для покупки в подземелье.',
+                'Теперь эту карту можно встретить у торговца в подземелье!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
@@ -159,7 +152,9 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget build(BuildContext context) {
     final balance = PlayerCoinsService.instance.balance;
     final unlockedService = UnlockedItemsService.instance;
-    final canBuy = balance >= _lootboxPrice;
+    final allUnlocked = _allCardsUnlocked;
+    final currentPrice = _currentLootboxPrice;
+    final canBuy = !allUnlocked && balance >= currentPrice;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
@@ -285,9 +280,13 @@ class _ShopScreenState extends State<ShopScreen> {
                                     ).withValues(alpha: 0.5),
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.card_giftcard,
-                                  color: Color(0xFFE040FB),
+                                child: Icon(
+                                  allUnlocked
+                                      ? Icons.check_circle_outline
+                                      : Icons.card_giftcard,
+                                  color: allUnlocked
+                                      ? const Color(0xFFFFD700)
+                                      : const Color(0xFFE040FB),
                                   size: 48,
                                 ),
                               ),
@@ -302,7 +301,9 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Открывает 1 случайную карту предмета для использования в подземелье.',
+                                allUnlocked
+                                    ? 'Все доступные карты собраны! Сундук больше недоступен.'
+                                    : 'Гарантированно открывает 1 новую карту предмета для использования в подземелье.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.7),
@@ -326,7 +327,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),
                                     ),
-                                    elevation: 6,
+                                    elevation: canBuy ? 6 : 0,
                                   ),
                                   child: _isOpening
                                       ? const SizedBox(
@@ -338,9 +339,11 @@ class _ShopScreenState extends State<ShopScreen> {
                                           ),
                                         )
                                       : Text(
-                                          canBuy
-                                              ? 'Открыть сундук ($_lootboxPrice 🪙)'
-                                              : 'Не хватает монет ($_lootboxPrice 🪙)',
+                                          allUnlocked
+                                              ? 'Все карты получены'
+                                              : (canBuy
+                                                  ? 'Открыть сундук ($currentPrice 🪙)'
+                                                  : 'Не хватает монет ($currentPrice 🪙)'),
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,

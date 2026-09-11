@@ -46,10 +46,10 @@ void main() {
 
     expect(find.text('10'), findsOneWidget);
     await openInventoryAndUse(tester);
-    expect(find.text('12'), findsOneWidget);
+    expect(find.text('14'), findsOneWidget);
   });
 
-  testWidgets('elixir_life restores +4 health correctly', (tester) async {
+  testWidgets('elixir_life restores +8 health correctly', (tester) async {
     tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
@@ -62,7 +62,7 @@ void main() {
 
     expect(find.text('10'), findsOneWidget);
     await openInventoryAndUse(tester);
-    expect(find.text('14'), findsOneWidget);
+    expect(find.text('18'), findsOneWidget);
   });
 
   testWidgets('potion_attack increases attack correctly', (tester) async {
@@ -78,7 +78,7 @@ void main() {
 
     expect(find.text('5'), findsOneWidget);
     await openInventoryAndUse(tester);
-    expect(find.text('7'), findsOneWidget);
+    expect(find.text('9'), findsOneWidget);
   });
 
   testWidgets('runic_shield activates shield charge', (tester) async {

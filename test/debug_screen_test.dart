@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kki_cardgame/screens/debug_screen.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';
+import 'package:kki_cardgame/services/run_chronicle_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -95,5 +96,44 @@ void main() {
     expect(find.text('Ур. 10 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 2 / 2'), findsOneWidget);
     expect(find.text('Ур. 3 / 3'), findsOneWidget);
+  });
+
+  testWidgets('DebugScreen shows chronicle section and allows clearing chronicle', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    // Add dummy runs to chronicle
+    await RunChronicleService.instance.load();
+    await RunChronicleService.instance.addRecord(
+      RunRecord(
+        endedAt: DateTime.now(),
+        cardsPassed: 15,
+        dungeonLevel: 2,
+        coins: 80,
+        isVictory: false,
+        journal: ['Тестовая запись'],
+      ),
+    );
+    expect(RunChronicleService.instance.records.length, 1);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DebugScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Хроника забегов'), findsOneWidget);
+    expect(find.text('Записей: 1 / 10'), findsOneWidget);
+
+    final clearButton = find.text('Очистить хронику');
+    expect(clearButton, findsOneWidget);
+
+    await tester.tap(clearButton);
+    await tester.pumpAndSettle();
+
+    expect(RunChronicleService.instance.records.isEmpty, isTrue);
+    expect(find.text('Записей: 0 / 10'), findsOneWidget);
   });
 }

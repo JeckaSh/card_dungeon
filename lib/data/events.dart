@@ -236,6 +236,83 @@ const List<EventCard> allEvents = [
     rightChoice: CardChoice(label: 'Сохранить', healthDelta: 1, attackDelta: 1),
     level: 1,
   ),
+  EventCard(
+    id: 'poison_spider',
+    type: EventType.monster,
+    title: 'Ядовитый паук',
+    description:
+        'Из расщелины выползает паук размером с собаку. С его жвал капает зеленоватый яд.',
+    leftChoice: CardChoice(
+      label: 'Растоптать',
+      healthDelta: -2,
+      attackDelta: 1,
+      coinsDelta: 5,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Сжечь паутину',
+      coinsDelta: -4,
+      healthDelta: 1,
+    ),
+    level: 1,
+  ),
+  EventCard(
+    id: 'spiked_bear_trap',
+    type: EventType.trap,
+    title: 'Ржавый капкан',
+    description:
+        'Под опавшими листьями щёлкает стальной капкан с зазубренными зубьями!',
+    leftChoice: CardChoice(
+      label: 'Рвануться силой',
+      healthDelta: -3,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Осторожно разжать',
+      attackDelta: -1,
+      coinsDelta: 5,
+    ),
+    level: 1,
+  ),
+  EventCard(
+    id: 'blinding_spores',
+    type: EventType.trap,
+    title: 'Ослепляющие споры',
+    description:
+        'Шаг по трухлявому наросту вздымает облако светящейся едкой пыльцы.',
+    leftChoice: CardChoice(
+      label: 'Пробежать насквозь',
+      healthDelta: -1,
+      coinsDelta: 8,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Задержать дыхание',
+      attackDelta: -1,
+    ),
+    level: 1,
+  ),
+  EventCard(
+    id: 'cursed_coin_pile',
+    type: EventType.treasure,
+    title: 'Проклятый кошелёк',
+    description:
+        'На каменном выступе лежит расшитый золотом мешочек, от которого веет холодом.',
+    leftChoice: CardChoice(
+      label: 'Забрать золото',
+      coinsDelta: 15,
+      statusEffect: StatusEffectType.midasCurse,
+      statusChance: 0.3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Не прикасаться',
+      healthDelta: 1,
+    ),
+    level: 1,
+  ),
 
   // ── УРОВЕНЬ 2 ────────────────────────────────
   EventCard(
@@ -301,6 +378,24 @@ const List<EventCard> allEvents = [
       healthDelta: -3,
       attackDelta: 3,
       coinsDelta: 15,
+    ),
+    level: 2,
+  ),
+  EventCard(
+    id: 'dungeon_smuggler',
+    type: EventType.merchant,
+    title: 'Контрабандист',
+    description:
+        'Ловкий торговец прячет запрещённое оружие и припасы в потайных карманах.',
+    leftChoice: CardChoice(
+      label: 'Купить припасы',
+      healthDelta: 4,
+      coinsDelta: -15,
+    ),
+    rightChoice: CardChoice(
+      label: 'Заточка клинка',
+      attackDelta: 2,
+      coinsDelta: -12,
     ),
     level: 2,
   ),
@@ -505,6 +600,84 @@ const List<EventCard> allEvents = [
     ),
     level: 2,
   ),
+  EventCard(
+    id: 'cave_leeches',
+    type: EventType.monster,
+    title: 'Пещерные пиявки',
+    description:
+        'С потолка капает слизь. Десятки гигантских пиявок падают на плечи и впиваются в плоть.',
+    leftChoice: CardChoice(
+      label: 'Сорвать пиявок',
+      healthDelta: -4,
+      attackDelta: 2,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Прижечь факелом',
+      healthDelta: -2,
+      coinsDelta: -5,
+    ),
+    level: 2,
+  ),
+  EventCard(
+    id: 'toxic_gargoyle',
+    type: EventType.monster,
+    title: 'Чумная горгулья',
+    description:
+        'Каменная статуя оживает с визгом и изрыгает поток ядовитой желчи прямо вам в лицо.',
+    leftChoice: CardChoice(
+      label: 'Принять удар',
+      healthDelta: -4,
+      coinsDelta: 15,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Увернуться щитом',
+      attackDelta: -2,
+      coinsDelta: 5,
+    ),
+    level: 2,
+  ),
+  EventCard(
+    id: 'smoke_chasm',
+    type: EventType.trap,
+    title: 'Едкий разлом',
+    description:
+        'Из трещины в полу поднимается густой едкий серный дым, застилающий глаза.',
+    leftChoice: CardChoice(
+      label: 'Прыгнуть в дым',
+      healthDelta: -2,
+      coinsDelta: 20,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Искать обход',
+      healthDelta: -1,
+      attackDelta: -1,
+    ),
+    level: 2,
+  ),
+  EventCard(
+    id: 'cursed_idol_greed',
+    type: EventType.treasure,
+    title: 'Идол алчности',
+    description:
+        'Золотая статуэтка с рубиновыми глазами шепчет об обещании несметных богатств.',
+    leftChoice: CardChoice(
+      label: 'Сорвать рубины',
+      coinsDelta: 35,
+      statusEffect: StatusEffectType.midasCurse,
+      statusChance: 0.4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Поклониться и уйти',
+      healthDelta: 2,
+    ),
+    level: 2,
+  ),
 
   // ── УРОВЕНЬ 3 ────────────────────────────────
   EventCard(
@@ -653,6 +826,25 @@ const List<EventCard> allEvents = [
     level: 3,
   ),
   EventCard(
+    id: 'astral_trader',
+    type: EventType.merchant,
+    title: 'Астральный меняла',
+    description:
+        'Древний дух в мерцающих одеждах готов поделиться силой за плату.',
+    leftChoice: CardChoice(
+      label: 'Купить реликвию',
+      coinsDelta: -35,
+      givesRandomItem: true,
+    ),
+    rightChoice: CardChoice(
+      label: 'Астральный эликсир',
+      healthDelta: 8,
+      attackDelta: 2,
+      coinsDelta: -30,
+    ),
+    level: 3,
+  ),
+  EventCard(
     id: 'abyss_shrine',
     type: EventType.rest,
     title: 'Алтарь Бездны',
@@ -722,6 +914,92 @@ const List<EventCard> allEvents = [
       healthDelta: 3,
       attackDelta: -2,
       coinsDelta: 25,
+    ),
+    level: 3,
+  ),
+  EventCard(
+    id: 'royal_basilisk',
+    type: EventType.monster,
+    title: 'Королевский василиск',
+    description:
+        'Чешуйчатый змей с венцом на голове изрыгает концентрированную кислоту и яд.',
+    leftChoice: CardChoice(
+      label: 'Рубить сплеча',
+      healthDelta: -6,
+      attackDelta: 4,
+      coinsDelta: 35,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Не смотреть в глаза',
+      healthDelta: -4,
+      attackDelta: -2,
+      coinsDelta: 15,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.5,
+    ),
+    level: 3,
+  ),
+  EventCard(
+    id: 'crimson_cultist',
+    type: EventType.monster,
+    title: 'Кровавый фанатик',
+    description:
+        'Жрец культа крови заносит изогнутый ритуальный кинжал, шепча гимны древней тьме.',
+    leftChoice: CardChoice(
+      label: 'Отразить кинжал',
+      healthDelta: -5,
+      attackDelta: 3,
+      coinsDelta: 20,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Прервать ритуал',
+      healthDelta: -3,
+      attackDelta: -2,
+      coinsDelta: 30,
+    ),
+    level: 3,
+  ),
+  EventCard(
+    id: 'midas_vault',
+    type: EventType.treasure,
+    title: 'Чертоги царя Мидаса',
+    description:
+        'Зал сверкает золотом, но каждое прикосновение к нему грозит вечным проклятием.',
+    leftChoice: CardChoice(
+      label: 'Набить карманы',
+      coinsDelta: 60,
+      statusEffect: StatusEffectType.midasCurse,
+      statusChance: 0.5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Взять чистую реликвию',
+      healthDelta: 4,
+      attackDelta: 2,
+    ),
+    level: 3,
+  ),
+  EventCard(
+    id: 'void_fog',
+    type: EventType.trap,
+    title: 'Мгла Пустоты',
+    description:
+        'Холодный непроглядный туман оседает на веки, скрывая от вас реальность.',
+    leftChoice: CardChoice(
+      label: 'Шагнуть во мглу',
+      healthDelta: -4,
+      attackDelta: 3,
+      coinsDelta: 25,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Осветить путь магией',
+      coinsDelta: -15,
+      attackDelta: 1,
     ),
     level: 3,
   ),

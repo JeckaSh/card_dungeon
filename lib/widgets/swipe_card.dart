@@ -14,6 +14,7 @@ class SwipeCard extends StatefulWidget {
     required this.onSwipe,
     this.hasUnlockedItems = true,
     this.isRevealingChoices = false,
+    this.isBlind = false,
     this.isBoss = false,
     this.dungeonLevel = 1,
   });
@@ -23,6 +24,7 @@ class SwipeCard extends StatefulWidget {
   final int currentAttack;
   final bool hasUnlockedItems;
   final bool isRevealingChoices;
+  final bool isBlind;
   final bool isBoss;
   final int dungeonLevel;
   final void Function(bool isRight) onSwipe;
@@ -243,6 +245,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
                           isLeft: true,
                           blockedReason: leftBlockedReason,
                           scale: scale,
+                          isBlind: widget.isBlind,
                         ),
                       ),
                     ),
@@ -256,6 +259,7 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
                           isLeft: false,
                           blockedReason: rightBlockedReason,
                           scale: scale,
+                          isBlind: widget.isBlind,
                         ),
                       ),
                     ),
@@ -460,12 +464,14 @@ class _ChoiceHint extends StatelessWidget {
     required this.isLeft,
     required this.blockedReason,
     this.scale = 1.0,
+    this.isBlind = false,
   });
 
   final CardChoice choice;
   final bool isLeft;
   final String? blockedReason;
   final double scale;
+  final bool isBlind;
 
   bool get _isBlocked => blockedReason != null;
 
@@ -531,9 +537,21 @@ class _ChoiceHint extends StatelessWidget {
                 fontSize: (15 * scale).clamp(11.0, 20.0),
               ),
             ),
-            if (choice.healthDelta != 0 ||
+            if (isBlind) ...[
+              SizedBox(height: 4 * scale),
+              Text(
+                '❤ ?  ⚡ ?  🪙 ?',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: (12 * scale).clamp(10.0, 15.0),
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ] else if (choice.healthDelta != 0 ||
                 choice.attackDelta != 0 ||
-                choice.coinsDelta != 0) ...[
+                choice.coinsDelta != 0 ||
+                choice.givesRandomItem) ...[
               SizedBox(height: 4 * scale),
               Text(
                 _formatDeltas(choice),

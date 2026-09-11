@@ -6,8 +6,6 @@ enum ItemEffectType {
   skip,
   shield,
   invertNext,
-  revealChoice,
-  rewind,
   thornmail,
   transmute,
   shadowPact,

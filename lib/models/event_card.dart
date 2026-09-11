@@ -8,6 +8,13 @@ enum EventType {
   boss,
 }
 
+enum StatusEffectType {
+  poison,
+  bleed,
+  blindness,
+  midasCurse,
+}
+
 class CardChoice {
   const CardChoice({
     required this.label,
@@ -15,6 +22,8 @@ class CardChoice {
     this.attackDelta = 0,
     this.coinsDelta = 0,
     this.givesRandomItem = false,
+    this.statusEffect,
+    this.statusChance = 0.0,
   });
 
   final String label;
@@ -22,6 +31,8 @@ class CardChoice {
   final int attackDelta;
   final int coinsDelta;
   final bool givesRandomItem;
+  final StatusEffectType? statusEffect;
+  final double statusChance;
 }
 
 class EventCard {

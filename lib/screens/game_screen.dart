@@ -17,6 +17,7 @@ import '../widgets/swipe_card.dart';
 
 int get _initialHealth => PlayerStatsService.instance.startingHealth;
 int get _initialAttack => PlayerStatsService.instance.startingAttack;
+
 /// Номер карточки (1-indexed), на которой появляется босс
 const _bossEvery = 20;
 
@@ -29,31 +30,10 @@ class JournalEntry {
     required this.text,
     required this.cardNumber,
   });
+
   final String emoji;
   final String text;
   final int cardNumber;
-}
-
-class _TurnSnapshot {
-  const _TurnSnapshot({
-    required this.health,
-    required this.attack,
-    required this.coins,
-    required this.cardsPassed,
-    required this.cardKey,
-    required this.inventory,
-    required this.deckPosition,
-    required this.dungeonLevel,
-  });
-
-  final int health;
-  final int attack;
-  final int coins;
-  final int cardsPassed;
-  final int cardKey;
-  final List<ItemCard> inventory;
-  final int deckPosition;
-  final int dungeonLevel;
 }
 
 class GameScreen extends StatefulWidget {
@@ -71,10 +51,10 @@ class GameScreen extends StatefulWidget {
   final int? initialCoins;
 
   @override
-  State<GameScreen> createState() => _GameScreenState();
+  State<GameScreen> createState() => GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class GameScreenState extends State<GameScreen> {
   final _random = Random();
 
   late List<EventCard> _deck;
@@ -99,7 +79,10 @@ class _GameScreenState extends State<GameScreen> {
   bool _isRevealingChoices = false;
   int _greedMagnetTurns = 0;
   bool _thornmailActive = false;
-  _TurnSnapshot? _lastTurnSnapshot;
+  int _poisonTurns = 0;
+  int _bleedTurns = 0;
+  int _blindnessTurns = 0;
+  int _midasCurseTurns = 0;
   final List<JournalEntry> _journal = [];
 
   // ─── Геттеры ────────────────────────────────
@@ -162,7 +145,10 @@ class _GameScreenState extends State<GameScreen> {
     _isRevealingChoices = false;
     _greedMagnetTurns = 0;
     _thornmailActive = false;
-    _lastTurnSnapshot = null;
+    _poisonTurns = 0;
+    _bleedTurns = 0;
+    _blindnessTurns = 0;
+    _midasCurseTurns = 0;
     _journal.clear();
     _rebuildDeck();
     _discoverCurrentCard();
@@ -222,44 +208,51 @@ class _GameScreenState extends State<GameScreen> {
       // Количество карт, которые игрок видит до босса
       final visibleCount = min(_bossEvery - 1, cards.length);
 
-      // Собираем всех доступных торговцев
-      final allMerchants = allEvents
-          .where((e) => e.type == EventType.merchant)
+      // Собираем доступных торговцев ТОЛЬКО текущего уровня
+      final currentLevelMerchants = allEvents
+          .where((e) => e.type == EventType.merchant && e.level == _dungeonLevel)
           .toList();
+      final pool = currentLevelMerchants.isNotEmpty
+          ? currentLevelMerchants
+          : cards.where((e) => e.type == EventType.merchant).toList();
 
-      // Сколько торговцев уже есть среди первых visibleCount карт
-      var merchantsInVisible = cards
-          .take(visibleCount)
-          .where((e) => e.type == EventType.merchant)
-          .length;
+      if (pool.isNotEmpty) {
+        // Сколько торговцев уже есть среди первых visibleCount карт
+        var merchantsInVisible = cards
+            .take(visibleCount)
+            .where((e) => e.type == EventType.merchant)
+            .length;
 
-      // Добавляем недостающих торговцев
-      for (var i = merchantsInVisible; i < guaranteed; i++) {
-        // Берём торговца из хвоста колоды или дублируем из пула
-        final tailIdx = cards
-            .skip(visibleCount)
-            .toList()
-            .indexWhere((e) => e.type == EventType.merchant);
+        // Добавляем недостающих торговцев
+        for (var i = merchantsInVisible; i < guaranteed; i++) {
+          // Берём торговца из хвоста колоды или дублируем из пула текущего уровня
+          final tailIdx = cards
+              .skip(visibleCount)
+              .toList()
+              .indexWhere((e) => e.type == EventType.merchant);
 
-        final EventCard merchantCard;
-        if (tailIdx != -1) {
-          final realIdx = visibleCount + tailIdx;
-          merchantCard = cards.removeAt(realIdx);
-        } else {
-          merchantCard = allMerchants[_random.nextInt(allMerchants.length)];
+          final EventCard merchantCard;
+          if (tailIdx != -1) {
+            final realIdx = visibleCount + tailIdx;
+            merchantCard = cards.removeAt(realIdx);
+          } else {
+            merchantCard = pool[_random.nextInt(pool.length)];
+          }
+
+          // Вставляем в случайное свободное место среди первых visibleCount позиций
+          final insertPos = _random.nextInt(visibleCount);
+          cards.insert(insertPos, merchantCard);
+          merchantsInVisible++;
         }
-
-        // Вставляем в случайное свободное место среди первых visibleCount позиций
-        final insertPos = _random.nextInt(visibleCount);
-        cards.insert(insertPos, merchantCard);
-        merchantsInVisible++;
       }
     }
 
     _deck = cards;
     _deckPosition = 0;
-
   }
+
+  @visibleForTesting
+  List<EventCard> get deck => List.unmodifiable(_deck);
 
   /// Выбирает боссовую карточку по номеру встреченного босса.
   EventCard _selectBoss() {
@@ -274,11 +267,9 @@ class _GameScreenState extends State<GameScreen> {
   /// Добавляет запись в дневник героя.
   void _addJournalEntry(String emoji, String text) {
     if (_journal.length >= 500) _journal.removeAt(0);
-    _journal.add(JournalEntry(
-      emoji: emoji,
-      text: text,
-      cardNumber: _cardsPassed + 1,
-    ));
+    _journal.add(
+      JournalEntry(emoji: emoji, text: text, cardNumber: _cardsPassed + 1),
+    );
   }
 
   String _eventActionEmoji(EventType type, int healthDelta) {
@@ -340,20 +331,11 @@ class _GameScreenState extends State<GameScreen> {
     // Проверяем доступность выбора
     if (choice.coinsDelta < 0 && _coins < choice.coinsDelta.abs()) return;
     if (choice.attackDelta < 0 && _attack < choice.attackDelta.abs()) return;
-    if (choice.givesRandomItem && UnlockedItemsService.instance.count == 0) return;
+    if (choice.givesRandomItem && UnlockedItemsService.instance.count == 0) {
+      return;
+    }
 
-    // Сохраняем снимок для возможного отката (Песочные часы)
     final cardTitle = _currentCard.title;
-    _lastTurnSnapshot = _TurnSnapshot(
-      health: _health,
-      attack: _attack,
-      coins: _coins,
-      cardsPassed: _cardsPassed,
-      cardKey: _cardKey,
-      inventory: List.of(_inventoryItems),
-      deckPosition: _deckPosition,
-      dungeonLevel: _dungeonLevel,
-    );
 
     ItemCard? receivedItem;
     if (choice.givesRandomItem) {
@@ -369,11 +351,21 @@ class _GameScreenState extends State<GameScreen> {
     var effectiveCoinsDelta = choice.coinsDelta;
     final triggeredBuffs = <String>[];
 
+    // 0. Проклятие Мидаса (если активно, монеты за выбор не начисляются)
+    if (_midasCurseTurns > 0 && effectiveCoinsDelta > 0) {
+      effectiveCoinsDelta = 0;
+      triggeredBuffs.add('👑 Проклятие Мидаса: золото обратилось в прах');
+    }
+
     // 1. Зеркало искажения
     if (_invertNextChoice) {
       _invertNextChoice = false;
-      if (effectiveHealthDelta < 0) effectiveHealthDelta = -effectiveHealthDelta;
-      if (effectiveAttackDelta < 0) effectiveAttackDelta = -effectiveAttackDelta;
+      if (effectiveHealthDelta < 0) {
+        effectiveHealthDelta = -effectiveHealthDelta;
+      }
+      if (effectiveAttackDelta < 0) {
+        effectiveAttackDelta = -effectiveAttackDelta;
+      }
       if (effectiveCoinsDelta < 0) effectiveCoinsDelta = -effectiveCoinsDelta;
       triggeredBuffs.add('🫞 Зеркало сработало');
     }
@@ -400,10 +392,51 @@ class _GameScreenState extends State<GameScreen> {
     }
     if (_greedMagnetTurns > 0) _greedMagnetTurns--;
 
+    // 5. Наложение статусов от выбора
+    if (choice.statusEffect != null && _random.nextDouble() < choice.statusChance) {
+      switch (choice.statusEffect!) {
+        case StatusEffectType.poison:
+          _poisonTurns = 3;
+          triggeredBuffs.add('🧪 Отравлен на 3 хода!');
+          break;
+        case StatusEffectType.bleed:
+          _bleedTurns = 3;
+          triggeredBuffs.add('🩸 Кровотечение на 3 хода!');
+          break;
+        case StatusEffectType.blindness:
+          _blindnessTurns = 3;
+          triggeredBuffs.add('👁️‍🗨️ Слепота на 3 хода!');
+          break;
+        case StatusEffectType.midasCurse:
+          _midasCurseTurns = 3;
+          triggeredBuffs.add('👑 Проклятие Мидаса на 3 хода!');
+          break;
+      }
+    }
+
+    // 6. Периодический урон от текущих статусов (DoT)
+    int dotDamage = 0;
+    if (_poisonTurns > 0) {
+      dotDamage += 1;
+      _poisonTurns--;
+      triggeredBuffs.add('🧪 Яд (-1 ❤)');
+    }
+    if (_bleedTurns > 0) {
+      dotDamage += 2;
+      _bleedTurns--;
+      triggeredBuffs.add('🩸 Кровотечение (-2 ❤)');
+    }
+    if (_blindnessTurns > 0) {
+      _blindnessTurns--;
+    }
+    if (_midasCurseTurns > 0) {
+      _midasCurseTurns--;
+    }
+
     _isRevealingChoices = false;
 
     setState(() {
-      _health = (_health + effectiveHealthDelta).clamp(0, 999);
+      _health = (_health + effectiveHealthDelta - dotDamage).clamp(0, 999);
       _attack = (_attack + effectiveAttackDelta).clamp(0, 99);
       _coins = (_coins + effectiveCoinsDelta).clamp(0, 999999);
 
@@ -414,13 +447,22 @@ class _GameScreenState extends State<GameScreen> {
 
       final details = <String>[];
       if (effectiveHealthDelta != 0) {
-        details.add('${effectiveHealthDelta > 0 ? '+' : ''}$effectiveHealthDelta ❤');
+        details.add(
+          '${effectiveHealthDelta > 0 ? '+' : ''}$effectiveHealthDelta ❤',
+        );
+      }
+      if (dotDamage > 0) {
+        details.add('-$dotDamage ❤ статус');
       }
       if (effectiveAttackDelta != 0) {
-        details.add('${effectiveAttackDelta > 0 ? '+' : ''}$effectiveAttackDelta ⚡');
+        details.add(
+          '${effectiveAttackDelta > 0 ? '+' : ''}$effectiveAttackDelta ⚡',
+        );
       }
       if (effectiveCoinsDelta != 0) {
-        details.add('${effectiveCoinsDelta > 0 ? '+' : ''}$effectiveCoinsDelta 🪙');
+        details.add(
+          '${effectiveCoinsDelta > 0 ? '+' : ''}$effectiveCoinsDelta 🪙',
+        );
       }
       if (receivedItem != null) {
         details.add('🎒 ${receivedItem.title}');
@@ -447,7 +489,10 @@ class _GameScreenState extends State<GameScreen> {
       if (_health <= 0) {
         _cardsPassed++;
         _result = GameResult.gameOver;
-        _addJournalEntry('☠️', 'Герой пал — убит $cardTitle');
+        final deathCause = dotDamage > 0 && effectiveHealthDelta == 0
+            ? 'Герой пал от ран ($cardTitle)'
+            : 'Герой пал — убит $cardTitle';
+        _addJournalEntry('☠️', deathCause);
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
         _saveChronicle(isVictory: false);
       } else {
@@ -484,13 +529,19 @@ class _GameScreenState extends State<GameScreen> {
     if (buffsNote != null) parts.add(buffsNote);
     if (receivedItem != null) parts.add('Получено: ${receivedItem.title}');
     if (choice.healthDelta != 0) {
-      parts.add('Здоровье ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}');
+      parts.add(
+        'Здоровье ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}',
+      );
     }
     if (choice.attackDelta != 0) {
-      parts.add('Атака ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}');
+      parts.add(
+        'Атака ${choice.attackDelta > 0 ? '+' : ''}${choice.attackDelta}',
+      );
     }
     if (choice.coinsDelta != 0) {
-      parts.add('Монеты ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
+      parts.add(
+        'Монеты ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}',
+      );
     }
     return parts.isEmpty ? choice.label : parts.join(', ');
   }
@@ -508,7 +559,10 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.heal:
           _health = (_health + item.value).clamp(0, 999);
           _lastFeedback = '${item.title}: +${item.value} ❤';
-          _addJournalEntry('🧪', 'Использовано ${item.title}: +${item.value} ❤');
+          _addJournalEntry(
+            '🧪',
+            'Использовано ${item.title}: +${item.value} ❤',
+          );
           resultTitle = '+${item.value} ❤';
           resultDescription =
               'Здоровье героя восстановлено на +${item.value} ❤.\nТекущее здоровье: $_health ❤.';
@@ -528,7 +582,10 @@ class _GameScreenState extends State<GameScreen> {
           _lastFeedback = wasBoss
               ? '⏩ Пропуск хода: босс обойдён стороной!'
               : 'Событие пропущено!';
-          _addJournalEntry('⏩', 'Использован ${item.title}: пропущено "$skippedCard"');
+          _addJournalEntry(
+            '⏩',
+            'Использован ${item.title}: пропущено "$skippedCard"',
+          );
           resultTitle = wasBoss ? 'Босс пропущен ⏩' : 'Событие пропущено';
           resultDescription = wasBoss
               ? 'Магический свиток перенёс вас мимо босса "$skippedCard"! Уровень подземелья успешно пройден без боя и потерь.'
@@ -536,8 +593,12 @@ class _GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.shield:
           _shieldCharges += item.value;
-          _lastFeedback = 'Рунический щит активирован! (+${item.value} заряд) 🛡️';
-          _addJournalEntry('🛡️', 'Использован ${item.title}: +${item.value} 🛡️ (всего $_shieldCharges)');
+          _lastFeedback =
+              'Рунический щит активирован! (+${item.value} заряд) 🛡️';
+          _addJournalEntry(
+            '🛡️',
+            'Использован ${item.title}: +${item.value} 🛡️ (всего $_shieldCharges)',
+          );
           resultTitle = 'Щит активирован (+${item.value} 🛡️)';
           resultDescription =
               'Рунический щит готов поглотить следующий урон по здоровью.\nВсего зарядов щита: $_shieldCharges.';
@@ -545,55 +606,21 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.invertNext:
           _invertNextChoice = true;
           _lastFeedback = 'Зеркало искажения: потери станут выгодой! 🫞';
-          _addJournalEntry('🪞', 'Использовано ${item.title}: искажение активировано');
+          _addJournalEntry(
+            '🪞',
+            'Использовано ${item.title}: искажение активировано',
+          );
           resultTitle = 'Зеркало искажения 🪞';
           resultDescription =
               'Искажение активировано! На следующем ходу любые потери здоровья, атаки или монет превратятся в равную выгоду.';
           break;
-        case ItemEffectType.revealChoice:
-          _isRevealingChoices = true;
-          _lastFeedback = 'Око провидца раскрыло тайны карты! 👁️';
-          _addJournalEntry('👁️', 'Использовано ${item.title}: тайны карты раскрыты');
-          resultTitle = 'Око провидца 👁️';
-          resultDescription =
-              'Тайны текущей карты раскрыты! Теперь вы можете видеть скрытые последствия каждого решения.';
-          break;
-        case ItemEffectType.rewind:
-          if (_lastTurnSnapshot != null) {
-            _health = _lastTurnSnapshot!.health;
-            _attack = _lastTurnSnapshot!.attack;
-            _coins = _lastTurnSnapshot!.coins;
-            _cardsPassed = _lastTurnSnapshot!.cardsPassed;
-            _cardKey = _lastTurnSnapshot!.cardKey;
-            _deckPosition = _lastTurnSnapshot!.deckPosition;
-            if (_dungeonLevel != _lastTurnSnapshot!.dungeonLevel) {
-              _dungeonLevel = _lastTurnSnapshot!.dungeonLevel;
-              _rebuildDeck();
-              _deckPosition = _lastTurnSnapshot!.deckPosition;
-            }
-            _inventoryItems
-              ..clear()
-              ..addAll(_lastTurnSnapshot!.inventory);
-            _lastTurnSnapshot = null;
-            _discoverCurrentCard();
-            _lastFeedback = 'Время отмотано назад! ⏳';
-            _addJournalEntry('⏳', 'Песочные часы: время отмотано назад');
-            resultTitle = 'Время отмотано ⏳';
-            resultDescription =
-                'Песочные часы вернули вас к состоянию до предыдущего хода.\nЗдоровье: $_health ❤, атака: $_attack ⚡, монеты: $_coins 🪙.';
-          } else {
-            _health = (_health + 3).clamp(0, 999);
-            _lastFeedback = 'Песочные часы восстановили +3 ❤ (нет прошлого хода)';
-            _addJournalEntry('⏳', 'Песочные часы: +3 ❤ (нет прошлого хода)');
-            resultTitle = '+3 ❤';
-            resultDescription =
-                'Песочные часы восстановили +3 ❤ (прошлый ход не был сохранён).\nТекущее здоровье: $_health ❤.';
-          }
-          break;
         case ItemEffectType.thornmail:
           _thornmailActive = true;
           _lastFeedback = 'Шипованная броня готова! 🌵';
-          _addJournalEntry('🌵', 'Использована ${item.title}: шипы активированы');
+          _addJournalEntry(
+            '🌵',
+            'Использована ${item.title}: шипы активированы',
+          );
           resultTitle = 'Шипованная броня 🌵';
           resultDescription =
               'Шипы наготове! При получении урона на следующем шаге вы нанесёте контратаку и получите x2 золота за каждую единицу потерянного здоровья.';
@@ -606,8 +633,12 @@ class _GameScreenState extends State<GameScreen> {
             _coins -= usedCoins;
             _attack = (_attack + bundles).clamp(0, 99);
             _health = (_health + bundles * 2).clamp(0, 999);
-            _lastFeedback = 'Алхимия: -$usedCoins 🪙 → +$bundles ⚡, +${bundles * 2} ❤ ⚗️';
-            _addJournalEntry('⚗️', 'Алхимия: $usedCoins🪙 → +$bundles⚡ +${bundles * 2}❤');
+            _lastFeedback =
+                'Алхимия: -$usedCoins 🪙 → +$bundles ⚡, +${bundles * 2} ❤ ⚗️';
+            _addJournalEntry(
+              '⚗️',
+              'Алхимия: $usedCoins🪙 → +$bundles⚡ +${bundles * 2}❤',
+            );
             resultTitle = 'Трансмутация ⚗️';
             resultDescription =
                 'Алхимический процесс успешен: $usedCoins 🪙 превращены в +$bundles ⚡ к атаке и +${bundles * 2} ❤ к здоровью!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
@@ -639,7 +670,10 @@ class _GameScreenState extends State<GameScreen> {
         case ItemEffectType.greedMagnet:
           _greedMagnetTurns += 3;
           _lastFeedback = 'Магнит жадности: +3 хода удвоения золота! 🧲';
-          _addJournalEntry('🧲', 'Использован ${item.title}: x2 золото на 3 хода');
+          _addJournalEntry(
+            '🧲',
+            'Использован ${item.title}: x2 золото на 3 хода',
+          );
           resultTitle = 'Магнит жадности 🧲';
           resultDescription =
               'Магнит активирован! Всё получаемое за выборы золото будет удваиваться на протяжении 3 ходов (осталось: $_greedMagnetTurns ходов).';
@@ -663,11 +697,19 @@ class _GameScreenState extends State<GameScreen> {
                   'Неудача! Кубик судьбы отнял 3 ❤.\nТекущее здоровье: $_health ❤.';
             }
           } else if (roll <= 4) {
-            final diceCard = getRandomUnlockedItemCard(_random, UnlockedItemsService.instance.unlockedIds) ??
+            final diceCard =
+                getRandomUnlockedItemCard(
+                  _random,
+                  UnlockedItemsService.instance.unlockedIds,
+                ) ??
                 allItemCards[_random.nextInt(allItemCards.length)];
             _inventoryItems.add(diceCard);
-            _lastFeedback = '🎲 Кубик [$roll]: Артефакт "${diceCard.title}"! 🎁';
-            _addJournalEntry('🎲', 'Кубик судьбы [$roll]: получен артефакт "${diceCard.title}"');
+            _lastFeedback =
+                '🎲 Кубик [$roll]: Артефакт "${diceCard.title}"! 🎁';
+            _addJournalEntry(
+              '🎲',
+              'Кубик судьбы [$roll]: получен артефакт "${diceCard.title}"',
+            );
             resultTitle = 'Кубик [$roll]: Артефакт 🎁';
             resultDescription =
                 'Кубик судьбы одарил вас новым предметом: "${diceCard.title}". Он добавлен в ваш инвентарь!';
@@ -684,17 +726,23 @@ class _GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.smokeBomb:
           final wasBoss = _isCurrentBoss;
-          final bestCoins = max(0, max(
-            _currentCard.leftChoice.coinsDelta,
-            _currentCard.rightChoice.coinsDelta,
-          )).toInt();
+          final bestCoins = max(
+            0,
+            max(
+              _currentCard.leftChoice.coinsDelta,
+              _currentCard.rightChoice.coinsDelta,
+            ),
+          ).toInt();
           if (bestCoins > 0) _coins = (_coins + bestCoins).clamp(0, 999999);
           final skippedCard = _currentCard.title;
           _advanceCard(wasBoss: wasBoss);
           _lastFeedback = wasBoss
               ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
               : '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
-          _addJournalEntry('💨', 'Дымовая шашка: побег от "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}');
+          _addJournalEntry(
+            '💨',
+            'Дымовая шашка: побег от "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}',
+          );
           resultTitle = wasBoss ? 'Побег от босса 💨' : 'Побег в дыму 💨';
           resultDescription = wasBoss
               ? 'Вы бросили дымовую шашку и ослепили босса! "$skippedCard" остался позади, а уровень подземелья успешно пройден${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}!'
@@ -704,17 +752,29 @@ class _GameScreenState extends State<GameScreen> {
           if (_coins >= 15) {
             final wasBoss = _isCurrentBoss;
             _coins -= 15;
-            final leftScore = _currentCard.leftChoice.coinsDelta +
+            final leftScore =
+                _currentCard.leftChoice.coinsDelta +
                 _currentCard.leftChoice.healthDelta +
                 _currentCard.leftChoice.attackDelta;
-            final rightScore = _currentCard.rightChoice.coinsDelta +
+            final rightScore =
+                _currentCard.rightChoice.coinsDelta +
                 _currentCard.rightChoice.healthDelta +
                 _currentCard.rightChoice.attackDelta;
-            final bestChoice =
-                rightScore >= leftScore ? _currentCard.rightChoice : _currentCard.leftChoice;
-            _health = (_health + max(0, bestChoice.healthDelta).toInt()).clamp(0, 999);
-            _attack = (_attack + max(0, bestChoice.attackDelta).toInt()).clamp(0, 99);
-            _coins = (_coins + max(0, bestChoice.coinsDelta).toInt()).clamp(0, 999999);
+            final bestChoice = rightScore >= leftScore
+                ? _currentCard.rightChoice
+                : _currentCard.leftChoice;
+            _health = (_health + max(0, bestChoice.healthDelta).toInt()).clamp(
+              0,
+              999,
+            );
+            _attack = (_attack + max(0, bestChoice.attackDelta).toInt()).clamp(
+              0,
+              99,
+            );
+            _coins = (_coins + max(0, bestChoice.coinsDelta).toInt()).clamp(
+              0,
+              999999,
+            );
             ItemCard? bribeItem;
             if (bestChoice.givesRandomItem) {
               bribeItem = getRandomUnlockedItemCard(
@@ -726,7 +786,10 @@ class _GameScreenState extends State<GameScreen> {
             final skippedCard = _currentCard.title;
             _advanceCard(wasBoss: wasBoss);
             _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
-            _addJournalEntry('💰', 'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}');
+            _addJournalEntry(
+              '💰',
+              'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
+            );
             resultTitle = 'Подкуп удался (-15 🪙) 💰';
             resultDescription =
                 'Золото решило вопрос: потрачено 15 🪙, применён лучший исход события без боя и потерь!${bribeItem != null ? ' Также получен предмет: "${bribeItem.title}".' : ''}\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
@@ -748,7 +811,11 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  void _showItemUsedDialog(ItemCard item, String resultTitle, String resultDescription) {
+  void _showItemUsedDialog(
+    ItemCard item,
+    String resultTitle,
+    String resultDescription,
+  ) {
     showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -784,11 +851,18 @@ class _GameScreenState extends State<GameScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFE94560), size: 26),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Color(0xFFE94560),
+              size: 26,
+            ),
             SizedBox(width: 10),
             Text(
               'Сдаться?',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -813,7 +887,9 @@ class _GameScreenState extends State<GameScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE94560),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: const Text('Сдаться и выйти'),
           ),
@@ -855,7 +931,9 @@ class _GameScreenState extends State<GameScreen> {
                     cardsPassed: _cardsPassed,
                     coins: _coins,
                     dungeonLevel: _dungeonLevel,
-                    nextBossIn: _result == GameResult.playing ? _nextBossIn : null,
+                    nextBossIn: _result == GameResult.playing
+                        ? _nextBossIn
+                        : null,
                   ),
                   if (_result == GameResult.playing)
                     _ActiveBuffsBar(
@@ -864,14 +942,24 @@ class _GameScreenState extends State<GameScreen> {
                       isRevealingChoices: _isRevealingChoices,
                       greedMagnetTurns: _greedMagnetTurns,
                       thornmailActive: _thornmailActive,
+                      poisonTurns: _poisonTurns,
+                      bleedTurns: _bleedTurns,
+                      blindnessTurns: _blindnessTurns,
+                      midasCurseTurns: _midasCurseTurns,
                     ),
                   if (_lastFeedback != null && _result == GameResult.playing)
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: Container(
                         key: ValueKey(_lastFeedback),
-                        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
@@ -897,8 +985,10 @@ class _GameScreenState extends State<GameScreen> {
                               event: _currentCard,
                               currentCoins: _coins,
                               currentAttack: _attack,
-                              hasUnlockedItems: UnlockedItemsService.instance.count > 0,
+                              hasUnlockedItems:
+                                  UnlockedItemsService.instance.count > 0,
                               isRevealingChoices: _isRevealingChoices,
+                              isBlind: _blindnessTurns > 0,
                               isBoss: isBoss,
                               dungeonLevel: _dungeonLevel,
                               onSwipe: _onSwipe,
@@ -919,7 +1009,11 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   if (_result == GameResult.playing)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+                      padding: const EdgeInsets.only(
+                        bottom: 16,
+                        left: 16,
+                        right: 16,
+                      ),
                       child: Column(
                         children: [
                           Text(
@@ -947,12 +1041,17 @@ class _GameScreenState extends State<GameScreen> {
                                 ),
                                 label: Text(
                                   'Инвентарь${_inventoryItems.isNotEmpty ? ' (${_inventoryItems.length})' : ''}',
-                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(
                                     color: _inventoryItems.isNotEmpty
-                                        ? const Color(0xFFE94560).withValues(alpha: 0.6)
+                                        ? const Color(
+                                            0xFFE94560,
+                                          ).withValues(alpha: 0.6)
                                         : Colors.white.withValues(alpha: 0.2),
                                   ),
                                   shape: RoundedRectangleBorder(
@@ -1051,6 +1150,10 @@ class _ActiveBuffsBar extends StatelessWidget {
     required this.isRevealingChoices,
     required this.greedMagnetTurns,
     required this.thornmailActive,
+    this.poisonTurns = 0,
+    this.bleedTurns = 0,
+    this.blindnessTurns = 0,
+    this.midasCurseTurns = 0,
   });
 
   final int shieldCharges;
@@ -1058,13 +1161,21 @@ class _ActiveBuffsBar extends StatelessWidget {
   final bool isRevealingChoices;
   final int greedMagnetTurns;
   final bool thornmailActive;
+  final int poisonTurns;
+  final int bleedTurns;
+  final int blindnessTurns;
+  final int midasCurseTurns;
 
   bool get _hasAnyBuff =>
       shieldCharges > 0 ||
       invertNextChoice ||
       isRevealingChoices ||
       greedMagnetTurns > 0 ||
-      thornmailActive;
+      thornmailActive ||
+      poisonTurns > 0 ||
+      bleedTurns > 0 ||
+      blindnessTurns > 0 ||
+      midasCurseTurns > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -1086,15 +1197,59 @@ class _ActiveBuffsBar extends StatelessWidget {
           alignment: WrapAlignment.center,
           children: [
             if (shieldCharges > 0)
-              _BuffChip(emoji: '🛡️', label: 'Щит ×$shieldCharges', color: const Color(0xFF29B6F6)),
+              _BuffChip(
+                emoji: '🛡️',
+                label: 'Щит ×$shieldCharges',
+                color: const Color(0xFF29B6F6),
+              ),
             if (invertNextChoice)
-              const _BuffChip(emoji: '🪞', label: 'Зеркало', color: Color(0xFFAB47BC)),
+              const _BuffChip(
+                emoji: '🪞',
+                label: 'Зеркало',
+                color: Color(0xFFAB47BC),
+              ),
             if (isRevealingChoices)
-              const _BuffChip(emoji: '👁️', label: 'Ясновидение', color: Color(0xFF26A69A)),
+              const _BuffChip(
+                emoji: '👁️',
+                label: 'Ясновидение',
+                color: Color(0xFF26A69A),
+              ),
             if (greedMagnetTurns > 0)
-              _BuffChip(emoji: '🧲', label: 'x2 монеты ×$greedMagnetTurns', color: const Color(0xFFFF7043)),
+              _BuffChip(
+                emoji: '🧲',
+                label: 'x2 монеты ×$greedMagnetTurns',
+                color: const Color(0xFFFF7043),
+              ),
             if (thornmailActive)
-              const _BuffChip(emoji: '🌵', label: 'Шипы', color: Color(0xFF8D6E63)),
+              const _BuffChip(
+                emoji: '🌵',
+                label: 'Шипы',
+                color: Color(0xFF8D6E63),
+              ),
+            if (poisonTurns > 0)
+              _BuffChip(
+                emoji: '🧪',
+                label: 'Яд ×$poisonTurns (-1❤)',
+                color: const Color(0xFF66BB6A),
+              ),
+            if (bleedTurns > 0)
+              _BuffChip(
+                emoji: '🩸',
+                label: 'Кровотечение ×$bleedTurns (-2❤)',
+                color: const Color(0xFFE53935),
+              ),
+            if (blindnessTurns > 0)
+              _BuffChip(
+                emoji: '👁️‍🗨️',
+                label: 'Слепота ×$blindnessTurns',
+                color: const Color(0xFF90A4AE),
+              ),
+            if (midasCurseTurns > 0)
+              _BuffChip(
+                emoji: '👑',
+                label: 'Проклятие Мидаса ×$midasCurseTurns',
+                color: const Color(0xFFFFB300),
+              ),
           ],
         ),
       ),
@@ -1103,7 +1258,11 @@ class _ActiveBuffsBar extends StatelessWidget {
 }
 
 class _BuffChip extends StatelessWidget {
-  const _BuffChip({required this.emoji, required this.label, required this.color});
+  const _BuffChip({
+    required this.emoji,
+    required this.label,
+    required this.color,
+  });
 
   final String emoji;
   final String label;
@@ -1120,7 +1279,11 @@ class _BuffChip extends StatelessWidget {
       ),
       child: Text(
         '$emoji $label',
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -1168,12 +1331,18 @@ class ResultOverlay extends StatelessWidget {
 
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: vPadding),
+          padding: EdgeInsets.symmetric(
+            horizontal: hPadding,
+            vertical: vPadding,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: 480,
-                minHeight: (constraints.maxHeight - (vPadding * 2)).clamp(0.0, double.infinity),
+                minHeight: (constraints.maxHeight - (vPadding * 2)).clamp(
+                  0.0,
+                  double.infinity,
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1182,11 +1351,15 @@ class ResultOverlay extends StatelessWidget {
                   Icon(
                     isVictory
                         ? Icons.emoji_events
-                        : (cardsPassed >= 20 ? Icons.emoji_events : Icons.heart_broken),
+                        : (cardsPassed >= 20
+                              ? Icons.emoji_events
+                              : Icons.heart_broken),
                     size: iconSize,
                     color: isVictory
                         ? const Color(0xFFFFD700)
-                        : (cardsPassed >= 20 ? const Color(0xFFF5A623) : const Color(0xFFE94560)),
+                        : (cardsPassed >= 20
+                              ? const Color(0xFFF5A623)
+                              : const Color(0xFFE94560)),
                   ),
                   SizedBox(height: isShortScreen ? 10 : 16),
                   Text(
@@ -1205,7 +1378,9 @@ class ResultOverlay extends StatelessWidget {
                         : 'Вы выдержали $cardsPassed событий!\nДобрались до уровня: $dungeonLevel',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: isVictory ? 0.85 : 0.65),
+                      color: Colors.white.withValues(
+                        alpha: isVictory ? 0.85 : 0.65,
+                      ),
                       fontSize: isShortScreen ? 14 : 15,
                       height: 1.4,
                     ),
@@ -1246,7 +1421,9 @@ class ResultOverlay extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1271,7 +1448,10 @@ class ResultOverlay extends StatelessWidget {
                               ),
                               const Spacer(),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withValues(alpha: 0.07),
                                   borderRadius: BorderRadius.circular(8),
@@ -1307,7 +1487,9 @@ class ResultOverlay extends StatelessWidget {
                                     child: Text(
                                       e.text,
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.75),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.75,
+                                        ),
                                         fontSize: isShortScreen ? 12 : 12.5,
                                         height: 1.35,
                                       ),
@@ -1315,15 +1497,22 @@ class ResultOverlay extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.05),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.05,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
                                       '#${e.cardNumber}',
                                       style: TextStyle(
-                                        color: Colors.white.withValues(alpha: 0.35),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.35,
+                                        ),
                                         fontSize: 10,
                                         fontFamily: 'monospace',
                                       ),
@@ -1346,7 +1535,9 @@ class ResultOverlay extends StatelessWidget {
                       icon: Icon(isVictory ? Icons.celebration : Icons.replay),
                       label: Text(isVictory ? 'Новый поход' : 'Снова в бой'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isVictory ? const Color(0xFF2E7D32) : const Color(0xFFE94560),
+                        backgroundColor: isVictory
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFFE94560),
                         foregroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(
                           vertical: isShortScreen ? 12 : 15,
@@ -1366,7 +1557,9 @@ class ResultOverlay extends StatelessWidget {
                       label: const Text('В главное меню'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white70,
-                        side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
                         padding: EdgeInsets.symmetric(
                           vertical: isShortScreen ? 10 : 13,
                         ),
@@ -1492,7 +1685,9 @@ class ItemUsedDialog extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -1538,7 +1733,11 @@ class ItemUsedDialog extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, size: 20, color: Colors.white54),
+                      icon: const Icon(
+                        Icons.close,
+                        size: 20,
+                        color: Colors.white54,
+                      ),
                       visualDensity: VisualDensity.compact,
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -1552,7 +1751,10 @@ class ItemUsedDialog extends StatelessWidget {
                   children: [
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: themeColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
@@ -1627,4 +1829,3 @@ class ItemUsedDialog extends StatelessWidget {
     );
   }
 }
-

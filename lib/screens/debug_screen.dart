@@ -5,6 +5,7 @@ import '../data/items.dart';
 import '../services/discovered_events.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
+import '../services/run_chronicle_service.dart';
 import '../services/unlocked_items_service.dart';
 
 class DebugScreen extends StatefulWidget {
@@ -36,6 +37,7 @@ class _DebugScreenState extends State<DebugScreen> {
       UnlockedItemsService.instance.load(),
       DiscoveredEventsService.instance.load(),
       PlayerStatsService.instance.load(),
+      RunChronicleService.instance.load(),
     ]);
     if (mounted) {
       _coinsController.text = PlayerCoinsService.instance.balance.toString();
@@ -44,6 +46,11 @@ class _DebugScreenState extends State<DebugScreen> {
   }
 
   void _refresh() => setState(() {});
+
+  Future<void> _clearChronicle() async {
+    await RunChronicleService.instance.clear();
+    _refresh();
+  }
 
   Future<void> _unlockAllEvents() async {
     final ids = [...allEvents, ...allBossCards].map((e) => e.id).toList();
@@ -410,6 +417,23 @@ class _DebugScreenState extends State<DebugScreen> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 28),
+
+                      // === ХРОНИКА ЗАБЕГОВ ===
+                      _SectionHeader(
+                        icon: Icons.history_edu_rounded,
+                        title: 'Хроника забегов',
+                        subtitle:
+                            'Записей: ${RunChronicleService.instance.records.length} / ${RunChronicleService.maxRuns}',
+                        color: const Color(0xFF00BCD4),
+                      ),
+                      const SizedBox(height: 12),
+                      _DebugButton(
+                        label: 'Очистить хронику',
+                        icon: Icons.delete_sweep_rounded,
+                        color: const Color(0xFFE94560),
+                        onPressed: _clearChronicle,
                       ),
                       const SizedBox(height: 32),
                     ],

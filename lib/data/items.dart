@@ -7,18 +7,27 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'potion_heal',
     title: 'Зелье лечения',
-    description: 'Восстанавливает +2 здоровья',
+    description: 'Восстанавливает +4 здоровья',
     effectType: ItemEffectType.heal,
-    value: 2,
-    icon: Icons.favorite,
+    value: 4,
+    icon: Icons.healing,
     color: Color(0xFFE94560),
   ),
   ItemCard(
     id: 'potion_attack',
     title: 'Зелье атаки',
-    description: 'Увеличивает атаку на +2',
+    description: 'Увеличивает атаку на +4',
     effectType: ItemEffectType.attack,
-    value: 2,
+    value: 4,
+    icon: Icons.flash_on,
+    color: Color(0xFFF5A623),
+  ),
+  ItemCard(
+    id: 'elixir_attack',
+    title: 'Элексир атаки',
+    description: 'Увеличивает атаку на +8',
+    effectType: ItemEffectType.attack,
+    value: 8,
     icon: Icons.flash_on,
     color: Color(0xFFF5A623),
   ),
@@ -34,9 +43,9 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'elixir_life',
     title: 'Эликсир жизни',
-    description: 'Восстанавливает +4 здоровья',
+    description: 'Восстанавливает +8 здоровья',
     effectType: ItemEffectType.heal,
-    value: 4,
+    value: 8,
     icon: Icons.healing,
     color: Color(0xFF4CAF50),
   ),
@@ -72,7 +81,8 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'philosophers_stone',
     title: 'Философский камень',
-    description: 'Конвертирует монеты (×10, макс. 100🪙) в атаку (+1) и здоровье (+2).',
+    description:
+        'Конвертирует монеты (×10, макс. 100🪙) в атаку (+1) и здоровье (+2).',
     effectType: ItemEffectType.transmute,
     value: 0,
     icon: Icons.science,
@@ -81,7 +91,8 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'shadow_pact',
     title: 'Теневой пакт',
-    description: 'Жертвуешь половиной HP → удваиваешь монеты + случайная карта.',
+    description:
+        'Жертвуешь половиной HP → удваиваешь монеты + случайная карта.',
     effectType: ItemEffectType.shadowPact,
     value: 0,
     icon: Icons.dark_mode,
@@ -99,7 +110,8 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'dice_of_fate',
     title: 'Кубик судьбы',
-    description: 'Случайный эффект: потери, артефакт, или джекпот (+5❤ +2⚡ +25🪙).',
+    description:
+        'Случайный эффект: потери, артефакт, или джекпот (+5❤ +2⚡ +25🪙).',
     effectType: ItemEffectType.diceOfFate,
     value: 0,
     icon: Icons.casino,
@@ -108,7 +120,8 @@ const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'smoke_bomb',
     title: 'Дымовая шашка',
-    description: 'Мгновенный побег: карта пропускается, лучшие монеты сохраняются.',
+    description:
+        'Мгновенный побег: карта пропускается, лучшие монеты сохраняются.',
     effectType: ItemEffectType.smokeBomb,
     value: 0,
     icon: Icons.cloud,
@@ -136,3 +149,12 @@ ItemCard? getRandomUnlockedItemCard(Random random, Set<String> unlockedIds) {
   if (unlockedCards.isEmpty) return null;
   return unlockedCards[random.nextInt(unlockedCards.length)];
 }
+
+ItemCard? getRandomLockedItemCard(Random random, Set<String> unlockedIds) {
+  final lockedCards = allItemCards
+      .where((item) => !unlockedIds.contains(item.id))
+      .toList();
+  if (lockedCards.isEmpty) return null;
+  return lockedCards[random.nextInt(lockedCards.length)];
+}
+

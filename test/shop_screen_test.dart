@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kki_cardgame/data/items.dart';
@@ -8,8 +10,29 @@ import 'package:kki_cardgame/widgets/item_details_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    await UnlockedItemsService.instance.reset();
+  });
+
+  test('getRandomLockedItemCard only returns locked cards and returns null when full', () {
+    final random = Random();
+    final allIds = allItemCards.map((c) => c.id).toSet();
+    
+    // With no cards unlocked, picks from all
+    final card1 = getRandomLockedItemCard(random, {});
+    expect(card1, isNotNull);
+    expect(allIds.contains(card1!.id), isTrue);
+
+    // With all except last unlocked, picks the only remaining card
+    final almostAll = allItemCards.take(allItemCards.length - 1).map((c) => c.id).toSet();
+    final card2 = getRandomLockedItemCard(random, almostAll);
+    expect(card2, isNotNull);
+    expect(card2!.id, equals(allItemCards.last.id));
+
+    // With all unlocked, returns null
+    final card3 = getRandomLockedItemCard(random, allIds);
+    expect(card3, isNull);
   });
 
   testWidgets('Tapping on an unlocked card in ShopScreen opens item details sheet', (tester) async {
@@ -77,7 +100,7 @@ void main() {
     expect(find.byType(ItemDetailsSheet), findsNothing);
   });
 
-  testWidgets('Opening a chest in ShopScreen shows reward dialog without crashing', (tester) async {
+  testWidgets('Opening chest drops unknown card, increases price and deducts coins', (tester) async {
     tester.view.physicalSize = const Size(800, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -85,7 +108,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    PlayerCoinsService.instance.restoreBalance(100);
+    PlayerCoinsService.instance.restoreBalance(200);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -94,11 +117,70 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Find and tap the open chest button
-    await tester.tap(find.textContaining('Открыть сундук'));
+    // Initial price with 0 unlocked cards is 50
+    expect(find.textContaining('Открыть сундук (50 🪙)'), findsOneWidget);
+
+    // Open first chest
+    await tester.tap(find.textContaining('Открыть сундук (50 🪙)'));
     await tester.pumpAndSettle();
 
     // Reward dialog should appear
-    expect(find.text('Отлично'), findsOneWidget);
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(UnlockedItemsService.instance.count, equals(1));
+    expect(PlayerCoinsService.instance.balance, equals(150));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Price should now be 75
+    expect(find.textContaining('Открыть сундук (75 🪙)'), findsOneWidget);
+
+    // Open second chest
+    await tester.tap(find.textContaining('Открыть сундук (75 🪙)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(UnlockedItemsService.instance.count, equals(2));
+    expect(PlayerCoinsService.instance.balance, equals(75));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Next price is 100, but player only has 75 coins left -> "Не хватает монет (100 🪙)"
+    expect(find.textContaining('Не хватает монет (100 🪙)'), findsOneWidget);
+  });
+
+  testWidgets('Chest is blocked and shows message when all cards are unlocked', (tester) async {
+    tester.view.physicalSize = const Size(800, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    // Unlock all cards
+    await UnlockedItemsService.instance.load();
+    await UnlockedItemsService.instance.unlockAll(allItemCards.map((c) => c.id).toList());
+    PlayerCoinsService.instance.restoreBalance(1000);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ShopScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Should display that all cards are collected
+    expect(find.text('Все карты получены'), findsOneWidget);
+    expect(find.textContaining('Все доступные карты собраны! Сундук больше недоступен.'), findsOneWidget);
+
+    // The button must be disabled
+    final button = tester.widget<ElevatedButton>(
+      find.widgetWithText(ElevatedButton, 'Все карты получены'),
+    );
+    expect(button.onPressed, isNull);
   });
 }
+

@@ -73,7 +73,7 @@ void main() {
     expect(find.byType(ItemUsedDialog), findsOneWidget);
     expect(find.text('Карта использована'), findsOneWidget);
     expect(find.text('Зелье лечения'), findsOneWidget);
-    expect(find.text('+2 ❤'), findsOneWidget);
+    expect(find.text('+4 ❤'), findsOneWidget);
     expect(find.textContaining('Здоровье героя восстановлено'), findsOneWidget);
 
     // Close the dialog
