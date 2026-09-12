@@ -10,6 +10,8 @@ class RunRecord {
     required this.coins,
     required this.isVictory,
     required this.journal,
+    this.dungeonId = 'cursed_forest',
+    this.dungeonName = 'Проклятый лес',
   });
 
   /// Время окончания забега (Unix ms)
@@ -30,6 +32,12 @@ class RunRecord {
   /// Записи дневника героя за забег
   final List<String> journal;
 
+  /// Идентификатор подземелья
+  final String dungeonId;
+
+  /// Название подземелья
+  final String dungeonName;
+
   Map<String, dynamic> toJson() => {
         'endedAt': endedAt.millisecondsSinceEpoch,
         'cardsPassed': cardsPassed,
@@ -37,6 +45,8 @@ class RunRecord {
         'coins': coins,
         'isVictory': isVictory,
         'journal': journal,
+        'dungeonId': dungeonId,
+        'dungeonName': dungeonName,
       };
 
   factory RunRecord.fromJson(Map<String, dynamic> json) => RunRecord(
@@ -49,6 +59,8 @@ class RunRecord {
         isVictory: (json['isVictory'] as bool?) ?? false,
         journal:
             (json['journal'] as List<dynamic>?)?.cast<String>() ?? const [],
+        dungeonId: (json['dungeonId'] as String?) ?? 'cursed_forest',
+        dungeonName: (json['dungeonName'] as String?) ?? 'Проклятый лес',
       );
 }
 

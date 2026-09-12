@@ -27,15 +27,15 @@ void main() {
     addTearDown(() => tester.view.resetPhysicalSize());
 
     // Discover at least one event so it is tapable and visible in glossary
-    DiscoveredEventsService.instance.markDiscovered('goblin');
+    DiscoveredEventsService.instance.markDiscovered('forest_wolf_lone');
 
     await tester.pumpWidget(
       const MaterialApp(home: GlossaryScreen()),
     );
     await tester.pumpAndSettle();
 
-    // Find and tap the card tile/text for goblin ('Гоблин-разбойник')
-    final cardFinder = find.text('Гоблин-разбойник');
+    // Find and tap the card tile/text for wolf ('Одичавший лютоволк')
+    final cardFinder = find.text('Одичавший лютоволк');
     expect(cardFinder, findsOneWidget);
     await tester.tap(cardFinder);
     await tester.pumpAndSettle();

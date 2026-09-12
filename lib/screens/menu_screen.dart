@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'chronicle_screen.dart';
 import 'debug_screen.dart';
+import 'dungeon_select_screen.dart';
 import 'glossary_screen.dart';
-import 'game_screen.dart';
 import 'inventory_screen.dart';
 import 'shop_screen.dart';
 
@@ -71,7 +71,7 @@ class MenuScreen extends StatelessWidget {
                           icon: Icons.explore,
                           onPressed: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const GameScreen()),
+                              MaterialPageRoute(builder: (_) => const DungeonSelectScreen()),
                             );
                           },
                         ),

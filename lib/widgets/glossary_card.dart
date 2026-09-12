@@ -127,7 +127,7 @@ class _KnownContent extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // Бейдж уровня + мини-выборы
+              // Бейдж уровня + тип карты / подземелье
               Row(
                 children: [
                   Container(
@@ -144,6 +144,36 @@ class _KnownContent extends StatelessWidget {
                             : Colors.white.withValues(alpha: 0.6),
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: event.isCommonDungeon
+                            ? const Color(0xFF64B5F6).withValues(alpha: 0.18)
+                            : const Color(0xFF81C784).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: event.isCommonDungeon
+                              ? const Color(0xFF64B5F6).withValues(alpha: 0.35)
+                              : const Color(0xFF81C784).withValues(alpha: 0.35),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        event.dungeonLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: event.isCommonDungeon
+                              ? const Color(0xFF90CAF9)
+                              : const Color(0xFFA5D6A7),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

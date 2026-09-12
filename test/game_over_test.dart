@@ -160,7 +160,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // 3rd boss is on screen
-    expect(find.text('Архидемон Бездны'), findsOneWidget);
+    expect(find.text('Древний Хозяин Леса'), findsOneWidget);
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Swipe left on the boss to fight ('Сразиться': -8 HP, player has 10 HP, survives with 2 HP)

@@ -15,6 +15,54 @@ enum StatusEffectType {
   midasCurse,
 }
 
+extension StatusEffectTypeExtension on StatusEffectType {
+  String get label {
+    switch (this) {
+      case StatusEffectType.poison:
+        return 'Отравление';
+      case StatusEffectType.bleed:
+        return 'Кровотечение';
+      case StatusEffectType.blindness:
+        return 'Слепота';
+      case StatusEffectType.midasCurse:
+        return 'Проклятие Мидаса';
+    }
+  }
+
+  String get icon {
+    switch (this) {
+      case StatusEffectType.poison:
+        return '🧪';
+      case StatusEffectType.bleed:
+        return '🩸';
+      case StatusEffectType.blindness:
+        return '👁️';
+      case StatusEffectType.midasCurse:
+        return '💰';
+    }
+  }
+}
+
+/// Идентификаторы подземелий для привязки карточек событий.
+class DungeonId {
+  /// Карты, доступные в любом подземелье (сокровища, торговцы и т.д.)
+  static const String common = 'common';
+
+  /// Проклятый лес
+  static const String cursedForest = 'cursed_forest';
+
+  /// Проверка, является ли карточка общей для всех подземелий
+  static bool isCommon(String id) =>
+      id == common || id == 'общий' || id == 'all';
+
+  /// Читаемое название подземелья для интерфейса
+  static String getLabel(String id) {
+    if (isCommon(id)) return 'Общий';
+    if (id == cursedForest) return 'Проклятый лес';
+    return id;
+  }
+}
+
 class CardChoice {
   const CardChoice({
     required this.label,
@@ -44,6 +92,7 @@ class EventCard {
     required this.leftChoice,
     required this.rightChoice,
     this.level = 1,
+    this.dungeonId = DungeonId.cursedForest,
   });
 
   final String id;
@@ -56,6 +105,24 @@ class EventCard {
   /// Уровень подземелья, на котором встречается карточка (1-3).
   /// Для боссов — номер уровня, на котором они появляются.
   final int level;
+
+  /// Третий атрибут: идентификатор подземелья, в котором может встретиться карта.
+  /// [DungeonId.common] ('common' или 'общий') означает, что карта встречается в любом подземелье.
+  final String dungeonId;
+
+  /// Алиас для [dungeonId]
+  String get dungeon => dungeonId;
+
+  /// Является ли карта общей для всех подземелий
+  bool get isCommonDungeon => DungeonId.isCommon(dungeonId);
+
+  /// Читаемое отображение типа подземелья
+  String get dungeonLabel => DungeonId.getLabel(dungeonId);
+
+  /// Доступна ли карточка в указанном подземелье
+  bool isAvailableInDungeon(String targetDungeonId) {
+    return isCommonDungeon || dungeonId == targetDungeonId;
+  }
 
   bool get isBoss => type == EventType.boss;
 }

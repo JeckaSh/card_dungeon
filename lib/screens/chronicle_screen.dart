@@ -73,20 +73,21 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded,
                 color: Colors.white70),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
           const Icon(Icons.auto_stories_rounded,
-              color: Color(0xFFE94560), size: 28),
-          const SizedBox(width: 12),
-          const Text(
-            'Хроника',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
+              color: Color(0xFFE94560), size: 26),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text(
+              'Хроника',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
-          const Spacer(),
           Text(
             'Последние ${RunChronicleService.maxRuns} забегов',
             style: TextStyle(
@@ -249,13 +250,51 @@ class _RunCardState extends State<_RunCard> {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          dateStr,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                dateStr,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.forest_rounded,
+                                    size: 11,
+                                    color: Color(0xFF81C784),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    r.dungeonName,
+                                    style: const TextStyle(
+                                      color: Color(0xFF81C784),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

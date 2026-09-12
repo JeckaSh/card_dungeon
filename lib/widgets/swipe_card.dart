@@ -551,7 +551,8 @@ class _ChoiceHint extends StatelessWidget {
             ] else if (choice.healthDelta != 0 ||
                 choice.attackDelta != 0 ||
                 choice.coinsDelta != 0 ||
-                choice.givesRandomItem) ...[
+                choice.givesRandomItem ||
+                choice.statusEffect != null) ...[
               SizedBox(height: 4 * scale),
               Text(
                 _formatDeltas(choice),
@@ -593,6 +594,9 @@ class _ChoiceHint extends StatelessWidget {
     }
     if (choice.givesRandomItem) {
       parts.add('🎒 +1 карта');
+    }
+    if (choice.statusEffect != null) {
+      parts.add('${choice.statusEffect!.icon} ${(choice.statusChance * 100).round()}%');
     }
     return parts.join('  ');
   }

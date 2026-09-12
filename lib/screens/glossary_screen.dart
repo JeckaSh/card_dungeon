@@ -469,6 +469,31 @@ class _CardDetailSheet extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: event.isCommonDungeon
+                          ? const Color(0xFF64B5F6).withValues(alpha: 0.15)
+                          : const Color(0xFF81C784).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: event.isCommonDungeon
+                            ? const Color(0xFF64B5F6).withValues(alpha: 0.35)
+                            : const Color(0xFF81C784).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Text(
+                      event.dungeonLabel,
+                      style: TextStyle(
+                        color: event.isCommonDungeon
+                            ? const Color(0xFF90CAF9)
+                            : const Color(0xFFA5D6A7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70, size: 22),
@@ -563,7 +588,10 @@ class _DetailChoice extends StatelessWidget {
             label,
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
-          if (choice.healthDelta != 0 || choice.attackDelta != 0 || choice.coinsDelta != 0) ...[
+          if (choice.healthDelta != 0 ||
+              choice.attackDelta != 0 ||
+              choice.coinsDelta != 0 ||
+              choice.statusEffect != null) ...[
             const SizedBox(height: 6),
             Text(
               _formatDeltas(),
@@ -585,6 +613,9 @@ class _DetailChoice extends StatelessWidget {
     }
     if (choice.coinsDelta != 0) {
       parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
+    }
+    if (choice.statusEffect != null) {
+      parts.add('${choice.statusEffect!.icon} ${choice.statusEffect!.label} (${(choice.statusChance * 100).round()}%)');
     }
     return parts.join('  ');
   }

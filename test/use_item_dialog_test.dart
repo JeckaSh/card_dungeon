@@ -100,7 +100,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Boss is present
-    expect(find.text('Страж Первого Этажа'), findsOneWidget);
+    expect(find.text('Альфа-вожак Ночной Стаи'), findsOneWidget);
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Open inventory
@@ -143,7 +143,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Boss is present
-    expect(find.text('Страж Первого Этажа'), findsOneWidget);
+    expect(find.text('Альфа-вожак Ночной Стаи'), findsOneWidget);
 
     // Open inventory
     final inventoryButtonFinder =

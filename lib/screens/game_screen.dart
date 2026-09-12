@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../data/dungeons.dart';
 import '../data/events.dart';
 import '../data/items.dart';
+import '../models/dungeon.dart';
 import '../models/event_card.dart';
 import '../models/item_card.dart';
 import '../services/discovered_events.dart';
@@ -43,12 +45,14 @@ class GameScreen extends StatefulWidget {
     this.initialDungeonLevel,
     this.initialCardsPassed,
     this.initialCoins,
+    this.dungeon = cursedForestDungeon,
   });
 
   final List<ItemCard>? initialInventory;
   final int? initialDungeonLevel;
   final int? initialCardsPassed;
   final int? initialCoins;
+  final Dungeon dungeon;
 
   @override
   State<GameScreen> createState() => GameScreenState();
@@ -152,7 +156,7 @@ class GameScreenState extends State<GameScreen> {
     _journal.clear();
     _rebuildDeck();
     _discoverCurrentCard();
-    _addJournalEntry('🗡️', 'Герой вошёл в подземелье');
+    _addJournalEntry('🗡️', 'Герой вошёл в подземелье: ${widget.dungeon.name}');
     if (widget.initialInventory == null && _inventoryItems.isNotEmpty) {
       final names = _inventoryItems.map((e) => e.title).join(', ');
       _addJournalEntry('🎒', 'Стартовое снаряжение: $names');
@@ -192,14 +196,24 @@ class GameScreenState extends State<GameScreen> {
 
   // ─── Работа с колодой ───────────────────────
 
-  /// Строит колоду из карточек текущего уровня и сбрасывает позицию.
+  /// Строит колоду из карточек текущего уровня для выбранного подземелья и сбрасывает позицию.
   /// Гарантирует ровно [PlayerStatsService.guaranteedMerchants] торговцев
   /// в первых [_bossEvery]-1 позициях (до встречи с боссом).
   /// При 0 — торговцы появляются случайно.
   void _rebuildDeck() {
-    var cards = allEvents.where((e) => e.level == _dungeonLevel).toList();
+    final currentDungeonId = widget.dungeon.id;
+    var cards = allEvents
+        .where((e) =>
+            e.level == _dungeonLevel &&
+            e.isAvailableInDungeon(currentDungeonId))
+        .toList();
     if (cards.isEmpty) {
-      cards = allEvents.toList();
+      cards = allEvents
+          .where((e) => e.isAvailableInDungeon(currentDungeonId))
+          .toList();
+      if (cards.isEmpty) {
+        cards = allEvents.toList();
+      }
     }
     cards.shuffle(_random);
 
@@ -208,9 +222,12 @@ class GameScreenState extends State<GameScreen> {
       // Количество карт, которые игрок видит до босса
       final visibleCount = min(_bossEvery - 1, cards.length);
 
-      // Собираем доступных торговцев ТОЛЬКО текущего уровня
+      // Собираем доступных торговцев ТОЛЬКО текущего уровня для этого подземелья
       final currentLevelMerchants = allEvents
-          .where((e) => e.type == EventType.merchant && e.level == _dungeonLevel)
+          .where((e) =>
+              e.type == EventType.merchant &&
+              e.level == _dungeonLevel &&
+              e.isAvailableInDungeon(currentDungeonId))
           .toList();
       final pool = currentLevelMerchants.isNotEmpty
           ? currentLevelMerchants
@@ -254,10 +271,14 @@ class GameScreenState extends State<GameScreen> {
   @visibleForTesting
   List<EventCard> get deck => List.unmodifiable(_deck);
 
-  /// Выбирает боссовую карточку по номеру встреченного босса.
+  /// Выбирает боссовую карточку для текущего подземелья по номеру встреченного босса.
   EventCard _selectBoss() {
     final bossNumber = (_cardsPassed + 1) ~/ _bossEvery;
-    return allBossCards[(bossNumber - 1) % allBossCards.length];
+    final dungeonBosses = allBossCards
+        .where((e) => e.isAvailableInDungeon(widget.dungeon.id))
+        .toList();
+    final pool = dungeonBosses.isNotEmpty ? dungeonBosses : allBossCards;
+    return pool[(bossNumber - 1) % pool.length];
   }
 
   void _discoverCurrentCard() {
@@ -297,11 +318,14 @@ class GameScreenState extends State<GameScreen> {
     _cardsPassed++;
     _cardKey++;
     if (wasBoss) {
-      // Победа над боссом → проверяем наличие карточек событий следующего уровня
+      // Победа над боссом → проверяем наличие карточек событий следующего уровня для этого подземелья
       final nextLevel = _dungeonLevel + 1;
-      final hasNextLevelCards = allEvents.any((e) => e.level == nextLevel);
+      final hasNextLevelCards = nextLevel <= widget.dungeon.levelsCount &&
+          allEvents.any((e) =>
+              e.level == nextLevel &&
+              e.isAvailableInDungeon(widget.dungeon.id));
       if (!hasNextLevelCards) {
-        // Карточек следующего уровня нет — подземелье успешно пройдено!
+        // Карточек следующего уровня нет или пройдены все уровни подземелья — победа!
         _result = GameResult.victory;
         _addJournalEntry('🏆', 'Подземелье успешно пройдено!');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
@@ -514,6 +538,8 @@ class GameScreenState extends State<GameScreen> {
         coins: _coins,
         isVictory: isVictory,
         journal: journalLines,
+        dungeonId: widget.dungeon.id,
+        dungeonName: widget.dungeon.name,
       ),
     );
   }
@@ -925,6 +951,37 @@ class GameScreenState extends State<GameScreen> {
               constraints: const BoxConstraints(maxWidth: 580),
               child: Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+                    child: Row(
+                      children: [
+                        Icon(
+                          widget.dungeon.icon,
+                          size: 15,
+                          color: widget.dungeon.accentColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.dungeon.name,
+                          style: TextStyle(
+                            color: widget.dungeon.accentColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Этаж $_dungeonLevel / ${widget.dungeon.levelsCount}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   StatsBar(
                     health: _health,
                     attack: _attack,
