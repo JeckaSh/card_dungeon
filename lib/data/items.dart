@@ -3,6 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../models/item_card.dart';
 
+/// Полный каталог всех доступных в игре расходуемых предметов и реликвий.
+///
+/// Игрок открывает эти предметы в Магазине ([ShopScreen]) за накопленные монеты.
+/// Открытые предметы могут:
+/// 1. Выпадать в событиях торговцев и тайников (`givesRandomItem: true`).
+/// 2. Выдаваться герою на старте забега при прокачке навыка «Стартовые карты» ([PlayerStatsService.startingCardsCount]).
+/// 3. Появляться в инвентаре от эффектов кубика или сделок.
 const List<ItemCard> allItemCards = [
   ItemCard(
     id: 'potion_heal',
@@ -138,10 +145,14 @@ const List<ItemCard> allItemCards = [
   ),
 ];
 
+/// Возвращает случайный предмет из полного списка [allItemCards].
 ItemCard getRandomItemCard(Random random) {
   return allItemCards[random.nextInt(allItemCards.length)];
 }
 
+/// Возвращает случайный предмет только из тех, которые уже разблокированы игроком ([unlockedIds]).
+///
+/// Если у игрока ещё нет открытых карт, возвращает `null`.
 ItemCard? getRandomUnlockedItemCard(Random random, Set<String> unlockedIds) {
   final unlockedCards = allItemCards
       .where((item) => unlockedIds.contains(item.id))
@@ -150,6 +161,10 @@ ItemCard? getRandomUnlockedItemCard(Random random, Set<String> unlockedIds) {
   return unlockedCards[random.nextInt(unlockedCards.length)];
 }
 
+/// Возвращает случайный предмет среди ещё закрытых карт игрока.
+///
+/// Используется в лутбоксах Магазина ([ShopScreen._openLootbox]) для гарантированного
+/// выпадения новой неизведанной карты. Если все карты уже открыты, возвращает `null`.
 ItemCard? getRandomLockedItemCard(Random random, Set<String> unlockedIds) {
   final lockedCards = allItemCards
       .where((item) => !unlockedIds.contains(item.id))

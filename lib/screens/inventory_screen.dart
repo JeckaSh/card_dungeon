@@ -8,6 +8,12 @@ import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
+/// Экран инвентаря и прокачки персонажа.
+///
+/// Предоставляет:
+/// * Просмотр общего баланса монет ([PlayerCoinsService]);
+/// * Прокачку постоянных характеристик героя (здоровье, атака, торговцы, стартовые карты);
+/// * Просмотр каталога уже открытых артефактов с возможностью изучения их свойств.
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 

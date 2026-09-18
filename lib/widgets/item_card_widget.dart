@@ -2,6 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../models/item_card.dart';
 
+/// Виджет отображения карты предмета (артефакта).
+///
+/// Используется в экранах магазина ([ShopScreen]), инвентаря ([InventoryScreen])
+/// и в нижнем листе инвентаря во время забега ([InventorySheet]).
+///
+/// Поддерживает:
+/// * [onTap] — открытие окна с подробной информацией о предмете;
+/// * [onAction] / [actionLabel] — отображение кнопки действия (например, «Использовать»).
 class ItemCardWidget extends StatelessWidget {
   const ItemCardWidget({
     super.key,
@@ -11,44 +19,20 @@ class ItemCardWidget extends StatelessWidget {
     this.onAction,
   });
 
+  /// Отображаемый предмет
   final ItemCard item;
+
+  /// Коллбэк при нажатии на карточку
   final VoidCallback? onTap;
+
+  /// Подпись на кнопке действия (по умолчанию «Применить»)
   final String? actionLabel;
+
+  /// Коллбэк при нажатии на кнопку действия
   final VoidCallback? onAction;
 
-  String get _categoryLabel {
-    return switch (item.effectType) {
-      ItemEffectType.heal => 'Исцеление',
-      ItemEffectType.attack => 'Усиление',
-      ItemEffectType.skip => 'Свиток',
-      ItemEffectType.shield => 'Защита',
-      ItemEffectType.invertNext => 'Искажение',
-      ItemEffectType.thornmail => 'Контратака',
-      ItemEffectType.transmute => 'Алхимия',
-      ItemEffectType.shadowPact => 'Тёмная сделка',
-      ItemEffectType.greedMagnet => 'Экономика',
-      ItemEffectType.diceOfFate => 'Удача',
-      ItemEffectType.smokeBomb => 'Побег',
-      ItemEffectType.bribery => 'Дипломатия',
-    };
-  }
-
-  String get _effectBadge {
-    return switch (item.effectType) {
-      ItemEffectType.heal => '+${item.value} ❤',
-      ItemEffectType.attack => '+${item.value} ⚡',
-      ItemEffectType.skip => 'Пропуск',
-      ItemEffectType.shield => '🛡️ ×${item.value}',
-      ItemEffectType.invertNext => '🪞 Инверсия',
-      ItemEffectType.thornmail => '🌵 Шипы',
-      ItemEffectType.transmute => '⚗️ Алхимия',
-      ItemEffectType.shadowPact => '📜 Пакт',
-      ItemEffectType.greedMagnet => '🧲 x2 монеты',
-      ItemEffectType.diceOfFate => '🎲 Кубик',
-      ItemEffectType.smokeBomb => '💨 Побег',
-      ItemEffectType.bribery => '💰 Подкуп',
-    };
-  }
+  String get _categoryLabel => item.categoryLabel;
+  String get _effectBadge => item.effectBadge;
 
   @override
   Widget build(BuildContext context) {

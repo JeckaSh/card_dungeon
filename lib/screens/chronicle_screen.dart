@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../services/run_chronicle_service.dart';
 
+/// Экран Хроники прошлых походов героя.
+///
+/// Хранит историю последних забегов ([RunRecord]) с детальной статистикой:
+/// исход (победа/поражение), пройденные карты, заработанные монеты
+/// и разворачиваемый журнал всех совершённых в забеге действий.
 class ChronicleScreen extends StatefulWidget {
   const ChronicleScreen({super.key});
 

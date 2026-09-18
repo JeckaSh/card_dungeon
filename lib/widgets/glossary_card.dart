@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import '../models/event_card.dart';
 import '../utils/event_style.dart';
 
+/// Виджет карточки события в Глоссарии ([GlossaryScreen]).
+///
+/// Если событие уже исследовано ([isDiscovered] = true), отображает цветную карточку
+/// с названием, категорией, уровнем и позволяет нажать ([onTap]) для просмотра деталей.
+/// Если не исследовано — скрывает информацию силуэтом с вопросительным знаком.
 class GlossaryCard extends StatelessWidget {
   const GlossaryCard({
     super.key,
@@ -11,8 +16,13 @@ class GlossaryCard extends StatelessWidget {
     this.onTap,
   });
 
+  /// Карточка события или босса
   final EventCard event;
+
+  /// Была ли карточка хотя бы раз встречена игроком в подземелье
   final bool isDiscovered;
+
+  /// Коллбэк открытия подробностей карточки
   final VoidCallback? onTap;
 
   @override

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/item_card.dart';
 
-/// Shows a bottom sheet with detailed information about an [ItemCard].
+/// Открывает модальный нижний лист с подробной информацией о предмете [item].
+///
+/// Параметр [isUnlocked] указывает, открыта ли карточка в коллекции игрока
+/// (для скрытия характеристик неразблокированных карт).
 void showItemDetailsSheet(
   BuildContext context,
   ItemCard item, {
@@ -21,6 +24,10 @@ void showItemDetailsSheet(
   );
 }
 
+/// Виджет подробного описания карты предмета.
+///
+/// Отображает полную карточку с категорией, эффектом, художественным описанием
+/// и цветовым акцентом.
 class ItemDetailsSheet extends StatelessWidget {
   const ItemDetailsSheet({
     super.key,
@@ -28,38 +35,14 @@ class ItemDetailsSheet extends StatelessWidget {
     this.isUnlocked = true,
   });
 
+  /// Рассматриваемый предмет
   final ItemCard item;
+
+  /// Открыт ли предмет игроком
   final bool isUnlocked;
 
-  String get _categoryLabel => switch (item.effectType) {
-    ItemEffectType.heal => 'Исцеление',
-    ItemEffectType.attack => 'Усиление',
-    ItemEffectType.skip => 'Свиток',
-    ItemEffectType.shield => 'Защита',
-    ItemEffectType.invertNext => 'Искажение',
-    ItemEffectType.thornmail => 'Контратака',
-    ItemEffectType.transmute => 'Алхимия',
-    ItemEffectType.shadowPact => 'Тёмная сделка',
-    ItemEffectType.greedMagnet => 'Экономика',
-    ItemEffectType.diceOfFate => 'Удача',
-    ItemEffectType.smokeBomb => 'Побег',
-    ItemEffectType.bribery => 'Дипломатия',
-  };
-
-  String get _effectBadge => switch (item.effectType) {
-    ItemEffectType.heal => '+${item.value} ❤',
-    ItemEffectType.attack => '+${item.value} ⚡',
-    ItemEffectType.skip => 'Пропуск',
-    ItemEffectType.shield => '🛡️ ×${item.value}',
-    ItemEffectType.invertNext => '🪞 Инверсия',
-    ItemEffectType.thornmail => '🌵 Шипы',
-    ItemEffectType.transmute => '⚗️ Алхимия',
-    ItemEffectType.shadowPact => '📜 Пакт',
-    ItemEffectType.greedMagnet => '🧲 x2 монеты',
-    ItemEffectType.diceOfFate => '🎲 Кубик',
-    ItemEffectType.smokeBomb => '💨 Побег',
-    ItemEffectType.bribery => '💰 Подкуп',
-  };
+  String get _categoryLabel => item.categoryLabel;
+  String get _effectBadge => item.effectBadge;
 
   @override
   Widget build(BuildContext context) {

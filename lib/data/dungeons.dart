@@ -26,13 +26,19 @@ const Dungeon catacombsDungeon = Dungeon(
   isAvailable: false,
 );
 
-/// Список всех подземелий игры
+/// Список всех подземелий игры.
+///
+/// Отображается на экране выбора локации ([DungeonSelectScreen]).
+/// Чтобы открыть доступ к локации, установите `isAvailable: true`.
 const List<Dungeon> allDungeons = [
   cursedForestDungeon,
   catacombsDungeon,
 ];
 
-/// Возвращает подземелье по его id или [cursedForestDungeon] по умолчанию
+/// Возвращает подземелье по его строковому [id].
+///
+/// Если подземелье с таким идентификатором не найдено,
+/// возвращается подземелье по умолчанию — [cursedForestDungeon].
 Dungeon getDungeonById(String id) {
   return allDungeons.firstWhere(
     (d) => d.id == id,

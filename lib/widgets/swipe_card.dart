@@ -5,6 +5,14 @@ import 'package:flutter/material.dart';
 import '../models/event_card.dart';
 import '../utils/event_style.dart';
 
+/// Интерактивная карточка события с поддержкой свайпов влево и вправо.
+///
+/// Основной элемент игрового процесса:
+/// * Свайп влево активирует [EventCard.leftChoice].
+/// * Свайп вправо активирует [EventCard.rightChoice].
+/// * Карточка блокирует свайп, если у игрока недостаточно ресурсов (монет или атаки).
+/// * Поддерживает визуальные эффекты: пульсация босса, слепота ([isBlind]),
+///   просмотр исходов ([isRevealingChoices]) и динамический наклон при перетаскивании.
 class SwipeCard extends StatefulWidget {
   const SwipeCard({
     super.key,
@@ -19,14 +27,31 @@ class SwipeCard extends StatefulWidget {
     this.dungeonLevel = 1,
   });
 
+  /// Текущее событие, отображаемое на карточке
   final EventCard event;
+
+  /// Текущий баланс монет героя (для проверки доступности платных выборов)
   final int currentCoins;
+
+  /// Текущая атака героя (для проверки требований силы к выбору)
   final int currentAttack;
+
+  /// Доступны ли в коллекции открытые предметы (для выборов, дающих случайный предмет)
   final bool hasUnlockedItems;
+
+  /// Режим ясновидения: показывать подсказки исходов без оттягивания карты
   final bool isRevealingChoices;
+
+  /// Статус «Слепота»: скрывает текст последствий выбора от игрока
   final bool isBlind;
+
+  /// Является ли текущая карточка боссом этажа (включает пульсирующую рамку)
   final bool isBoss;
+
+  /// Текущий уровень (этаж) подземелья
   final int dungeonLevel;
+
+  /// Коллбэк при завершении свайпа: `true` — вправо, `false` — влево
   final void Function(bool isRight) onSwipe;
 
   @override
@@ -36,6 +61,7 @@ class SwipeCard extends StatefulWidget {
 class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
   late AnimationController _swipeController;
   late AnimationController _pulseController;
+  Animation<Offset>? _offsetAnimation;
   Offset _dragOffset = Offset.zero;
   bool _isDragging = false;
   double _swipeThreshold = 100.0;
@@ -47,7 +73,12 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
     _swipeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
-    );
+    )..addListener(() {
+        if (_offsetAnimation != null) {
+          setState(() => _dragOffset = _offsetAnimation!.value);
+        }
+      });
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -110,29 +141,23 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
 
   void _animateOffScreen(bool isRight) {
     final targetX = isRight ? _exitDistance : -_exitDistance;
-    final animation = Tween<Offset>(
+    _offsetAnimation = Tween<Offset>(
       begin: _dragOffset,
       end: Offset(targetX, _dragOffset.dy),
     ).animate(CurvedAnimation(parent: _swipeController, curve: Curves.easeOut));
 
-    animation.addListener(() {
-      setState(() => _dragOffset = animation.value);
-    });
-
     _swipeController.forward(from: 0).then((_) {
-      widget.onSwipe(isRight);
+      if (mounted) {
+        widget.onSwipe(isRight);
+      }
     });
   }
 
   void _animateBack() {
-    final animation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
+    _offsetAnimation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
         .animate(
           CurvedAnimation(parent: _swipeController, curve: Curves.elasticOut),
         );
-
-    animation.addListener(() {
-      setState(() => _dragOffset = animation.value);
-    });
 
     _swipeController.forward(from: 0);
   }

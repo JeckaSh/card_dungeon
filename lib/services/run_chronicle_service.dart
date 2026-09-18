@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Запись об одном завершённом забеге.
+/// Запись об одном завершённом забеге в подземелье.
+///
+/// Содержит детальную статистику забега: дату и время окончания ([endedAt]),
+/// количество пройденных карточек ([cardsPassed]), финальный этаж ([dungeonLevel]),
+/// собранные за забег монеты ([coins]), статус исхода ([isVictory])
+/// и пошаговый журнал всех решений героя ([journal]).
 class RunRecord {
   RunRecord({
     required this.endedAt,

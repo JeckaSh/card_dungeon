@@ -1,8 +1,15 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Сервис учёта исследованных игроком событий и боссов (Глоссарий).
+///
+/// Когда игрок встречает новую карточку в подземелье, её `id` сохраняется
+/// в реестр открытых событий.
+/// В Глоссарии ([GlossaryScreen]) открытые события отображаются в цвете
+/// с полными описаниями, а ещё неизведанные — как закрытые «туманом войны» карточки.
 class DiscoveredEventsService {
   DiscoveredEventsService._();
 
+  /// Глобальный синглтон сервиса глоссария
   static final DiscoveredEventsService instance = DiscoveredEventsService._();
 
   static const _storageKey = 'discovered_event_ids';
@@ -10,6 +17,7 @@ class DiscoveredEventsService {
   Set<String> _discovered = {};
   bool _loaded = false;
 
+  /// Загружает список открытых событий из постоянного хранилища
   Future<void> load() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();

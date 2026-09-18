@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kki_cardgame/data/dungeons.dart';
 import 'package:kki_cardgame/data/events.dart';
 import 'package:kki_cardgame/main.dart';
 import 'package:kki_cardgame/models/event_card.dart';
 import 'package:kki_cardgame/screens/chronicle_screen.dart';
 import 'package:kki_cardgame/screens/dungeon_select_screen.dart';
 import 'package:kki_cardgame/screens/game_screen.dart';
-import 'package:kki_cardgame/screens/glossary_screen.dart';
 import 'package:kki_cardgame/services/discovered_events.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';

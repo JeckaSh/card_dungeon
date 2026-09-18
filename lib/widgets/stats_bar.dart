@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// Верхняя статусная панель текущего забега в [GameScreen].
+///
+/// Отображает:
+/// * Здоровье ([health]), атаку ([attack]) и собранные за забег монеты ([coins]);
+/// * Количество успешно пройденных карт ([cardsPassed]);
+/// * Предупреждающий счётчик до появления босса ([nextBossIn]).
 class StatsBar extends StatelessWidget {
   const StatsBar({
     super.key,
@@ -11,13 +17,22 @@ class StatsBar extends StatelessWidget {
     this.nextBossIn,
   });
 
+  /// Текущее здоровье героя
   final int health;
+
+  /// Текущая сила атаки героя
   final int attack;
+
+  /// Количество пройденных карточек в текущем забеге
   final int cardsPassed;
+
+  /// Монеты, собранные героем в текущем забеге
   final int coins;
+
+  /// Текущий этаж (уровень) подземелья
   final int dungeonLevel;
 
-  /// Сколько карточек до следующего босса (null — не показывать).
+  /// Сколько карточек осталось до следующего босса (null — скрыто, отображается когда осталось <= 5)
   final int? nextBossIn;
 
   @override

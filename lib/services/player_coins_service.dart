@@ -1,9 +1,17 @@
-﻿import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Хранит общий баланс монет игрока (сохраняется между сессиями).
+/// Сервис хранения и сохранения постоянного баланса монет игрока.
+///
+/// Монеты зарабатываются во время успешных или завершённых забегов в подземелье
+/// и расходуются на:
+/// * Открытие новых карт в Магазине ([ShopScreen]);
+/// * Постоянную прокачку характеристик персонажа в Инвентаре ([InventoryScreen]).
+///
+/// Значение баланса сохраняется между запусками через [SharedPreferences].
 class PlayerCoinsService {
   PlayerCoinsService._();
 
+  /// Глобальный синглтон сервиса монет
   static final PlayerCoinsService instance = PlayerCoinsService._();
 
   static const _storageKey = 'player_coins';
@@ -11,9 +19,10 @@ class PlayerCoinsService {
   int _balance = 0;
   bool _loaded = false;
 
-  /// Общий баланс монет (инвентарь).
+  /// Общий баланс монет игрока
   int get balance => _balance;
 
+  /// Загружает сохранённый баланс из локального хранилища
   Future<void> load() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();

@@ -6,7 +6,18 @@ import 'dungeon_select_screen.dart';
 import 'glossary_screen.dart';
 import 'inventory_screen.dart';
 import 'shop_screen.dart';
+import 'tutorial_screen.dart';
 
+/// Главный экран игры (Меню).
+///
+/// Предоставляет навигацию по всем ключевым разделам:
+/// * Выбор подземелья ([DungeonSelectScreen]);
+/// * Магазин карт за монеты ([ShopScreen]);
+/// * Инвентарь и прокачка героя ([InventoryScreen]);
+/// * Глоссарий открытых карт ([GlossaryScreen]);
+/// * Хроника прошлых забегов ([ChronicleScreen]);
+/// * Интерактивное обучение основам игры ([TutorialScreen]);
+/// * Панель отладки и тестирования ([DebugScreen]).
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
 
@@ -57,7 +68,7 @@ class MenuScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 40),
                         Text(
-                          'Старт: 10 HP и 3 атаки. Продержись как можно\nдольше и собери максимум золота!',
+                          'Исследуй опасные этажи, побеждай боссов,\nсобирай реликвии и развивай своего героя!',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
@@ -116,6 +127,17 @@ class MenuScreen extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(builder: (_) => const ChronicleScreen()),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _MenuButton(
+                          label: 'Обучение',
+                          icon: Icons.school_rounded,
+                          isSecondary: true,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const TutorialScreen()),
                             );
                           },
                         ),

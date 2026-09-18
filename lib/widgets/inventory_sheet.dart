@@ -4,6 +4,10 @@ import '../models/item_card.dart';
 import 'item_card_widget.dart';
 import 'item_details_sheet.dart';
 
+/// Нижний модальный лист инвентаря героя во время активного забега ([GameScreen]).
+///
+/// Отображает список собранных расходуемых предметов ([items]) в виде
+/// горизонтальной карусели и позволяет применить выбранный предмет ([onUseItem]).
 class InventorySheet extends StatelessWidget {
   const InventorySheet({
     super.key,
@@ -11,7 +15,10 @@ class InventorySheet extends StatelessWidget {
     required this.onUseItem,
   });
 
+  /// Список предметов в инвентаре героя
   final List<ItemCard> items;
+
+  /// Коллбэк при активации предмета игроком
   final void Function(int index, ItemCard item) onUseItem;
 
   @override

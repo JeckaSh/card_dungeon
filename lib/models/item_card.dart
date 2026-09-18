@@ -1,20 +1,102 @@
 import 'package:flutter/material.dart';
 
+/// Тип действия или эффекта расходуемой карты предмета (артефакта).
+///
+/// Каждый эффект имеет свою механику обработки в `GameScreen._useItem`:
+/// * [heal] — мгновенно восстанавливает здоровье на величину [ItemCard.value].
+/// * [attack] — навсегда (в рамках забега) увеличивает атаку героя на [ItemCard.value].
+/// * [skip] — безопасно пропускает текущую карточку события или босса без потерь.
+/// * [shield] — даёт [ItemCard.value] зарядов рунического щита, поглощающего урон.
+/// * [invertNext] — активирует искажение: следующий выбор обращает потери в выгоду.
+/// * [thornmail] — следующий полученный урон конвертируется в двойное золото.
+/// * [transmute] — тратит монеты (кратно 10, до 100) и даёт здоровье и атаку.
+/// * [shadowPact] — жертвует 50% текущего HP, взамен удваивает монеты и даёт случайную карту.
+/// * [greedMagnet] — удваивает золото от выборов на протяжении следующих 3 ходов.
+/// * [diceOfFate] — бросок кубика d6 со случайным исходом (потеря, карта или джекпот).
+/// * [smokeBomb] — мгновенный побег от карты/босса с подбором доступных монет.
+/// * [bribery] — за 15 монет позволяет выбрать наилучший исход без боя.
 enum ItemEffectType {
+  /// Восстановление здоровья героя
   heal,
+
+  /// Увеличение силы атаки
   attack,
+
+  /// Пропуск хода без негативных последствий
   skip,
+
+  /// Защитный рунический щит от входящего урона
   shield,
+
+  /// Зеркало искажения: потери на следующем шаге станут приобретениями
   invertNext,
+
+  /// Шипованная броня: контратака золотом при получении урона
   thornmail,
+
+  /// Алхимическая трансмутация: превращение монет в здоровье и атаку
   transmute,
+
+  /// Тёмная сделка: жертва HP ради золота и артефакта
   shadowPact,
+
+  /// Магнит жадности: временное удвоение добычи монет
   greedMagnet,
+
+  /// Кубик судьбы: случайный исход (риск vs большая награда)
   diceOfFate,
+
+  /// Дымовая шашка: тактическое отступление с сохранением монет
   smokeBomb,
+
+  /// Золотой подкуп: нейтрализация угрозы за фиксированную плату
   bribery,
 }
 
+/// Расширение для работы с категориями и отображением эффектов предметов.
+extension ItemEffectTypeExtension on ItemEffectType {
+  /// Читаемое название категории предмета на русском языке
+  String get categoryLabel => switch (this) {
+        ItemEffectType.heal => 'Исцеление',
+        ItemEffectType.attack => 'Усиление',
+        ItemEffectType.skip => 'Свиток',
+        ItemEffectType.shield => 'Защита',
+        ItemEffectType.invertNext => 'Искажение',
+        ItemEffectType.thornmail => 'Контратака',
+        ItemEffectType.transmute => 'Алхимия',
+        ItemEffectType.shadowPact => 'Тёмная сделка',
+        ItemEffectType.greedMagnet => 'Экономика',
+        ItemEffectType.diceOfFate => 'Удача',
+        ItemEffectType.smokeBomb => 'Побег',
+        ItemEffectType.bribery => 'Дипломатия',
+      };
+
+  /// Формирует компактный бейдж эффекта с учётом числового параметра [value]
+  String getBadge(int value) => switch (this) {
+        ItemEffectType.heal => '+$value ❤',
+        ItemEffectType.attack => '+$value ⚡',
+        ItemEffectType.skip => 'Пропуск',
+        ItemEffectType.shield => '🛡️ ×$value',
+        ItemEffectType.invertNext => '🪞 Инверсия',
+        ItemEffectType.thornmail => '🌵 Шипы',
+        ItemEffectType.transmute => '⚗️ Алхимия',
+        ItemEffectType.shadowPact => '📜 Пакт',
+        ItemEffectType.greedMagnet => '🧲 x2 монеты',
+        ItemEffectType.diceOfFate => '🎲 Кубик',
+        ItemEffectType.smokeBomb => '💨 Побег',
+        ItemEffectType.bribery => '💰 Подкуп',
+      };
+}
+
+/// Модель расходуемой карточки предмета (артефакта/зелья/свитка).
+///
+/// Карточки предметов хранятся в инвентаре героя во время забега и могут быть
+/// активированы в любой момент через нижний лист инвентаря ([InventorySheet]).
+///
+/// Для добавления нового предмета в игру:
+/// 1. Создайте экземпляр `ItemCard` в списке `allItemCards` в `lib/data/items.dart`.
+/// 2. Если требуется новая игровая механика, добавьте значение в [ItemEffectType]
+///    и обработайте его в методе `_useItem` в `lib/screens/game_screen.dart`.
 class ItemCard {
   const ItemCard({
     required this.id,
@@ -26,11 +108,31 @@ class ItemCard {
     required this.color,
   });
 
+  /// Уникальный строковый идентификатор предмета (например, 'potion_heal')
   final String id;
+
+  /// Отображаемое название карточки на русском языке
   final String title;
+
+  /// Подробное описание действия предмета для игрока
   final String description;
+
+  /// Тип механики, вызываемой при использовании карточки
   final ItemEffectType effectType;
+
+  /// Числовой модификатор эффекта (например, количество восстанавливаемого HP,
+  /// прирост атаки, заряды щита или ходы действия)
   final int value;
+
+  /// Иконка для визуального отображения карточки
   final IconData icon;
+
+  /// Цветовая гамма карточки (градиент и тени)
   final Color color;
+
+  /// Категория предмета для UI
+  String get categoryLabel => effectType.categoryLabel;
+
+  /// Текст компактного бейджа эффекта для карточки
+  String get effectBadge => effectType.getBadge(value);
 }

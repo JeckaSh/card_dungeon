@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/event_card.dart';
 
+/// Возвращает тематический цвет карточки в зависимости от типа события [type].
 Color eventTypeColor(EventType type) {
   return switch (type) {
     EventType.monster => const Color(0xFF8B0000),
@@ -14,6 +15,7 @@ Color eventTypeColor(EventType type) {
   };
 }
 
+/// Возвращает иконку карточки в зависимости от типа события [type].
 IconData eventTypeIcon(EventType type) {
   return switch (type) {
     EventType.monster => Icons.pets,
@@ -26,6 +28,7 @@ IconData eventTypeIcon(EventType type) {
   };
 }
 
+/// Возвращает читаемое русское название категории события.
 String eventTypeLabel(EventType type) {
   return switch (type) {
     EventType.monster => 'Монстр',

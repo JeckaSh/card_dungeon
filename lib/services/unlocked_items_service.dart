@@ -1,18 +1,31 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Сервис учёта открытых игроком предметов (артефактов).
+///
+/// Предметы открываются через лутбоксы в Магазине ([ShopScreen]).
+/// Только открытые карты:
+/// 1. Могут выпадать герою в подземелье от торговцев, алтарей и тайников;
+/// 2. Могут быть выданы на старте при наличии навыка стартовых карт ([PlayerStatsService.startingCardsCount]);
+/// 3. Показываются с полным описанием и параметрами в инвентаре.
 class UnlockedItemsService {
   UnlockedItemsService._();
+
+  /// Глобальный синглтон сервиса открытых предметов
   static final UnlockedItemsService instance = UnlockedItemsService._();
 
   static const _key = 'unlocked_item_ids';
   final Set<String> _unlockedIds = {};
 
+  /// Неизменяемый набор строковых идентификаторов открытых предметов
   Set<String> get unlockedIds => Set.unmodifiable(_unlockedIds);
 
+  /// Проверяет, открыт ли предмет с указанным [id]
   bool isUnlocked(String id) => _unlockedIds.contains(id);
 
+  /// Общее количество открытых предметов
   int get count => _unlockedIds.length;
 
+  /// Загружает список открытых предметов из локального хранилища
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final list = prefs.getStringList(_key) ?? [];

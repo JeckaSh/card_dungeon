@@ -6,6 +6,11 @@ import '../services/discovered_events.dart';
 import '../utils/event_style.dart';
 import '../widgets/glossary_card.dart';
 
+/// Экран бестиария и энциклопедии встреченных событий (Глоссарий).
+///
+/// Отображает все существующие в игре карты событий и боссов, сгруппированные
+/// по категориям ([EventType]). Карты, которые герой ещё не встречал в игре,
+/// отображаются закрытыми силуэтами.
 class GlossaryScreen extends StatefulWidget {
   const GlossaryScreen({super.key});
 

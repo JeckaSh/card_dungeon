@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 
 import 'screens/menu_screen.dart';
 
+/// Точка входа в мобильное приложение Card Dungeon.
+///
+/// Фиксирует портретную ориентацию экрана и запускает [DungeonCardsApp].
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
@@ -11,6 +14,7 @@ void main() {
   runApp(const DungeonCardsApp());
 }
 
+/// Корневой виджет приложения с глобальной тёмной темой.
 class DungeonCardsApp extends StatelessWidget {
   const DungeonCardsApp({super.key});
 

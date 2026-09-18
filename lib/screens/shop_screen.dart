@@ -9,9 +9,18 @@ import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
+/// Базовая стоимость первого лутбокса с новой картой
 const int _baseLootboxPrice = 50;
+
+/// Увеличение стоимости за каждую уже открытую карту в коллекции
 const int _lootboxPriceStep = 25;
 
+/// Экран Магазина артефактов.
+///
+/// Позволяет игроку открывать новые карты предметов за накопленные монеты:
+/// * Стоимость растёт с каждой открытой картой: `50 + (N_unlocked * 25)`;
+/// * Гарантирует выпадение карты, которой ещё нет в коллекции;
+/// * Отображает прогресс коллекции и каталог всех предметов.
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
 
