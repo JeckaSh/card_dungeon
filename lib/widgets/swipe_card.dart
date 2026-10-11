@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../models/event_card.dart';
 import '../utils/event_style.dart';
+import '../app_localizations.dart';
+
 
 /// Интерактивная карточка события с поддержкой свайпов влево и вправо.
 ///
@@ -413,8 +415,8 @@ class _EventCardContent extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   isBoss
-                                      ? '⚔ БОСС · Уровень $dungeonLevel'
-                                      : eventTypeLabel(event.type),
+                                      ? context.l10n.gameBossBadge(dungeonLevel)
+                                      : context.l10n.eventTypeLabel(event.type),
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     color: isBoss
@@ -535,8 +537,12 @@ class _ChoiceHint extends StatelessWidget {
                 SizedBox(width: 5 * scale),
                 Text(
                   blockedReason == 'Карты'
-                      ? 'Нет доступных карт'
-                      : 'Нет ${blockedReason!.toLowerCase()}',
+                      ? context.l10n.gameNoAvailableCards
+                      : context.l10n.gameNoResource(
+                          blockedReason == 'Монеты'
+                              ? (context.l10n.isRussian ? 'монет' : 'coins')
+                              : (context.l10n.isRussian ? 'атаки' : 'attack'),
+                        ),
                   style: TextStyle(
                     color: const Color(0xFFFF6B6B),
                     fontWeight: FontWeight.bold,
@@ -547,7 +553,7 @@ class _ChoiceHint extends StatelessWidget {
             ),
             SizedBox(height: 4 * scale),
             Text(
-              _requiredText(),
+              _requiredText(context),
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: (12 * scale).clamp(9.0, 15.0),
@@ -580,7 +586,7 @@ class _ChoiceHint extends StatelessWidget {
                 choice.statusEffect != null) ...[
               SizedBox(height: 4 * scale),
               Text(
-                _formatDeltas(choice),
+                _formatDeltas(choice, context),
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: (12 * scale).clamp(10.0, 15.0),
@@ -593,20 +599,22 @@ class _ChoiceHint extends StatelessWidget {
     );
   }
 
-  String _requiredText() {
+  String _requiredText(BuildContext context) {
     if (blockedReason == 'Карты') {
-      return 'нет доступных для покупки карточек';
+      return context.l10n.isRussian
+          ? 'нет доступных для покупки карточек'
+          : 'no cards available for purchase';
     }
     if (blockedReason == 'Монеты') {
-      return 'Нужно: ${choice.coinsDelta.abs()} 🪙';
+      return context.l10n.gameNeedCoins(choice.coinsDelta.abs());
     }
     if (blockedReason == 'Атака') {
-      return 'Нужно: ${choice.attackDelta.abs()} ⚡';
+      return context.l10n.gameNeedAttack(choice.attackDelta.abs());
     }
     return '';
   }
 
-  String _formatDeltas(CardChoice choice) {
+  String _formatDeltas(CardChoice choice, BuildContext context) {
     final parts = <String>[];
     if (choice.healthDelta != 0) {
       parts.add('❤ ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}');
@@ -618,7 +626,7 @@ class _ChoiceHint extends StatelessWidget {
       parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
     }
     if (choice.givesRandomItem) {
-      parts.add('🎒 +1 карта');
+      parts.add(context.l10n.gameAddCardBag);
     }
     if (choice.statusEffect != null) {
       parts.add('${choice.statusEffect!.icon} ${(choice.statusChance * 100).round()}%');
@@ -626,3 +634,4 @@ class _ChoiceHint extends StatelessWidget {
     return parts.join('  ');
   }
 }
+

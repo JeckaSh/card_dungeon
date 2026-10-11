@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/dungeons.dart';
 import '../data/events.dart';
 import '../data/items.dart';
@@ -911,55 +912,58 @@ class GameScreenState extends State<GameScreen> {
   Future<void> _confirmLeave() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Color(0xFFE94560),
-              size: 26,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Сдаться?',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+      builder: (ctx) {
+        final l10n = ctx.l10n;
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Color(0xFFE94560),
+                size: 26,
               ),
+              const SizedBox(width: 10),
+              Text(
+                l10n.gameSurrenderTitle,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            l10n.gameSurrenderContent(_coins),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 15,
+              height: 1.45,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(
+                l10n.gameContinue,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE94560),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(l10n.gameSurrenderConfirm),
             ),
           ],
-        ),
-        content: Text(
-          'При досрочном выходе из подземелья весь прогресс и накопленные за этот забег монеты ($_coins 🪙) будут потеряны.',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 15,
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Продолжить',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFE94560),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('Сдаться и выйти'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (confirmed == true && mounted) {
@@ -1001,7 +1005,7 @@ class GameScreenState extends State<GameScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          widget.dungeon.name,
+                          context.l10n.dungeonName(widget.dungeon.id, widget.dungeon.name),
                           style: TextStyle(
                             color: widget.dungeon.accentColor,
                             fontSize: 12,
@@ -1011,7 +1015,7 @@ class GameScreenState extends State<GameScreen> {
                         ),
                         const Spacer(),
                         Text(
-                          'Этаж $_dungeonLevel / ${widget.dungeon.levelsCount}',
+                          context.l10n.gameDungeonFloor(_dungeonLevel, widget.dungeon.levelsCount),
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 11,
@@ -1113,7 +1117,7 @@ class GameScreenState extends State<GameScreen> {
                       child: Column(
                         children: [
                           Text(
-                            '← свайп влево  ·  свайп вправо →',
+                            context.l10n.gameSwipeHint,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.3),
                               fontSize: 13,
@@ -1136,7 +1140,7 @@ class GameScreenState extends State<GameScreen> {
                                   ),
                                 ),
                                 label: Text(
-                                  'Инвентарь${_inventoryItems.isNotEmpty ? ' (${_inventoryItems.length})' : ''}',
+                                  '${context.l10n.inventoryTitle}${_inventoryItems.isNotEmpty ? ' (${_inventoryItems.length})' : ''}',
                                   style: const TextStyle(
                                     color: Colors.white70,
                                     fontSize: 13,
@@ -1168,7 +1172,7 @@ class GameScreenState extends State<GameScreen> {
                                   color: Colors.white.withValues(alpha: 0.35),
                                 ),
                                 label: Text(
-                                  'Сдаться',
+                                  context.l10n.gameSurrender,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.35),
                                     fontSize: 13,
@@ -1221,7 +1225,7 @@ class _BossWarningBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Flexible(
             child: Text(
-              '⚔ БОСС · Уровень $dungeonLevel — готовься к бою!',
+              context.l10n.gameBossWarning(dungeonLevel),
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
@@ -1295,55 +1299,55 @@ class _ActiveBuffsBar extends StatelessWidget {
             if (shieldCharges > 0)
               _BuffChip(
                 emoji: '🛡️',
-                label: 'Щит ×$shieldCharges',
+                label: context.l10n.gameBuffShield(shieldCharges),
                 color: const Color(0xFF29B6F6),
               ),
             if (invertNextChoice)
-              const _BuffChip(
+              _BuffChip(
                 emoji: '🪞',
-                label: 'Зеркало',
-                color: Color(0xFFAB47BC),
+                label: context.l10n.gameBuffMirror,
+                color: const Color(0xFFAB47BC),
               ),
             if (isRevealingChoices)
-              const _BuffChip(
+              _BuffChip(
                 emoji: '👁️',
-                label: 'Ясновидение',
-                color: Color(0xFF26A69A),
+                label: context.l10n.gameBuffClairvoyance,
+                color: const Color(0xFF26A69A),
               ),
             if (greedMagnetTurns > 0)
               _BuffChip(
                 emoji: '🧲',
-                label: 'x2 монеты ×$greedMagnetTurns',
+                label: context.l10n.gameBuffGreed(greedMagnetTurns),
                 color: const Color(0xFFFF7043),
               ),
             if (thornmailActive)
-              const _BuffChip(
+              _BuffChip(
                 emoji: '🌵',
-                label: 'Шипы',
-                color: Color(0xFF8D6E63),
+                label: context.l10n.gameBuffThorns,
+                color: const Color(0xFF8D6E63),
               ),
             if (poisonTurns > 0)
               _BuffChip(
                 emoji: '🧪',
-                label: 'Яд ×$poisonTurns (-1❤)',
+                label: context.l10n.gameBuffPoison(poisonTurns),
                 color: const Color(0xFF66BB6A),
               ),
             if (bleedTurns > 0)
               _BuffChip(
                 emoji: '🩸',
-                label: 'Кровотечение ×$bleedTurns (-2❤)',
+                label: context.l10n.gameBuffBleed(bleedTurns),
                 color: const Color(0xFFE53935),
               ),
             if (blindnessTurns > 0)
               _BuffChip(
                 emoji: '👁️‍🗨️',
-                label: 'Слепота ×$blindnessTurns',
+                label: context.l10n.gameBuffBlindness(blindnessTurns),
                 color: const Color(0xFF90A4AE),
               ),
             if (midasCurseTurns > 0)
               _BuffChip(
                 emoji: '👑',
-                label: 'Проклятие Мидаса ×$midasCurseTurns',
+                label: context.l10n.gameBuffMidasCurse(midasCurseTurns),
                 color: const Color(0xFFFFB300),
               ),
           ],
@@ -1459,7 +1463,7 @@ class ResultOverlay extends StatelessWidget {
                   ),
                   SizedBox(height: isShortScreen ? 10 : 16),
                   Text(
-                    isVictory ? 'Подземелье пройдено!' : 'Конец приключения',
+                    isVictory ? context.l10n.gameDungeonCleared : context.l10n.gameAdventureOver,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: isVictory ? const Color(0xFFFFD700) : Colors.white,
@@ -1470,8 +1474,8 @@ class ResultOverlay extends StatelessWidget {
                   SizedBox(height: isShortScreen ? 6 : 8),
                   Text(
                     isVictory
-                        ? 'Поздравляем! Вы успешно прошли подземелье!\nВыдержано $cardsPassed событий · Уровень $dungeonLevel зачищен'
-                        : 'Вы выдержали $cardsPassed событий!\nДобрались до уровня: $dungeonLevel',
+                        ? context.l10n.gameVictoryCongrats(cardsPassed, dungeonLevel)
+                        : context.l10n.gameDefeatDesc(cardsPassed, dungeonLevel),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(
@@ -1486,7 +1490,7 @@ class ResultOverlay extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _ResultStat(
-                          label: 'За забег',
+                          label: context.l10n.gameThisRun,
                           value: '+$runCoins 🪙',
                           color: const Color(0xFFFFD700),
                           isCompact: isShortScreen,
@@ -1495,7 +1499,7 @@ class ResultOverlay extends StatelessWidget {
                       SizedBox(width: isShortScreen ? 8 : 12),
                       Expanded(
                         child: _ResultStat(
-                          label: 'Итого',
+                          label: context.l10n.gameTotalCoins,
                           value: '$totalCoins 🪙',
                           color: const Color(0xFFFFD700),
                           isCompact: isShortScreen,
@@ -1534,7 +1538,7 @@ class ResultOverlay extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'Хроника похода',
+                                context.l10n.gameRunChronicle,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.55),
                                   fontSize: 12,
@@ -1629,7 +1633,7 @@ class ResultOverlay extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: onRestart,
                       icon: Icon(isVictory ? Icons.celebration : Icons.replay),
-                      label: Text(isVictory ? 'Новый поход' : 'Снова в бой'),
+                      label: Text(isVictory ? context.l10n.gameNewRun : context.l10n.gameFightAgain),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isVictory
                             ? const Color(0xFF2E7D32)
@@ -1650,7 +1654,7 @@ class ResultOverlay extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onMenu,
                       icon: const Icon(Icons.home_outlined),
-                      label: const Text('В главное меню'),
+                      label: Text(context.l10n.gameMainMenu),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white70,
                         side: BorderSide(
@@ -1806,7 +1810,7 @@ class ItemUsedDialog extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Карта использована',
+                            context.l10n.gameCardUsed,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.6),
                               fontSize: 11,
@@ -1816,7 +1820,7 @@ class ItemUsedDialog extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            item.title,
+                            context.l10n.itemTitle(item.id, item.title),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -1906,9 +1910,9 @@ class ItemUsedDialog extends StatelessWidget {
                           ),
                         ),
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text(
-                          'Отлично',
-                          style: TextStyle(
+                        child: Text(
+                          context.l10n.great,
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),

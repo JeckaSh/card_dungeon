@@ -15,6 +15,7 @@ class PlayerCoinsService {
   static final PlayerCoinsService instance = PlayerCoinsService._();
 
   static const _storageKey = 'player_coins';
+  static const _tutorialRewardKey = 'tutorial_reward_granted';
 
   int _balance = 0;
   bool _loaded = false;
@@ -47,5 +48,17 @@ class PlayerCoinsService {
     SharedPreferences.getInstance().then(
       (prefs) => prefs.setInt(_storageKey, _balance),
     );
+  }
+
+  /// Возвращает true, если награда за первое прохождение обучения уже была выдана.
+  Future<bool> isTutorialRewardGranted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_tutorialRewardKey) ?? false;
+  }
+
+  /// Сохраняет флаг о том, что награда за обучение уже была выдана.
+  Future<void> markTutorialRewardGranted() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_tutorialRewardKey, true);
   }
 }

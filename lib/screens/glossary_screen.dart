@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/events.dart';
 import '../models/event_card.dart';
 import '../services/discovered_events.dart';
+import '../services/locale_service.dart';
 import '../utils/event_style.dart';
 import '../widgets/glossary_card.dart';
 
@@ -92,31 +94,37 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     final regularCategories =
         EventType.values.where((t) => t != EventType.boss).toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
-        foregroundColor: Colors.white,
-        title: const Text('Глоссарий'),
-        actions: [
-          IconButton(
-            tooltip: _collapsedCategories.isEmpty ? 'Свернуть все' : 'Развернуть все',
-            icon: Icon(
-              _collapsedCategories.isEmpty
-                  ? Icons.unfold_less_rounded
-                  : Icons.unfold_more_rounded,
-              color: Colors.white70,
-            ),
-            onPressed: () => _toggleAll(regularCategories),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0F1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            title: Text(l10n.glossaryTitle),
+            actions: [
+              IconButton(
+                tooltip: _collapsedCategories.isEmpty
+                    ? l10n.glossaryCollapseAll
+                    : l10n.glossaryExpandAll,
+                icon: Icon(
+                  _collapsedCategories.isEmpty
+                      ? Icons.unfold_less_rounded
+                      : Icons.unfold_more_rounded,
+                  color: Colors.white70,
+                ),
+                onPressed: () => _toggleAll(regularCategories),
+              ),
+              const SizedBox(width: 4),
+            ],
+            elevation: 0,
           ),
-          const SizedBox(width: 4),
-        ],
-        elevation: 0,
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE94560)),
-            )
+          body: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFE94560)),
+                )
           : CustomScrollView(
                   slivers: [
                     // Прогресс-бар открытия
@@ -126,7 +134,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                         child: Row(
                           children: [
                             Text(
-                              'Открыто: $discoveredCount / ${all.length}',
+                              '${l10n.glossaryDiscovered}: $discoveredCount / ${all.length}',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 14,
@@ -179,7 +187,9 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                       ),
                     const SliverToBoxAdapter(child: SizedBox(height: 32)),
                   ],
-        ),
+                ),
+        );
+      },
     );
   }
 }
@@ -226,7 +236,7 @@ class _CategoryHeader extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  eventTypeLabel(type),
+                  context.l10n.eventTypeLabel(type),
                   style: TextStyle(
                     color: color,
                     fontSize: 18,
@@ -314,9 +324,9 @@ class _BossHeader extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'Боссы',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.eventTypePluralLabel(EventType.boss),
+                          style: const TextStyle(
                             color: color,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -340,9 +350,9 @@ class _BossHeader extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const Text(
-                      'Появляются каждую 20-ю карточку',
-                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    Text(
+                      context.l10n.glossaryBossHint,
+                      style: const TextStyle(color: Colors.white38, fontSize: 11),
                     ),
                   ],
                 ),
@@ -450,7 +460,7 @@ class _CardDetailSheet extends StatelessWidget {
                           : null,
                     ),
                     child: Text(
-                      isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
+                      isBoss ? context.l10n.glossaryBossBadge : context.l10n.eventTypeLabel(event.type),
                       style: TextStyle(
                         color: color,
                         fontSize: 12,
@@ -466,7 +476,7 @@ class _CardDetailSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isBoss ? 'Уровень ${event.level}' : 'Уровень ${event.level}',
+                      context.l10n.glossaryLevel(event.level),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -489,7 +499,7 @@ class _CardDetailSheet extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      event.dungeonLabel,
+                      context.l10n.dungeonScope(event.isCommonDungeon, event.dungeonId, event.dungeonLabel),
                       style: TextStyle(
                         color: event.isCommonDungeon
                             ? const Color(0xFF90CAF9)
@@ -503,7 +513,7 @@ class _CardDetailSheet extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70, size: 22),
                     onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'Закрыть',
+                    tooltip: context.l10n.close,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -554,9 +564,9 @@ class _CardDetailSheet extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Закрыть',
-                    style: TextStyle(
+                  child: Text(
+                    context.l10n.close,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -599,7 +609,7 @@ class _DetailChoice extends StatelessWidget {
               choice.statusEffect != null) ...[
             const SizedBox(height: 6),
             Text(
-              _formatDeltas(),
+              _formatDeltas(context),
               style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
             ),
           ],
@@ -608,7 +618,7 @@ class _DetailChoice extends StatelessWidget {
     );
   }
 
-  String _formatDeltas() {
+  String _formatDeltas(BuildContext context) {
     final parts = <String>[];
     if (choice.healthDelta != 0) {
       parts.add('❤ ${choice.healthDelta > 0 ? '+' : ''}${choice.healthDelta}');
@@ -620,8 +630,9 @@ class _DetailChoice extends StatelessWidget {
       parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
     }
     if (choice.statusEffect != null) {
-      parts.add('${choice.statusEffect!.icon} ${choice.statusEffect!.label} (${(choice.statusChance * 100).round()}%)');
+      parts.add('${choice.statusEffect!.icon} ${context.l10n.statusEffectLabel(choice.statusEffect!)} (${(choice.statusChance * 100).round()}%)');
     }
     return parts.join('  ');
   }
 }
+

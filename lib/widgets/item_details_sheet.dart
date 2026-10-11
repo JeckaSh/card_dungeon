@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../models/item_card.dart';
 
 /// Открывает модальный нижний лист с подробной информацией о предмете [item].
@@ -41,11 +42,14 @@ class ItemDetailsSheet extends StatelessWidget {
   /// Открыт ли предмет игроком
   final bool isUnlocked;
 
-  String get _categoryLabel => item.categoryLabel;
-  String get _effectBadge => item.effectBadge;
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final title = l10n.itemTitle(item.id, item.title);
+    final description = l10n.itemDescription(item.id, item.description);
+    final categoryLabel = l10n.itemCategoryLabel(item.effectType);
+    final effectBadge = l10n.itemEffectBadge(item.effectType, item.value);
+
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF1A1A2E),
@@ -104,7 +108,7 @@ class ItemDetailsSheet extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    _categoryLabel,
+                                    categoryLabel,
                                     style: TextStyle(
                                       color: isUnlocked
                                           ? item.color
@@ -127,7 +131,7 @@ class ItemDetailsSheet extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                _effectBadge,
+                                effectBadge,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.85),
                                   fontSize: 12,
@@ -158,7 +162,7 @@ class ItemDetailsSheet extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            isUnlocked ? 'Открыта' : 'В сундуке',
+                            isUnlocked ? l10n.itemDetailsUnlocked : l10n.itemDetailsInChest,
                             style: TextStyle(
                               color: isUnlocked
                                   ? const Color(0xFF4CAF50)
@@ -178,7 +182,7 @@ class ItemDetailsSheet extends StatelessWidget {
                       size: 22,
                     ),
                     onPressed: () => Navigator.of(context).pop(),
-                    tooltip: 'Закрыть',
+                    tooltip: l10n.close,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -186,7 +190,7 @@ class ItemDetailsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               Text(
-                item.title,
+                title,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -195,7 +199,7 @@ class ItemDetailsSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                item.description,
+                description,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 15,
@@ -226,8 +230,8 @@ class ItemDetailsSheet extends StatelessWidget {
                     Expanded(
                       child: Text(
                         isUnlocked
-                            ? 'Эта карта разблокирована и может быть куплена у торговца реликвиями в подземелье.'
-                            : 'Эта карта пока не открыта. Открывайте магические сундуки в магазине, чтобы разблокировать её!',
+                            ? l10n.itemDetailsUnlockedHint
+                            : l10n.itemDetailsLockedHint,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.65),
                           fontSize: 13,
@@ -252,9 +256,9 @@ class ItemDetailsSheet extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Закрыть',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  child: Text(
+                    l10n.close,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

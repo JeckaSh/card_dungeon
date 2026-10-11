@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../models/item_card.dart';
 
 /// Виджет отображения карты предмета (артефакта).
@@ -31,11 +32,14 @@ class ItemCardWidget extends StatelessWidget {
   /// Коллбэк при нажатии на кнопку действия
   final VoidCallback? onAction;
 
-  String get _categoryLabel => item.categoryLabel;
-  String get _effectBadge => item.effectBadge;
-
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final title = l10n.itemTitle(item.id, item.title);
+    final description = l10n.itemDescription(item.id, item.description);
+    final categoryLabel = l10n.itemCategoryLabel(item.effectType);
+    final effectBadge = l10n.itemEffectBadge(item.effectType, item.value);
+    final action = actionLabel ?? l10n.invSheetApply;
     return GestureDetector(
       onTap: onTap,
       child: AspectRatio(
@@ -93,7 +97,7 @@ class ItemCardWidget extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                _categoryLabel,
+                                categoryLabel,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -116,7 +120,7 @@ class ItemCardWidget extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                _effectBadge,
+                                effectBadge,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 textAlign: TextAlign.right,
@@ -148,7 +152,7 @@ class ItemCardWidget extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        item.title,
+                        title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -159,7 +163,7 @@ class ItemCardWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        item.description,
+                        description,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -185,7 +189,7 @@ class ItemCardWidget extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              actionLabel ?? 'Применить',
+                              action,
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,

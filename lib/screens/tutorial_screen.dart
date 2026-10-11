@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../models/event_card.dart';
 import '../models/item_card.dart';
 import '../services/player_coins_service.dart';
@@ -45,7 +46,8 @@ class TutorialStep {
 /// 5. Статус-эффекты (яд, кровотечение, слепота, проклятие);
 /// 6. Битвы с боссами в конце этажей.
 ///
-/// За успешное завершение обучения игрок получает награду +50 золота.
+/// За успешное **первое** завершение обучения игрок получает награду +50 золота.
+/// При повторных прохождениях награда не начисляется.
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({super.key});
 
@@ -61,6 +63,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
   int _shieldCharges = 0;
   bool _usedItemInStep = false;
   bool _isFinished = false;
+  /// true — первое прохождение (награда выдаётся), false — повторное (без награды)
+  bool _isFirstCompletion = false;
 
   final List<ItemCard> _inventory = [
     const ItemCard(
@@ -256,8 +260,14 @@ class _TutorialScreenState extends State<TutorialScreen> {
         _usedItemInStep = false;
       } else {
         _isFinished = true;
-        // Начисляем стартовую награду 50 монет
-        PlayerCoinsService.instance.applyDelta(50);
+        // Начисляем стартовую награду 50 монет только при первом прохождении
+        PlayerCoinsService.instance.isTutorialRewardGranted().then((alreadyGranted) {
+          if (!alreadyGranted) {
+            PlayerCoinsService.instance.applyDelta(50);
+            PlayerCoinsService.instance.markTutorialRewardGranted();
+            if (mounted) setState(() => _isFirstCompletion = true);
+          }
+        });
       }
     });
   }
@@ -318,18 +328,18 @@ class _TutorialScreenState extends State<TutorialScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A2E),
         foregroundColor: Colors.white,
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.school_rounded, color: Color(0xFFFFD700), size: 22),
-            SizedBox(width: 8),
-            Text('Обучение', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Icon(Icons.school_rounded, color: Color(0xFFFFD700), size: 22),
+            const SizedBox(width: 8),
+            Text(context.l10n.tutorialTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         elevation: 0,
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Выйти', style: TextStyle(color: Colors.white60)),
+            child: Text(context.l10n.tutorialExit, style: const TextStyle(color: Colors.white60)),
           ),
         ],
       ),
@@ -397,9 +407,9 @@ class _TutorialScreenState extends State<TutorialScreen> {
                   children: [
                     Row(
                       children: [
-                        const Text(
-                          'Наставник',
-                          style: TextStyle(
+                        Text(
+                          context.l10n.tutorialMentor,
+                          style: const TextStyle(
                             color: Color(0xFFFFD700),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -413,7 +423,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Шаг ${_currentStepIndex + 1} из ${_steps.length}',
+                            context.l10n.tutorialStep(_currentStepIndex + 1, _steps.length),
                             style: const TextStyle(color: Colors.white70, fontSize: 11),
                           ),
                         ),
@@ -470,7 +480,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                   ),
                 ),
                 label: Text(
-                  'Инвентарь (${_inventory.length})',
+                  context.l10n.tutorialInventory(_inventory.length),
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 13,
@@ -500,6 +510,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   Widget _buildVictoryScreen() {
+    final l10n = context.l10n;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -511,10 +522,10 @@ class _TutorialScreenState extends State<TutorialScreen> {
             size: 80,
           ),
           const SizedBox(height: 18),
-          const Text(
-            'Обучение завершено!',
+          Text(
+            l10n.tutorialCompleted,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -523,7 +534,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Ты освоил все основы выживания в подземелье!\nТеперь ты знаешь, как делать правильные выборы, использовать артефакты и сражаться с боссами.',
+            l10n.tutorialCompletedBody,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
@@ -532,40 +543,63 @@ class _TutorialScreenState extends State<TutorialScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD700).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+          if (_isFirstCompletion)
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFD700).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 30),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.tutorialRewardLabel,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      Text(
+                        l10n.tutorialRewardCoins,
+                        style: const TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.white54, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    l10n.tutorialRewardAlreadyGranted,
+                    style: const TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+                ],
               ),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.monetization_on, color: Color(0xFFFFD700), size: 30),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Награда за обучение',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
-                    ),
-                    Text(
-                      '+50 🪙 Золота',
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
@@ -573,7 +607,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
             child: ElevatedButton.icon(
               onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.explore),
-              label: const Text('В главное меню', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              label: Text(l10n.tutorialToMenu, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE94560),
                 foregroundColor: Colors.white,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/items.dart';
 import '../models/item_card.dart';
+import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
 import '../services/unlocked_items_service.dart';
@@ -51,28 +53,46 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final stats = PlayerStatsService.instance;
     final unlockedItems = allItemCards.where((item) => unlockedService.isUnlocked(item.id)).toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
-        foregroundColor: Colors.white,
-        title: const Text('Инвентарь'),
-        elevation: 0,
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFFD700)),
-            )
-          : SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Монеты ──────────────────────────────────────────
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0F1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            title: Text(l10n.inventoryTitle),
+            elevation: 0,
+          ),
+          body: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+                )
+              : _buildBody(context, l10n, coins, unlockedItems, stats, unlockedService),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    AppLocalizations l10n,
+    int coins,
+    List<ItemCard> unlockedItems,
+    PlayerStatsService stats,
+    UnlockedItemsService unlockedService,
+  ) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Монеты ──────────────────────────────────────────
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -104,8 +124,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Монеты',
+              Text(
+                l10n.inventoryBalance,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.55),
                                   fontSize: 13,
@@ -136,9 +156,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       children: [
                         Row(
                           children: [
-                            const Text(
-                              'Прокачка персонажа',
-                              style: TextStyle(
+                            Text(
+                              l10n.invCharUpgrades,
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -147,7 +167,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             const Spacer(),
                             Flexible(
                               child: Text(
-                                'Стартовые статы',
+                                l10n.invStartingStats,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.4),
@@ -162,7 +182,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           children: [
                             Expanded(
                               child: _StatUpgradeCard(
-                                title: 'Здоровье',
+                                title: l10n.inventoryHealth,
                                 icon: Icons.favorite,
                                 color: const Color(0xFFE94560),
                                 currentValue: '${stats.startingHealth} ❤',
@@ -182,7 +202,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _StatUpgradeCard(
-                                title: 'Атака',
+                                title: l10n.inventoryAttack,
                                 icon: Icons.flash_on,
                                 color: const Color(0xFFFFD700),
                                 currentValue: '${stats.startingAttack} ⚡',
@@ -207,12 +227,12 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           children: [
                             Expanded(
                               child: _StatUpgradeCard(
-                                title: 'Торговцы',
+                                title: l10n.inventoryMerchant,
                                 icon: Icons.storefront_rounded,
                                 color: const Color(0xFF26A69A),
                                 currentValue: stats.guaranteedMerchants == 0
-                                    ? 'случайно'
-                                    : '${stats.guaranteedMerchants} за ур.',
+                                    ? (l10n.isRussian ? 'случайно' : 'random')
+                                    : l10n.invPerLevel(stats.guaranteedMerchants),
                                 level: stats.merchantLevel,
                                 maxLevel: PlayerStatsService.maxMerchantLevel,
                                 bonusText: '+1 🏪',
@@ -229,7 +249,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _StatUpgradeCard(
-                                title: 'Стартовые карты',
+                                title: l10n.inventoryStartCards,
                                 icon: !stats.isStartingCardsUnlocked
                                     ? Icons.lock_outline
                                     : Icons.auto_awesome_motion_rounded,
@@ -237,10 +257,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     ? Colors.white38
                                     : const Color(0xFFAB47BC),
                                 currentValue: !stats.isStartingCardsUnlocked
-                                    ? 'закрыто'
+                                    ? l10n.invLocked
                                     : (stats.startingCardsCount == 0
-                                        ? '0 карт'
-                                        : '${stats.startingCardsCount} ${stats.startingCardsCount == 1 ? "карта" : "карты"}'),
+                                        ? l10n.invZeroCards
+                                        : l10n.invCardsCount(stats.startingCardsCount)),
                                 level: stats.startingCardsLevel,
                                 maxLevel: PlayerStatsService.maxStartingCardsLevel,
                                 bonusText: '+1 🃏',
@@ -248,7 +268,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 isMax: stats.isStartingCardsMax,
                                 canAfford: coins >= stats.startingCardsUpgradeCost,
                                 isLocked: !stats.isStartingCardsUnlocked,
-                                lockedText: 'Нужно 3 карты (${unlockedItems.length}/3)',
+                                lockedText: l10n.invNeed3Cards(unlockedItems.length),
                                 onUpgrade: () {
                                   if (stats.upgradeStartingCards()) {
                                     setState(() {});
@@ -273,7 +293,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                'Открытые карты предметов',
+                                l10n.invUnlockedItemCards,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white70,
@@ -320,7 +340,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     if (_isCardsExpanded) ...[
                       const SizedBox(height: 4),
                       Text(
-                        'Эти карты могут быть куплены у торговца реликвиями в подземелье.',
+                        l10n.invCardsHint,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.45),
                           fontSize: 12,
@@ -348,9 +368,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'Нет открытых карт',
-                                  style: TextStyle(
+                                Text(
+                                  l10n.invNoCardsUnlocked,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -358,7 +378,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Открывайте сундуки в магазине,\nчтобы разблокировать карты предметов!',
+                                  l10n.invOpenChestsHint,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.45),
@@ -389,12 +409,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             );
                           },
                         ),
-                    ],
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ),
+            ],
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -485,7 +504,7 @@ class _StatUpgradeCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  'Ур. $level',
+                  context.l10n.invLvl(level),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 10,
@@ -528,7 +547,7 @@ class _StatUpgradeCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
-                            lockedText ?? 'ЗАБЛОКИРОВАНО',
+                            lockedText ?? context.l10n.invLockedCaps,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.5),
@@ -549,7 +568,7 @@ class _StatUpgradeCard extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'МАКС. УРОВЕНЬ',
+                          context.l10n.invMaxLevelCaps,
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 10,

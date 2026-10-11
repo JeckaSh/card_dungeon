@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/events.dart';
 import '../data/items.dart';
 import '../services/discovered_events.dart';
+import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
 import '../services/run_chronicle_service.dart';
@@ -139,316 +141,339 @@ class _DebugScreenState extends State<DebugScreen> {
   @override
   Widget build(BuildContext context) {
     final stats = PlayerStatsService.instance;
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
-        foregroundColor: Colors.white,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
-              ),
-              child: const Text(
-                'DEBUG',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('Настройки'),
-          ],
-        ),
-        elevation: 0,
-      ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFE94560)))
-          : SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: ListView(
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      // === СОБЫТИЯ ===
-                      _SectionHeader(
-                        icon: Icons.auto_stories,
-                        title: 'Карточки событий',
-                        subtitle:
-                            'Открыто: ${DiscoveredEventsService.instance.count} / ${allEvents.length + allBossCards.length}',
-                        color: const Color(0xFFE94560),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Открыть все',
-                              icon: Icons.lock_open,
-                              color: const Color(0xFF4CAF50),
-                              onPressed: _unlockAllEvents,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Закрыть все',
-                              icon: Icons.lock_outline,
-                              color: const Color(0xFFE94560),
-                              onPressed: _lockAllEvents,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-
-                      // === ПРЕДМЕТЫ ===
-                      _SectionHeader(
-                        icon: Icons.card_giftcard,
-                        title: 'Карточки предметов (лутбоксы)',
-                        subtitle:
-                            'Открыто: ${UnlockedItemsService.instance.count} / ${allItemCards.length}',
-                        color: const Color(0xFF9C27B0),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Открыть все',
-                              icon: Icons.lock_open,
-                              color: const Color(0xFF4CAF50),
-                              onPressed: _unlockAllItems,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Закрыть все',
-                              icon: Icons.lock_outline,
-                              color: const Color(0xFFE94560),
-                              onPressed: _lockAllItems,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-
-                      // === МОНЕТЫ ===
-                      _SectionHeader(
-                        icon: Icons.monetization_on,
-                        title: 'Монеты',
-                        subtitle: 'Баланс: ${PlayerCoinsService.instance.balance} 🪙',
-                        color: const Color(0xFFFFD700),
-                      ),
-                      const SizedBox(height: 12),
-                      // Быстрые кнопки
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _QuickCoinButton(label: '+50', onPressed: () => _addCoins(50)),
-                          _QuickCoinButton(label: '+200', onPressed: () => _addCoins(200)),
-                          _QuickCoinButton(label: '+1000', onPressed: () => _addCoins(1000)),
-                          _QuickCoinButton(
-                            label: '-50',
-                            onPressed: () => _removeCoins(50),
-                            isNegative: true,
-                          ),
-                          _QuickCoinButton(
-                            label: '-200',
-                            onPressed: () => _removeCoins(200),
-                            isNegative: true,
-                          ),
-                          _QuickCoinButton(
-                            label: 'Обнулить',
-                            onPressed: () {
-                              PlayerCoinsService.instance.restoreBalance(0);
-                              _coinsController.text = '0';
-                              _refresh();
-                            },
-                            isNegative: true,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      // Ручной ввод
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _coinsController,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'Установить баланс',
-                                labelStyle: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white.withValues(alpha: 0.05),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.15),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Color(0xFFFFD700),
-                                  ),
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.monetization_on,
-                                  color: Color(0xFFFFD700),
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          ElevatedButton(
-                            onPressed: _setCoins,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFD700),
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 18,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'Применить',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-
-                      // === ПРОКАЧКА ХАРАКТЕРИСТИК ===
-                      _SectionHeader(
-                        icon: Icons.upgrade_rounded,
-                        title: 'Прокачка характеристик героя',
-                        subtitle:
-                            'Здоровье: ур. ${stats.healthLevel} (${stats.startingHealth} ❤) • Атака: ур. ${stats.attackLevel} (${stats.startingAttack} ⚡) • Торговцы: ур. ${stats.merchantLevel} • Карты: ур. ${stats.startingCardsLevel} (${stats.startingCardsCount} шт.)',
-                        color: const Color(0xFF00E676),
-                      ),
-                      const SizedBox(height: 12),
-                      _StatLevelControllerCard(
-                        title: 'Уровень здоровья',
-                        icon: Icons.favorite,
-                        color: const Color(0xFFE94560),
-                        level: stats.healthLevel,
-                        maxLevel: PlayerStatsService.maxHealthLevel,
-                        startingValue: '${stats.startingHealth} ❤',
-                        bonusText: '+${stats.healthLevel * PlayerStatsService.healthPerLevel} ❤',
-                        onChanged: _setHealthLevel,
-                      ),
-                      const SizedBox(height: 12),
-                      _StatLevelControllerCard(
-                        title: 'Уровень атаки',
-                        icon: Icons.flash_on,
-                        color: const Color(0xFFFFD700),
-                        level: stats.attackLevel,
-                        maxLevel: PlayerStatsService.maxAttackLevel,
-                        startingValue: '${stats.startingAttack} ⚡',
-                        bonusText: '+${stats.attackLevel * PlayerStatsService.attackPerLevel} ⚡',
-                        onChanged: _setAttackLevel,
-                      ),
-                      const SizedBox(height: 12),
-                      _StatLevelControllerCard(
-                        title: 'Уровень торговцев',
-                        icon: Icons.storefront_rounded,
-                        color: const Color(0xFF26A69A),
-                        level: stats.merchantLevel,
-                        maxLevel: PlayerStatsService.maxMerchantLevel,
-                        startingValue: stats.guaranteedMerchants == 0
-                            ? 'случайно'
-                            : '${stats.guaranteedMerchants} 🏪 за уровень',
-                        bonusText: stats.merchantLevel == 0
-                            ? 'нет гарантии'
-                            : '${stats.merchantLevel} торг. гарант.',
-                        onChanged: _setMerchantLevel,
-                      ),
-                      const SizedBox(height: 12),
-                      _StatLevelControllerCard(
-                        title: 'Уровень стартовых карт',
-                        icon: Icons.auto_awesome_motion_rounded,
-                        color: const Color(0xFFAB47BC),
-                        level: stats.startingCardsLevel,
-                        maxLevel: PlayerStatsService.maxStartingCardsLevel,
-                        startingValue: stats.startingCardsCount == 0
-                            ? 'нет карт'
-                            : '${stats.startingCardsCount} карт на старте',
-                        bonusText: stats.startingCardsLevel == 0
-                            ? '0 карт'
-                            : '+${stats.startingCardsLevel} случ. карт',
-                        onChanged: _setStartingCardsLevel,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Сбросить в 0',
-                              icon: Icons.refresh_rounded,
-                              color: const Color(0xFFE94560),
-                              onPressed: _resetStats,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _DebugButton(
-                              label: 'Максимум (10/10/2/3)',
-                              icon: Icons.rocket_launch_rounded,
-                              color: const Color(0xFF00E676),
-                              onPressed: _maxStats,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 28),
-
-                      // === ХРОНИКА ЗАБЕГОВ ===
-                      _SectionHeader(
-                        icon: Icons.history_edu_rounded,
-                        title: 'Хроника забегов',
-                        subtitle:
-                            'Записей: ${RunChronicleService.instance.records.length} / ${RunChronicleService.maxRuns}',
-                        color: const Color(0xFF00BCD4),
-                      ),
-                      const SizedBox(height: 12),
-                      _DebugButton(
-                        label: 'Очистить хронику',
-                        icon: Icons.delete_sweep_rounded,
-                        color: const Color(0xFFE94560),
-                        onPressed: _clearChronicle,
-                      ),
-                      const SizedBox(height: 32),
-                    ],
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0F1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+                  ),
+                  child: const Text(
+                    'DEBUG',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Text(l10n.debugTitle),
+              ],
             ),
+            elevation: 0,
+          ),
+          body: _loading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFFE94560)))
+              : SafeArea(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 520),
+                      child: ListView(
+                        padding: const EdgeInsets.all(20),
+                        children: [
+                          // === СОБЫТИЯ ===
+                          _SectionHeader(
+                            icon: Icons.auto_stories,
+                            title: l10n.debugEventsTitle,
+                            subtitle: l10n.debugUnlockedCount(
+                              DiscoveredEventsService.instance.count,
+                              allEvents.length + allBossCards.length,
+                            ),
+                            color: const Color(0xFFE94560),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugUnlockAll,
+                                  icon: Icons.lock_open,
+                                  color: const Color(0xFF4CAF50),
+                                  onPressed: _unlockAllEvents,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugLockAll,
+                                  icon: Icons.lock_outline,
+                                  color: const Color(0xFFE94560),
+                                  onPressed: _lockAllEvents,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === ПРЕДМЕТЫ ===
+                          _SectionHeader(
+                            icon: Icons.card_giftcard,
+                            title: l10n.debugItemsTitle,
+                            subtitle: l10n.debugUnlockedCount(
+                              UnlockedItemsService.instance.count,
+                              allItemCards.length,
+                            ),
+                            color: const Color(0xFF9C27B0),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugUnlockAll,
+                                  icon: Icons.lock_open,
+                                  color: const Color(0xFF4CAF50),
+                                  onPressed: _unlockAllItems,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugLockAll,
+                                  icon: Icons.lock_outline,
+                                  color: const Color(0xFFE94560),
+                                  onPressed: _lockAllItems,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === МОНЕТЫ ===
+                          _SectionHeader(
+                            icon: Icons.monetization_on,
+                            title: l10n.debugCoinsTitle,
+                            subtitle: l10n.debugCoinsBalance(PlayerCoinsService.instance.balance),
+                            color: const Color(0xFFFFD700),
+                          ),
+                          const SizedBox(height: 12),
+                          // Быстрые кнопки
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _QuickCoinButton(label: '+50', onPressed: () => _addCoins(50)),
+                              _QuickCoinButton(label: '+200', onPressed: () => _addCoins(200)),
+                              _QuickCoinButton(label: '+1000', onPressed: () => _addCoins(1000)),
+                              _QuickCoinButton(
+                                label: '-50',
+                                onPressed: () => _removeCoins(50),
+                                isNegative: true,
+                              ),
+                              _QuickCoinButton(
+                                label: '-200',
+                                onPressed: () => _removeCoins(200),
+                                isNegative: true,
+                              ),
+                              _QuickCoinButton(
+                                label: l10n.debugResetCoins,
+                                onPressed: () {
+                                  PlayerCoinsService.instance.restoreBalance(0);
+                                  _coinsController.text = '0';
+                                  _refresh();
+                                },
+                                isNegative: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Ручной ввод
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _coinsController,
+                                  keyboardType: TextInputType.number,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    labelText: l10n.debugSetCoinsLabel,
+                                    labelStyle: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.5),
+                                    ),
+                                    filled: true,
+                                    fillColor: Colors.white.withValues(alpha: 0.05),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.white.withValues(alpha: 0.15),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: Color(0xFFFFD700),
+                                      ),
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.monetization_on,
+                                      color: Color(0xFFFFD700),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              ElevatedButton(
+                                onPressed: _setCoins,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFFD700),
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 18,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: Text(
+                                  l10n.debugApply,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === ПРОКАЧКА ХАРАКТЕРИСТИК ===
+                          _SectionHeader(
+                            icon: Icons.upgrade_rounded,
+                            title: l10n.debugHeroStatsTitle,
+                            subtitle: l10n.debugHeroStatsSubtitle(
+                              healthLvl: stats.healthLevel,
+                              startingHealth: stats.startingHealth,
+                              attackLvl: stats.attackLevel,
+                              startingAttack: stats.startingAttack,
+                              merchantLvl: stats.merchantLevel,
+                              cardsLvl: stats.startingCardsLevel,
+                              cardsCount: stats.startingCardsCount,
+                            ),
+                            color: const Color(0xFF00E676),
+                          ),
+                          const SizedBox(height: 12),
+                          _StatLevelControllerCard(
+                            title: l10n.debugHealthLevelTitle,
+                            icon: Icons.favorite,
+                            color: const Color(0xFFE94560),
+                            level: stats.healthLevel,
+                            maxLevel: PlayerStatsService.maxHealthLevel,
+                            startingValue: '${stats.startingHealth} ❤',
+                            bonusText: '+${stats.healthLevel * PlayerStatsService.healthPerLevel} ❤',
+                            l10n: l10n,
+                            onChanged: _setHealthLevel,
+                          ),
+                          const SizedBox(height: 12),
+                          _StatLevelControllerCard(
+                            title: l10n.debugAttackLevelTitle,
+                            icon: Icons.flash_on,
+                            color: const Color(0xFFFFD700),
+                            level: stats.attackLevel,
+                            maxLevel: PlayerStatsService.maxAttackLevel,
+                            startingValue: '${stats.startingAttack} ⚡',
+                            bonusText: '+${stats.attackLevel * PlayerStatsService.attackPerLevel} ⚡',
+                            l10n: l10n,
+                            onChanged: _setAttackLevel,
+                          ),
+                          const SizedBox(height: 12),
+                          _StatLevelControllerCard(
+                            title: l10n.debugMerchantLevelTitle,
+                            icon: Icons.storefront_rounded,
+                            color: const Color(0xFF26A69A),
+                            level: stats.merchantLevel,
+                            maxLevel: PlayerStatsService.maxMerchantLevel,
+                            startingValue: stats.guaranteedMerchants == 0
+                                ? l10n.debugRandom
+                                : l10n.debugMerchantsPerLevel(stats.guaranteedMerchants),
+                            bonusText: stats.merchantLevel == 0
+                                ? l10n.debugNoGuarantee
+                                : l10n.debugMerchantsGuaranteed(stats.merchantLevel),
+                            l10n: l10n,
+                            onChanged: _setMerchantLevel,
+                          ),
+                          const SizedBox(height: 12),
+                          _StatLevelControllerCard(
+                            title: l10n.debugStartingCardsLevelTitle,
+                            icon: Icons.auto_awesome_motion_rounded,
+                            color: const Color(0xFFAB47BC),
+                            level: stats.startingCardsLevel,
+                            maxLevel: PlayerStatsService.maxStartingCardsLevel,
+                            startingValue: stats.startingCardsCount == 0
+                                ? l10n.debugNoCards
+                                : l10n.debugCardsAtStart(stats.startingCardsCount),
+                            bonusText: stats.startingCardsLevel == 0
+                                ? l10n.debugZeroCards
+                                : l10n.debugRandomCardsBonus(stats.startingCardsLevel),
+                            l10n: l10n,
+                            onChanged: _setStartingCardsLevel,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugResetStats,
+                                  icon: Icons.refresh_rounded,
+                                  color: const Color(0xFFE94560),
+                                  onPressed: _resetStats,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugMaxStats,
+                                  icon: Icons.rocket_launch_rounded,
+                                  color: const Color(0xFF00E676),
+                                  onPressed: _maxStats,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === ХРОНИКА ЗАБЕГОВ ===
+                          _SectionHeader(
+                            icon: Icons.history_edu_rounded,
+                            title: l10n.debugChronicleTitle,
+                            subtitle: l10n.debugChronicleRecords(
+                              RunChronicleService.instance.records.length,
+                              RunChronicleService.maxRuns,
+                            ),
+                            color: const Color(0xFF00BCD4),
+                          ),
+                          const SizedBox(height: 12),
+                          _DebugButton(
+                            label: l10n.debugClearChronicle,
+                            icon: Icons.delete_sweep_rounded,
+                            color: const Color(0xFFE94560),
+                            onPressed: _clearChronicle,
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+        );
+      },
     );
   }
 }
@@ -584,6 +609,7 @@ class _StatLevelControllerCard extends StatelessWidget {
     required this.maxLevel,
     required this.startingValue,
     required this.bonusText,
+    required this.l10n,
     required this.onChanged,
   });
 
@@ -594,6 +620,7 @@ class _StatLevelControllerCard extends StatelessWidget {
   final int maxLevel;
   final String startingValue;
   final String bonusText;
+  final AppLocalizations l10n;
   final ValueChanged<int> onChanged;
 
   @override
@@ -633,7 +660,7 @@ class _StatLevelControllerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Старт: $startingValue ($bonusText)',
+                      l10n.debugStartBonus(startingValue, bonusText),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
@@ -650,7 +677,7 @@ class _StatLevelControllerCard extends StatelessWidget {
                   border: Border.all(color: color.withValues(alpha: 0.4)),
                 ),
                 child: Text(
-                  'Ур. $level / $maxLevel',
+                  l10n.debugLevelMax(level, maxLevel),
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.bold,
@@ -705,21 +732,21 @@ class _StatLevelControllerCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               _QuickLevelChip(
-                label: 'Мин (0)',
+                label: l10n.debugLevelMinChip,
                 isSelected: level == 0,
                 color: color,
                 onTap: () => onChanged(0),
               ),
               const SizedBox(width: 8),
               _QuickLevelChip(
-                label: 'Ур. 5',
+                label: l10n.debugLevelChip(5),
                 isSelected: level == 5,
                 color: color,
                 onTap: () => onChanged(5),
               ),
               const SizedBox(width: 8),
               _QuickLevelChip(
-                label: 'Макс ($maxLevel)',
+                label: l10n.debugLevelMaxChip(maxLevel),
                 isSelected: level == maxLevel,
                 color: color,
                 onTap: () => onChanged(maxLevel),

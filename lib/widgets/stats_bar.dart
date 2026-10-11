@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
+
 /// Верхняя статусная панель текущего забега в [GameScreen].
 ///
 /// Отображает:
@@ -37,6 +39,7 @@ class StatsBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
@@ -53,7 +56,7 @@ class StatsBar extends StatelessWidget {
                 child: _StatItem(
                   icon: Icons.favorite,
                   color: const Color(0xFFE94560),
-                  label: 'Здоровье',
+                  label: l10n.gameHealth,
                   value: health,
                 ),
               ),
@@ -62,7 +65,7 @@ class StatsBar extends StatelessWidget {
                 child: _StatItem(
                   icon: Icons.flash_on,
                   color: const Color(0xFFF5A623),
-                  label: 'Атака',
+                  label: l10n.gameAttack,
                   value: attack,
                 ),
               ),
@@ -71,7 +74,7 @@ class StatsBar extends StatelessWidget {
                 child: _StatItem(
                   icon: Icons.monetization_on,
                   color: const Color(0xFFFFD700),
-                  label: 'Монеты',
+                  label: l10n.gameCoins,
                   value: coins,
                 ),
               ),
@@ -83,7 +86,7 @@ class StatsBar extends StatelessWidget {
               Icon(Icons.layers_outlined, size: 16, color: Colors.white.withValues(alpha: 0.5)),
               const SizedBox(width: 6),
               Text(
-                'Пройдено: $cardsPassed',
+                l10n.gameCardsPassed(cardsPassed),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -106,7 +109,7 @@ class StatsBar extends StatelessWidget {
                       const Icon(Icons.crisis_alert, size: 13, color: Color(0xFFEF5350)),
                       const SizedBox(width: 4),
                       Text(
-                        'Босс через $nextBossIn',
+                        l10n.gameBossIn(nextBossIn!),
                         style: const TextStyle(
                           color: Color(0xFFEF5350),
                           fontSize: 11,
@@ -132,7 +135,7 @@ class StatsBar extends StatelessWidget {
                     const Icon(Icons.castle_outlined, size: 14, color: Color(0xFF9C27B0)),
                     const SizedBox(width: 5),
                     Text(
-                      'Уровень $dungeonLevel',
+                      l10n.gameLevel(dungeonLevel),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,

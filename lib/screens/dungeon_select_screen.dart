@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/dungeons.dart';
 import '../models/dungeon.dart';
+import '../services/locale_service.dart';
 import 'game_screen.dart';
 
 /// Экран выбора подземелий.
@@ -10,38 +12,45 @@ class DungeonSelectScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F0F1A), Color(0xFF1A1A2E), Color(0xFF16213E)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  children: [
-                    for (final dungeon in allDungeons)
-                      _DungeonCard(
-                        dungeon: dungeon,
-                        onSelect: dungeon.isAvailable
-                            ? () => _enterDungeon(context, dungeon)
-                            : null,
-                      ),
-                  ],
-                ),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0F0F1A), Color(0xFF1A1A2E), Color(0xFF16213E)],
               ),
-            ],
+            ),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, l10n),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                      children: [
+                        for (final dungeon in allDungeons)
+                          _DungeonCard(
+                            dungeon: dungeon,
+                            l10n: l10n,
+                            onSelect: dungeon.isAvailable
+                                ? () => _enterDungeon(context, dungeon)
+                                : null,
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -53,7 +62,7 @@ class DungeonSelectScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
@@ -64,7 +73,7 @@ class DungeonSelectScreen extends StatelessWidget {
               Icons.arrow_back_ios_new_rounded,
               color: Colors.white70,
             ),
-            tooltip: 'Назад',
+            tooltip: l10n.back,
           ),
           const SizedBox(width: 8),
           const Icon(
@@ -73,12 +82,12 @@ class DungeonSelectScreen extends StatelessWidget {
             size: 28,
           ),
           const SizedBox(width: 12),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Подземелья',
-                style: TextStyle(
+                l10n.dungeonSelectTitle,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -86,8 +95,8 @@ class DungeonSelectScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                'Выберите куда отправиться',
-                style: TextStyle(
+                l10n.dungeonSelectSubtitle,
+                style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 13,
                 ),
@@ -103,10 +112,12 @@ class DungeonSelectScreen extends StatelessWidget {
 class _DungeonCard extends StatelessWidget {
   const _DungeonCard({
     required this.dungeon,
+    required this.l10n,
     required this.onSelect,
   });
 
   final Dungeon dungeon;
+  final AppLocalizations l10n;
   final VoidCallback? onSelect;
 
   @override
@@ -172,7 +183,7 @@ class _DungeonCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            dungeon.name,
+                            l10n.dungeonName(dungeon.id, dungeon.name),
                             style: TextStyle(
                               color: isAvailable ? Colors.white : Colors.white60,
                               fontSize: 20,
@@ -182,7 +193,7 @@ class _DungeonCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Количество уровней: ${dungeon.levelsCount}',
+                            '${l10n.dungeonLevelsCount}: ${dungeon.levelsCount}',
                             style: TextStyle(
                               color: isAvailable ? accent : Colors.white38,
                               fontSize: 13,
@@ -209,7 +220,7 @@ class _DungeonCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        isAvailable ? 'ДОСТУПНО' : 'СКОРО',
+                        isAvailable ? l10n.dungeonAvailable : l10n.dungeonSoon,
                         style: TextStyle(
                           color: isAvailable ? accent : Colors.white38,
                           fontSize: 11,
@@ -224,7 +235,7 @@ class _DungeonCard extends StatelessWidget {
 
                 // Описание
                 Text(
-                  dungeon.description,
+                  l10n.dungeonDescription(dungeon.id, dungeon.description),
                   style: TextStyle(
                     color: isAvailable
                         ? Colors.white.withValues(alpha: 0.8)
@@ -242,19 +253,19 @@ class _DungeonCard extends StatelessWidget {
                   children: [
                     _InfoChip(
                       icon: Icons.layers_rounded,
-                      label: '${dungeon.levelsCount} уровня',
+                      label: l10n.dungeonLevels(dungeon.levelsCount),
                       color: isAvailable ? accent : Colors.white38,
                     ),
                     _InfoChip(
                       icon: Icons.style_rounded,
-                      label: isAvailable ? 'Уникальные карты' : 'Новый набор карт',
+                      label: isAvailable ? l10n.dungeonUniqueCards : l10n.dungeonNewCards,
                       color: isAvailable
                           ? const Color(0xFF64B5F6)
                           : Colors.white38,
                     ),
                     _InfoChip(
                       icon: Icons.military_tech_rounded,
-                      label: isAvailable ? 'Боссы каждого уровня' : 'Новые боссы',
+                      label: isAvailable ? l10n.dungeonBossEachLevel : l10n.dungeonNewBosses,
                       color: isAvailable
                           ? const Color(0xFFFFB74D)
                           : Colors.white38,
@@ -271,9 +282,9 @@ class _DungeonCard extends StatelessWidget {
                       ? ElevatedButton.icon(
                           onPressed: onSelect,
                           icon: const Icon(Icons.play_arrow_rounded, size: 22),
-                          label: const Text(
-                            'Войти в подземелье',
-                            style: TextStyle(
+                          label: Text(
+                            l10n.dungeonEnterButton,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 0.5,
@@ -292,7 +303,7 @@ class _DungeonCard extends StatelessWidget {
                       : OutlinedButton.icon(
                           onPressed: null,
                           icon: const Icon(Icons.lock_outline_rounded, size: 18),
-                          label: const Text('Подземелье в разработке'),
+                          label: Text(l10n.dungeonInDevelopment),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white30,
                             side: const BorderSide(color: Colors.white12),

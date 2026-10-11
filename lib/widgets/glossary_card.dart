@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../models/event_card.dart';
 import '../utils/event_style.dart';
 
@@ -76,6 +77,7 @@ class _KnownContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Stack(
       children: [
         // Фоновый значок
@@ -106,7 +108,7 @@ class _KnownContent extends StatelessWidget {
                       : null,
                 ),
                 child: Text(
-                  event.isBoss ? '⚔ БОСС' : eventTypeLabel(event.type),
+                  event.isBoss ? l10n.glossaryBossBadge : l10n.eventTypeLabel(event.type),
                   style: TextStyle(
                     color: event.isBoss ? const Color(0xFFEF5350) : Colors.white70,
                     fontSize: 10,
@@ -147,7 +149,7 @@ class _KnownContent extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      event.isBoss ? 'Босс' : 'Ур. ${event.level}',
+                      event.isBoss ? l10n.eventTypeBoss : l10n.invLvl(event.level),
                       style: TextStyle(
                         color: event.isBoss
                             ? const Color(0xFFEF5350)
@@ -235,6 +237,7 @@ class _UnknownContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Stack(
       children: [
         Positioned.fill(
@@ -260,7 +263,7 @@ class _UnknownContent extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Неизвестно',
+                l10n.glossaryUnknown,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 14,
@@ -269,7 +272,7 @@ class _UnknownContent extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Встреть в подземелье',
+                l10n.glossaryMeetInDungeon,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.25),
                   fontSize: 10,

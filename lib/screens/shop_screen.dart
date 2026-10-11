@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../data/items.dart';
 import '../models/item_card.dart';
+import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/unlocked_items_service.dart';
 import '../widgets/item_card_widget.dart';
@@ -84,76 +86,79 @@ class _ShopScreenState extends State<ShopScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Column(
-          children: [
-            Text(
-              '🎉 НОВАЯ КАРТА!',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFFFFD700),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 220,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (ctx) {
+        final l10n = ctx.l10n;
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Column(
             children: [
-              SizedBox(
-                width: 170,
-                height: 236,
-                child: ItemCardWidget(
-                  item: item,
-                  onTap: () =>
-                      showItemDetailsSheet(context, item, isUnlocked: true),
-                ),
-              ),
-              const SizedBox(height: 16),
               Text(
-                'Теперь эту карту можно встретить у торговца в подземелье!',
+                l10n.shopNewCardUnlocked,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 13,
-                  height: 1.4,
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
               ),
             ],
           ),
-        ),
-        actions: [
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                setState(() {});
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE94560),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          content: SizedBox(
+            width: 220,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 170,
+                  height: 236,
+                  child: ItemCardWidget(
+                    item: item,
+                    onTap: () =>
+                        showItemDetailsSheet(context, item, isUnlocked: true),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
+                const SizedBox(height: 16),
+                Text(
+                  l10n.shopNewCardHint,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              child: const Text(
-                'Отлично',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  setState(() {});
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE94560),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  l10n.great,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -165,20 +170,24 @@ class _ShopScreenState extends State<ShopScreen> {
     final currentPrice = _currentLootboxPrice;
     final canBuy = !allUnlocked && balance >= currentPrice;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A2E),
-        foregroundColor: Colors.white,
-        title: const Text('Магазин'),
-        elevation: 0,
-      ),
-      body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFE94560)),
-            )
-          : SafeArea(
-              child: SingleChildScrollView(
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F0F1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1A1A2E),
+            foregroundColor: Colors.white,
+            title: Text(l10n.shopTitle),
+            elevation: 0,
+          ),
+          body: _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFE94560)),
+                )
+              : SafeArea(
+                  child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 20,
                       vertical: 16,
@@ -224,7 +233,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Ваш баланс',
+                                    l10n.shopYourBalance,
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.6,
@@ -300,9 +309,9 @@ class _ShopScreenState extends State<ShopScreen> {
                                 ),
                               ),
                               const SizedBox(height: 14),
-                              const Text(
-                                'Магический сундук',
-                                style: TextStyle(
+                              Text(
+                                l10n.shopMagicChest,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -311,8 +320,8 @@ class _ShopScreenState extends State<ShopScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 allUnlocked
-                                    ? 'Все доступные карты собраны! Сундук больше недоступен.'
-                                    : 'Гарантированно открывает 1 новую карту предмета для использования в подземелье.',
+                                    ? l10n.shopChestDescAllCollected
+                                    : l10n.shopChestDesc,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.7),
@@ -349,10 +358,10 @@ class _ShopScreenState extends State<ShopScreen> {
                                         )
                                       : Text(
                                           allUnlocked
-                                              ? 'Все карты получены'
+                                              ? l10n.shopAllCardsObtained
                                               : (canBuy
-                                                  ? 'Открыть сундук ($currentPrice 🪙)'
-                                                  : 'Не хватает монет ($currentPrice 🪙)'),
+                                                  ? l10n.shopOpenChestPrice(currentPrice)
+                                                  : l10n.shopNotEnoughCoinsPrice(currentPrice)),
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,
@@ -380,9 +389,9 @@ class _ShopScreenState extends State<ShopScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
-                                const Text(
-                                  'Доступные карты',
-                                  style: TextStyle(
+                                Text(
+                                  l10n.shopAvailableCards,
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -417,7 +426,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    'Открыто: ${unlockedService.count} / ${allItemCards.length}',
+                                    '${l10n.shopCollectionUnlocked}: ${unlockedService.count} / ${allItemCards.length}',
                                     style: const TextStyle(
                                       color: Color(0xFFFFD700),
                                       fontSize: 12,
@@ -467,8 +476,10 @@ class _ShopScreenState extends State<ShopScreen> {
                         const SizedBox(height: 20),
                       ],
                     ),
-              ),
-            ),
+                  ),
+                ),
+        );
+      },
     );
   }
 }
@@ -506,7 +517,7 @@ class _LockedItemCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              item.title,
+              context.l10n.itemTitle(item.id, item.title),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -517,7 +528,7 @@ class _LockedItemCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'В сундуке',
+              context.l10n.shopInChest,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.3),
                 fontSize: 11,

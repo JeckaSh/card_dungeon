@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
+import '../services/locale_service.dart';
 import '../services/run_chronicle_service.dart';
 
 /// Экран Хроники прошлых походов героя.
@@ -36,39 +38,45 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF0F0F1A), Color(0xFF1A1A2E), Color(0xFF16213E)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFE94560),
-                        ),
-                      )
-                    : _records.isEmpty
-                        ? _buildEmpty()
-                        : _buildList(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LocaleService.instance.localeNotifier,
+      builder: (context, locale, _) {
+        final l10n = AppLocalizations(locale);
+        return Scaffold(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0F0F1A), Color(0xFF1A1A2E), Color(0xFF16213E)],
               ),
-            ],
+            ),
+            child: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, l10n),
+                  Expanded(
+                    child: _loading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFE94560),
+                            ),
+                          )
+                        : _records.isEmpty
+                            ? _buildEmpty(l10n)
+                            : _buildList(),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
@@ -82,10 +90,10 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
           const Icon(Icons.auto_stories_rounded,
               color: Color(0xFFE94560), size: 26),
           const SizedBox(width: 8),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Хроника',
-              style: TextStyle(
+              l10n.chronicleTitle,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -94,7 +102,9 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
             ),
           ),
           Text(
-            'Последние ${RunChronicleService.maxRuns} забегов',
+            l10n.isRussian
+                ? 'Последние ${RunChronicleService.maxRuns}'
+                : 'Last ${RunChronicleService.maxRuns}',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
@@ -105,7 +115,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -117,7 +127,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'Хроника пуста',
+            l10n.chronicleEmpty.split('\n').first,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.5),
               fontSize: 20,
@@ -126,7 +136,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Записи о забегах появятся\nпосле первой игры',
+            l10n.chronicleEmpty.split('\n').last,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.3),
@@ -171,10 +181,10 @@ class _RunCardState extends State<_RunCard> {
     final r = widget.record;
     final isVictory = r.isVictory;
     final accent = isVictory ? const Color(0xFFFFD700) : const Color(0xFFE94560);
-    final label = isVictory ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ';
+    final label = isVictory ? context.l10n.chronicleVictoryCaps : context.l10n.chronicleDefeatCaps;
     final icon = isVictory ? Icons.emoji_events_rounded : Icons.sentiment_very_dissatisfied;
 
-    final dateStr = _formatDate(r.endedAt);
+    final dateStr = context.l10n.chronicleFormatDate(r.endedAt);
     final runNum = widget.index + 1;
 
     return AnimatedContainer(
@@ -228,7 +238,7 @@ class _RunCardState extends State<_RunCard> {
                         Row(
                           children: [
                             Text(
-                              'Забег #$runNum',
+                              context.l10n.chronicleRunNumber(runNum),
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 12,
@@ -289,7 +299,7 @@ class _RunCardState extends State<_RunCard> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    r.dungeonName,
+                                    context.l10n.dungeonName(r.dungeonId, r.dungeonName),
                                     style: const TextStyle(
                                       color: Color(0xFF81C784),
                                       fontSize: 11,
@@ -325,19 +335,19 @@ class _RunCardState extends State<_RunCard> {
               children: [
                 _StatChip(
                     icon: Icons.layers_rounded,
-                    label: 'Уровень',
+                    label: context.l10n.chronicleLevelLabel,
                     value: '${r.dungeonLevel}',
                     color: const Color(0xFF29B6F6)),
                 const SizedBox(width: 8),
                 _StatChip(
                     icon: Icons.style_rounded,
-                    label: 'Карточек',
+                    label: context.l10n.chronicleCardsLabel,
                     value: '${r.cardsPassed}',
                     color: const Color(0xFFAB47BC)),
                 const SizedBox(width: 8),
                 _StatChip(
                     icon: Icons.monetization_on_rounded,
-                    label: 'Монеты',
+                    label: context.l10n.chronicleCoinsLabel,
                     value: '${r.coins}',
                     color: const Color(0xFFFFD54F)),
               ],
@@ -350,26 +360,6 @@ class _RunCardState extends State<_RunCard> {
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime dt) {
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inDays == 0) {
-      final h = dt.hour.toString().padLeft(2, '0');
-      final m = dt.minute.toString().padLeft(2, '0');
-      return 'Сегодня в $h:$m';
-    } else if (diff.inDays == 1) {
-      final h = dt.hour.toString().padLeft(2, '0');
-      final m = dt.minute.toString().padLeft(2, '0');
-      return 'Вчера в $h:$m';
-    } else {
-      final day = dt.day.toString().padLeft(2, '0');
-      final month = dt.month.toString().padLeft(2, '0');
-      final h = dt.hour.toString().padLeft(2, '0');
-      final m = dt.minute.toString().padLeft(2, '0');
-      return '$day.$month.${dt.year} в $h:$m';
-    }
   }
 }
 
@@ -446,7 +436,7 @@ class _JournalSection extends StatelessWidget {
                   color: accent.withValues(alpha: 0.7), size: 14),
               const SizedBox(width: 6),
               Text(
-                'Дневник героя',
+                context.l10n.chronicleJournalTitle,
                 style: TextStyle(
                   color: accent.withValues(alpha: 0.7),
                   fontSize: 11,

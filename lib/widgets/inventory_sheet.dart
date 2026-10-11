@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app_localizations.dart';
 import '../models/item_card.dart';
 import 'item_card_widget.dart';
 import 'item_details_sheet.dart';
@@ -23,6 +24,7 @@ class InventorySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF1A1A2E),
@@ -55,11 +57,11 @@ class InventorySheet extends StatelessWidget {
                 child: const Icon(Icons.backpack_outlined, color: Color(0xFFE94560), size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Инвентарь забега',
+                  l10n.invSheetTitle,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -75,7 +77,7 @@ class InventorySheet extends StatelessWidget {
                   border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                 ),
                 child: Text(
-                  'Предметов: ${items.length}',
+                  l10n.invSheetItemCount(items.length),
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
@@ -87,7 +89,7 @@ class InventorySheet extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.white70, size: 22),
                 onPressed: () => Navigator.of(context).pop(),
-                tooltip: 'Закрыть',
+                tooltip: l10n.close,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -111,9 +113,9 @@ class InventorySheet extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.25),
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Рюкзак пуст',
-                    style: TextStyle(
+                  Text(
+                    l10n.invSheetEmpty,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -121,7 +123,7 @@ class InventorySheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Покупайте зелья и свитки у торговца реликвиями во время приключения!',
+                    l10n.invSheetEmptyHint,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
@@ -149,7 +151,7 @@ class InventorySheet extends StatelessWidget {
                   return ItemCardWidget(
                     item: item,
                     onTap: () => showItemDetailsSheet(context, item, isUnlocked: true),
-                    actionLabel: 'Применить',
+                    actionLabel: l10n.invSheetApply,
                     onAction: () {
                       Navigator.of(context).pop();
                       onUseItem(index, item);
@@ -172,9 +174,9 @@ class InventorySheet extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Закрыть',
-                style: TextStyle(
+              child: Text(
+                l10n.close,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
