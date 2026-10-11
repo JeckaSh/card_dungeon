@@ -209,14 +209,19 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
           onPanStart: _onPanStart,
           onPanUpdate: _onPanUpdate,
           onPanEnd: _onPanEnd,
-          child: Transform.translate(
-            offset: _dragOffset,
-            child: Transform.rotate(
-              angle: rotation,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
+          behavior: HitTestBehavior.translucent,
+          child: Center(
+            child: SizedBox(
+              width: cardWidth,
+              height: cardHeight,
+              child: Transform.translate(
+                offset: _dragOffset,
+                child: Transform.rotate(
+                  angle: rotation,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
                   // Пульсирующая рамка для босса
                   if (widget.isBoss)
                     AnimatedBuilder(
@@ -273,6 +278,9 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
                           blockedReason: leftBlockedReason,
                           scale: scale,
                           isBlind: widget.isBlind,
+                          maxWidth: widget.isRevealingChoices
+                              ? (cardWidth - 28 * scale) / 2
+                              : cardWidth - 20 * scale,
                         ),
                       ),
                     ),
@@ -287,6 +295,9 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
                           blockedReason: rightBlockedReason,
                           scale: scale,
                           isBlind: widget.isBlind,
+                          maxWidth: widget.isRevealingChoices
+                              ? (cardWidth - 28 * scale) / 2
+                              : cardWidth - 20 * scale,
                         ),
                       ),
                     ),
@@ -295,7 +306,9 @@ class _SwipeCardState extends State<SwipeCard> with TickerProviderStateMixin {
               ),
             ),
           ),
-        );
+        ),
+      ),
+    );
       },
     );
   }
@@ -492,6 +505,7 @@ class _ChoiceHint extends StatelessWidget {
     required this.blockedReason,
     this.scale = 1.0,
     this.isBlind = false,
+    this.maxWidth,
   });
 
   final CardChoice choice;
@@ -499,6 +513,7 @@ class _ChoiceHint extends StatelessWidget {
   final String? blockedReason;
   final double scale;
   final bool isBlind;
+  final double? maxWidth;
 
   bool get _isBlocked => blockedReason != null;
 
@@ -508,9 +523,10 @@ class _ChoiceHint extends StatelessWidget {
         ? const Color(0xFF6B0000)
         : (isLeft ? Colors.red : Colors.green);
     return Container(
+      constraints: maxWidth != null ? BoxConstraints(maxWidth: maxWidth!) : null,
       padding: EdgeInsets.symmetric(
-        horizontal: (14 * scale).clamp(10.0, 20.0),
-        vertical: (8 * scale).clamp(6.0, 14.0),
+        horizontal: (12 * scale).clamp(8.0, 18.0),
+        vertical: (7 * scale).clamp(5.0, 12.0),
       ),
       decoration: BoxDecoration(
         color: bgColor.withValues(alpha: 0.9),
@@ -524,6 +540,7 @@ class _ChoiceHint extends StatelessWidget {
         crossAxisAlignment: isLeft
             ? CrossAxisAlignment.start
             : CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (_isBlocked) ...[
             Row(
@@ -535,18 +552,23 @@ class _ChoiceHint extends StatelessWidget {
                   size: (16 * scale).clamp(13.0, 20.0),
                 ),
                 SizedBox(width: 5 * scale),
-                Text(
-                  blockedReason == 'Карты'
-                      ? context.l10n.gameNoAvailableCards
-                      : context.l10n.gameNoResource(
-                          blockedReason == 'Монеты'
-                              ? (context.l10n.isRussian ? 'монет' : 'coins')
-                              : (context.l10n.isRussian ? 'атаки' : 'attack'),
-                        ),
-                  style: TextStyle(
-                    color: const Color(0xFFFF6B6B),
-                    fontWeight: FontWeight.bold,
-                    fontSize: (14 * scale).clamp(11.0, 18.0),
+                Flexible(
+                  child: Text(
+                    blockedReason == 'Карты'
+                        ? context.l10n.gameNoAvailableCards
+                        : context.l10n.gameNoResource(
+                            blockedReason == 'Монеты'
+                                ? (context.l10n.isRussian ? 'монет' : 'coins')
+                                : (context.l10n.isRussian ? 'атаки' : 'attack'),
+                          ),
+                    style: TextStyle(
+                      color: const Color(0xFFFF6B6B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: (14 * scale).clamp(11.0, 18.0),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: isLeft ? TextAlign.left : TextAlign.right,
                   ),
                 ),
               ],
@@ -558,6 +580,9 @@ class _ChoiceHint extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.6),
                 fontSize: (12 * scale).clamp(9.0, 15.0),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
             ),
           ] else ...[
             Text(
@@ -567,6 +592,9 @@ class _ChoiceHint extends StatelessWidget {
                 fontWeight: FontWeight.bold,
                 fontSize: (15 * scale).clamp(11.0, 20.0),
               ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              textAlign: isLeft ? TextAlign.left : TextAlign.right,
             ),
             if (isBlind) ...[
               SizedBox(height: 4 * scale),
@@ -578,6 +606,7 @@ class _ChoiceHint extends StatelessWidget {
                   fontStyle: FontStyle.italic,
                   letterSpacing: 1.2,
                 ),
+                textAlign: isLeft ? TextAlign.left : TextAlign.right,
               ),
             ] else if (choice.healthDelta != 0 ||
                 choice.attackDelta != 0 ||
@@ -591,6 +620,9 @@ class _ChoiceHint extends StatelessWidget {
                   color: Colors.white70,
                   fontSize: (12 * scale).clamp(10.0, 15.0),
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: isLeft ? TextAlign.left : TextAlign.right,
               ),
             ],
           ],

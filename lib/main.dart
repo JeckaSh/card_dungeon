@@ -32,6 +32,7 @@ class DungeonCardsApp extends StatelessWidget {
         return MaterialApp(
           title: locale.languageCode == 'ru' ? 'Подземелье' : 'Dungeon',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const _NoScrollbarBehavior(),
           locale: locale,
           supportedLocales: const [Locale('ru'), Locale('en')],
           localizationsDelegates: const [
@@ -44,10 +45,29 @@ class DungeonCardsApp extends StatelessWidget {
             scaffoldBackgroundColor: const Color(0xFF0F0F1A),
             fontFamily: 'Roboto',
             useMaterial3: true,
+            scrollbarTheme: const ScrollbarThemeData(
+              thumbVisibility: WidgetStatePropertyAll(false),
+              trackVisibility: WidgetStatePropertyAll(false),
+              thickness: WidgetStatePropertyAll(0),
+            ),
           ),
           home: const MenuScreen(),
         );
       },
     );
+  }
+}
+
+/// Кастомное поведение скролла, отключающее системный индикатор прокрутки (скроллбар) на всех экранах.
+class _NoScrollbarBehavior extends MaterialScrollBehavior {
+  const _NoScrollbarBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
   }
 }

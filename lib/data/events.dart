@@ -12,6 +12,12 @@ import '../models/event_card.dart';
 /// * [dungeonId] — принадлежность к подземелью ([DungeonId.cursedForest] или общий пул [DungeonId.common]);
 /// * [leftChoice] и [rightChoice] — два варианта выбора для игрока со своими эффектами.
 ///
+/// Баланс карт:
+/// В соответствии с игровым балансом каждый выбор влияет либо строго на здоровье
+/// (и в редких случаях сокровищ на монеты), либо строго на атаку (и в редких случаях сокровищ на монеты).
+/// Два выбора на одной карте не влияют на одну и ту же характеристику, исключая тупиковые ситуации.
+/// Большинство карт подземелья (монстры, ловушки, отдых) не дают монет: монеты генерируются сундуками/сокровищами.
+///
 /// Для добавления нового события:
 /// 1. Создайте `EventCard` в соответствующей секции уровня;
 /// 2. Укажите уникальный `id` (используется для сохранения открытых карт в глоссарии);
@@ -27,8 +33,16 @@ const List<EventCard> allEvents = [
     type: EventType.treasure,
     title: 'Сундук с сокровищами',
     description: 'Перед вами старый сундук, покрытый пылью веков.',
-    leftChoice: CardChoice(label: 'Открыть', coinsDelta: 15),
-    rightChoice: CardChoice(label: 'Игнорировать'),
+    leftChoice: CardChoice(
+      label: 'Открыть осторожно',
+      healthDelta: 1,
+      coinsDelta: 15,
+    ),
+    rightChoice: CardChoice(
+      label: 'Сбить замок силой',
+      attackDelta: 1,
+      coinsDelta: 10,
+    ),
     level: 1,
     dungeonId: DungeonId.common,
   ),
@@ -39,11 +53,15 @@ const List<EventCard> allEvents = [
     description:
         'Таинственный торговец открывает сумку с магическими зельями и свитками.',
     leftChoice: CardChoice(
-      label: 'Купить предмет',
+      label: 'Купить реликвию силы',
+      attackDelta: 1,
       coinsDelta: -10,
       givesRandomItem: true,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Передохнуть у лавки',
+      healthDelta: 1,
+    ),
     level: 1,
     dungeonId: DungeonId.common,
   ),
@@ -51,13 +69,16 @@ const List<EventCard> allEvents = [
     id: 'merchant',
     type: EventType.merchant,
     title: 'Странствующий торговец',
-    description: 'Торговец предлагает зелье силы или амулет исцеления.',
+    description: 'Торговец предлагает целебные отвары или уроки фехтования.',
     leftChoice: CardChoice(
-      label: 'Купить зелье',
-      healthDelta: 2,
+      label: 'Купить зелье здоровья',
+      healthDelta: 3,
       coinsDelta: -8,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Тренировка с чучелом',
+      attackDelta: 1,
+    ),
     level: 1,
     dungeonId: DungeonId.common,
   ),
@@ -67,11 +88,15 @@ const List<EventCard> allEvents = [
     title: 'Подозрительный сундук',
     description: 'Сундук выглядит богато, но ручка слегка подрагивает.',
     leftChoice: CardChoice(
-      label: 'Осторожно вскрыть',
+      label: 'Осторожно вскрыть замок',
       healthDelta: -3,
       coinsDelta: 20,
     ),
-    rightChoice: CardChoice(label: 'Оставить'),
+    rightChoice: CardChoice(
+      label: 'Разрубить мимика ударом',
+      attackDelta: -1,
+      coinsDelta: 10,
+    ),
     level: 1,
     dungeonId: DungeonId.common,
   ),
@@ -81,11 +106,15 @@ const List<EventCard> allEvents = [
     title: 'Запечатанная сокровищница',
     description: 'Каменная плита скрывает нишу с золотом. Нужна грубая сила.',
     leftChoice: CardChoice(
-      label: 'Сдвинуть плиту',
+      label: 'Сдвинуть плиту силой',
       attackDelta: -2,
       coinsDelta: 25,
     ),
-    rightChoice: CardChoice(label: 'Пройти мимо'),
+    rightChoice: CardChoice(
+      label: 'Протиснуться сквозь щель',
+      healthDelta: -2,
+      coinsDelta: 12,
+    ),
     level: 1,
     dungeonId: DungeonId.common,
   ),
@@ -98,15 +127,12 @@ const List<EventCard> allEvents = [
     description:
         'Из сумрачных зарослей тихо выступает крупный пепельный волк с голодным оскалом.',
     leftChoice: CardChoice(
-      label: 'Встретить клинком',
+      label: 'Сразить клинком',
       attackDelta: -2,
-      coinsDelta: 6,
     ),
     rightChoice: CardChoice(
-      label: 'Бросить мясо',
-      healthDelta: -1,
-      attackDelta: 1,
-      coinsDelta: -4,
+      label: 'Отбиться телом',
+      healthDelta: -3,
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
@@ -117,11 +143,13 @@ const List<EventCard> allEvents = [
     title: 'Змеиный выводок',
     description:
         'Под ногой хрустит мох, и из сухих ветвей взвивается ядовитая болотная гадюка. Опасность эффекта: Отравление (35%).',
-    leftChoice: CardChoice(label: 'Отпрыгнуть назад', attackDelta: -1),
+    leftChoice: CardChoice(
+      label: 'Отсечь голову на лету',
+      attackDelta: -1,
+    ),
     rightChoice: CardChoice(
       label: 'Раздавить сапогом',
       healthDelta: -2,
-      coinsDelta: 8,
       statusEffect: StatusEffectType.poison,
       statusChance: 0.35,
     ),
@@ -134,11 +162,13 @@ const List<EventCard> allEvents = [
     title: 'Капкан зверолова',
     description:
         'Скрытый под опавшей листвой ржавый стальной капкан с зубьями щелкает в шаге от вас. Опасность эффекта: Кровотечение (35%).',
-    leftChoice: CardChoice(label: 'Осторожно разрядить', attackDelta: -1, coinsDelta: 4),
+    leftChoice: CardChoice(
+      label: 'Перерубить трос мечом',
+      attackDelta: -1,
+    ),
     rightChoice: CardChoice(
-      label: 'Перепрыгнуть наугад',
+      label: 'Вырвать ногу из капкана',
       healthDelta: -2,
-      coinsDelta: 7,
       statusEffect: StatusEffectType.bleed,
       statusChance: 0.35,
     ),
@@ -152,15 +182,12 @@ const List<EventCard> allEvents = [
     description:
         'Свирепый лесной кабан, покрытый шрамами и засохшей глиной, с ревом несётся напролом.',
     leftChoice: CardChoice(
-      label: 'Принять таран щитом',
-      healthDelta: -2,
-      attackDelta: 2,
-      coinsDelta: 10,
+      label: 'Встретить копьем на скаку',
+      attackDelta: -2,
     ),
     rightChoice: CardChoice(
-      label: 'Увернуться в терновник',
-      healthDelta: -1,
-      attackDelta: -1,
+      label: 'Принять таран на щит',
+      healthDelta: -3,
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
@@ -171,8 +198,14 @@ const List<EventCard> allEvents = [
     title: 'Родник дриады',
     description:
         'Журчащий лесной ключ омывает замшелые камни. Вода отдаёт свежестью и ароматом хвои.',
-    leftChoice: CardChoice(label: 'Напиться воды', healthDelta: 4),
-    rightChoice: CardChoice(label: 'Омыть клинок', attackDelta: 2),
+    leftChoice: CardChoice(
+      label: 'Напиться целебной воды',
+      healthDelta: 3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Омыть и заточить клинок',
+      attackDelta: 1,
+    ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
   ),
@@ -182,11 +215,13 @@ const List<EventCard> allEvents = [
     title: 'Шепчущий терновник',
     description:
         'Колючие плети терновника шевелятся сами по себе, перегораживая тропу живой изгородью.',
-    leftChoice: CardChoice(label: 'Прорубить мечом', attackDelta: -2),
+    leftChoice: CardChoice(
+      label: 'Прорубить терновник',
+      attackDelta: -2,
+    ),
     rightChoice: CardChoice(
       label: 'Протиснуться сквозь шипы',
       healthDelta: -2,
-      coinsDelta: 6,
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
@@ -198,14 +233,13 @@ const List<EventCard> allEvents = [
     description:
         'Круг из фосфоресцирующих грибов манит тусклым изумрудным сиянием в полумраке. Опасность эффекта: Слепота (30%).',
     leftChoice: CardChoice(
-      label: 'Срезать шляпки',
-      coinsDelta: 12,
+      label: 'Съесть светящийся гриб',
+      healthDelta: -1,
       statusEffect: StatusEffectType.blindness,
       statusChance: 0.3,
     ),
     rightChoice: CardChoice(
-      label: 'Растоптать круг',
-      healthDelta: 2,
+      label: 'Растоптать грибной круг',
       attackDelta: 1,
     ),
     level: 1,
@@ -218,13 +252,12 @@ const List<EventCard> allEvents = [
     description:
         'Черные вороны с кроваво-красными клювами пикируют с крон, ослепляя хлопаньем крыльев. Опасность эффекта: Слепота (35%).',
     leftChoice: CardChoice(
-      label: 'Отбиваться факелом',
+      label: 'Разогнать факелом',
       attackDelta: -1,
-      coinsDelta: 5,
     ),
     rightChoice: CardChoice(
       label: 'Прикрыться плащом',
-      healthDelta: -1,
+      healthDelta: -2,
       statusEffect: StatusEffectType.blindness,
       statusChance: 0.35,
     ),
@@ -238,12 +271,14 @@ const List<EventCard> allEvents = [
     description:
         'В глубине дупла векового дуба что-то поблескивает среди сухих ветвей и паутины.',
     leftChoice: CardChoice(
-      label: 'Запустить руку',
-      givesRandomItem: true,
+      label: 'Запустить руку в дупло',
       healthDelta: -2,
-      coinsDelta: -4,
+      givesRandomItem: true,
     ),
-    rightChoice: CardChoice(label: 'Осмотреть снаружи', coinsDelta: 8),
+    rightChoice: CardChoice(
+      label: 'Осмотреть дупло клинком',
+      attackDelta: 1,
+    ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
   ),
@@ -253,11 +288,13 @@ const List<EventCard> allEvents = [
     title: 'Торфяная трясина',
     description:
         'Кажущаяся твёрдой тропа внезапно проседает — холодная топь засасывает по колено.',
-    leftChoice: CardChoice(label: 'Медленно выползти', attackDelta: -2),
+    leftChoice: CardChoice(
+      label: 'Опереться на шест и выпрыгнуть',
+      attackDelta: -1,
+    ),
     rightChoice: CardChoice(
-      label: 'Рвануться силой',
+      label: 'Выбраться через трясину',
       healthDelta: -2,
-      coinsDelta: 5,
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
@@ -269,11 +306,13 @@ const List<EventCard> allEvents = [
     description:
         'Среди зарослей папоротника стоит покосившаяся хижина со связками сушёных целебных трав.',
     leftChoice: CardChoice(
-      label: 'Целебный сбор',
-      healthDelta: 3,
-      coinsDelta: -3,
+      label: 'Целебный настой травницы',
+      healthDelta: 2,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Помочь расколоть брёвна',
+      attackDelta: 1,
+    ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
   ),
@@ -284,12 +323,13 @@ const List<EventCard> allEvents = [
     description:
         'Хищная пятнистая кошка с кисточками на ушах бесшумно спрыгивает с ветви за спиной.',
     leftChoice: CardChoice(
-      label: 'Ударить мечом',
-      healthDelta: -1,
-      attackDelta: -1,
-      coinsDelta: 9,
+      label: 'Опережающий выпад клинка',
+      attackDelta: -2,
     ),
-    rightChoice: CardChoice(label: 'Отпрянуть в сторону', attackDelta: -2),
+    rightChoice: CardChoice(
+      label: 'Принять прыжок на доспех',
+      healthDelta: -3,
+    ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
   ),
@@ -307,10 +347,14 @@ const List<EventCard> allEvents = [
         'Сундук с черными рунами манит золотом, но от него веет могильным холодом.',
     leftChoice: CardChoice(
       label: 'Вскрыть и забрать',
-      healthDelta: -4,
+      healthDelta: -5,
       coinsDelta: 40,
     ),
-    rightChoice: CardChoice(label: 'Пройти мимо'),
+    rightChoice: CardChoice(
+      label: 'Разрубить оковы силой',
+      attackDelta: -2,
+      coinsDelta: 30,
+    ),
     level: 2,
     dungeonId: DungeonId.common,
   ),
@@ -325,7 +369,10 @@ const List<EventCard> allEvents = [
       attackDelta: 3,
       coinsDelta: -15,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Передохнуть у костра скупщика',
+      healthDelta: 2,
+    ),
     level: 2,
     dungeonId: DungeonId.common,
   ),
@@ -336,11 +383,15 @@ const List<EventCard> allEvents = [
     description:
         'Ловкий делец готов продать ценный предмет тому, у кого есть золото.',
     leftChoice: CardChoice(
-      label: 'Купить редкий предмет',
-      coinsDelta: -20,
+      label: 'Купить редкое снаряжение',
+      attackDelta: 2,
+      coinsDelta: -18,
       givesRandomItem: true,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Выпить целебного вина',
+      healthDelta: 3,
+    ),
     level: 2,
     dungeonId: DungeonId.common,
   ),
@@ -351,12 +402,16 @@ const List<EventCard> allEvents = [
     description:
         'Золотая статуэтка с рубиновыми глазами шепчет об обещании несметных богатств. Опасность эффекта: Проклятие Мидаса (40%).',
     leftChoice: CardChoice(
-      label: 'Сорвать рубины',
+      label: 'Сорвать рубины силой',
+      attackDelta: -1,
       coinsDelta: 35,
       statusEffect: StatusEffectType.midasCurse,
       statusChance: 0.4,
     ),
-    rightChoice: CardChoice(label: 'Поклониться и уйти', healthDelta: 2),
+    rightChoice: CardChoice(
+      label: 'Поклониться и исцелиться',
+      healthDelta: 3,
+    ),
     level: 2,
     dungeonId: DungeonId.common,
   ),
@@ -367,11 +422,15 @@ const List<EventCard> allEvents = [
     description:
         'Скрытая за ложной стеной кладовая полна забытых монет и драгоценностей.',
     leftChoice: CardChoice(
-      label: 'Очистить кладовую',
+      label: 'Взломать решётку силой',
+      attackDelta: -2,
       coinsDelta: 35,
-      attackDelta: -1,
     ),
-    rightChoice: CardChoice(label: 'Игнорировать'),
+    rightChoice: CardChoice(
+      label: 'Пролезть сквозь узкую щель',
+      healthDelta: -3,
+      coinsDelta: 20,
+    ),
     level: 2,
     dungeonId: DungeonId.common,
   ),
@@ -384,15 +443,12 @@ const List<EventCard> allEvents = [
     description:
         'Огромный бурый медведь, поражённый скверной леса, с бешеным рёвом крушит стволы деревьев.',
     leftChoice: CardChoice(
-      label: 'Схватка насмерть',
-      healthDelta: -5,
-      attackDelta: 4,
-      coinsDelta: 25,
+      label: 'Сразить зверя мечом',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Ошеломить факелом',
-      healthDelta: -2,
-      attackDelta: -2,
+      label: 'Принять удар когтей',
+      healthDelta: -5,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -404,14 +460,12 @@ const List<EventCard> allEvents = [
     description:
         'Горбатая тварь в тине и лохмотьях с шипением плюется едкой желчью из гнилого омута. Опасность эффекта: Отравление (40%).',
     leftChoice: CardChoice(
-      label: 'Рассечь нечисть',
-      healthDelta: -3,
-      attackDelta: 2,
-      coinsDelta: 18,
+      label: 'Рассечь нечисть клинком',
+      attackDelta: -2,
     ),
     rightChoice: CardChoice(
-      label: 'Забросать камнями',
-      attackDelta: -1,
+      label: 'Прорваться сквозь желчь',
+      healthDelta: -4,
       statusEffect: StatusEffectType.poison,
       statusChance: 0.4,
     ),
@@ -425,16 +479,12 @@ const List<EventCard> allEvents = [
     description:
         'Живое дерево с растрескавшейся чёрной корой и горящими гнилушками преграждает путь.',
     leftChoice: CardChoice(
-      label: 'Рубить корни',
-      healthDelta: -4,
-      attackDelta: 3,
-      coinsDelta: 22,
+      label: 'Срубить чёрный ствол',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Сжечь ветви',
-      healthDelta: -2,
-      attackDelta: -2,
-      coinsDelta: 10,
+      label: 'Проломить ветви телом',
+      healthDelta: -5,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -446,17 +496,14 @@ const List<EventCard> allEvents = [
     description:
         'Восьмилапый монстр размером с лошадь спускается на клейкой нити, щёлкая ядовитыми жвалами. Опасность эффекта: Отравление (35%).',
     leftChoice: CardChoice(
-      label: 'Пронзить брюхо',
-      healthDelta: -3,
-      attackDelta: 2,
-      coinsDelta: 20,
-      statusEffect: StatusEffectType.poison,
-      statusChance: 0.35,
+      label: 'Пронзить ядовитое брюхо',
+      attackDelta: -2,
     ),
     rightChoice: CardChoice(
-      label: 'Разрезать паутину',
-      healthDelta: -1,
-      attackDelta: -2,
+      label: 'Разорвать паутину телом',
+      healthDelta: -4,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.35,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -468,14 +515,12 @@ const List<EventCard> allEvents = [
     description:
         'Маскировка из веток осыпается, обнажая дно глубокой волчьей ямы с заострёнными кольями. Опасность эффекта: Кровотечение (40%).',
     leftChoice: CardChoice(
-      label: 'Зацепиться за край',
+      label: 'Зацепиться за край клинком',
       attackDelta: -2,
-      coinsDelta: 10,
     ),
     rightChoice: CardChoice(
-      label: 'Спрыгнуть на уступ',
-      healthDelta: -3,
-      coinsDelta: 20,
+      label: 'Спрыгнуть на острые уступы',
+      healthDelta: -4,
       statusEffect: StatusEffectType.bleed,
       statusChance: 0.4,
     ),
@@ -489,13 +534,14 @@ const List<EventCard> allEvents = [
     description:
         'Грубо вырезанный из морёного дуба тотем увенчан ветвистыми рогами. От него веет древней силой. Опасность эффекта: Проклятие Мидаса (35%).',
     leftChoice: CardChoice(
-      label: 'Пожертвовать монеты',
+      label: 'Пожертвовать монеты за силу',
+      attackDelta: 2,
       coinsDelta: -10,
-      attackDelta: 3,
     ),
     rightChoice: CardChoice(
-      label: 'Сорвать амулеты',
-      coinsDelta: 25,
+      label: 'Сорвать амулеты жертвы',
+      healthDelta: -3,
+      coinsDelta: 20,
       statusEffect: StatusEffectType.midasCurse,
       statusChance: 0.35,
     ),
@@ -508,11 +554,13 @@ const List<EventCard> allEvents = [
     title: 'Лагерь следопыта',
     description:
         'Заброшенная стоянка егеря: тлеющие угли в кострище и кожаные походные тюки.',
-    leftChoice: CardChoice(label: 'Согреться у костра', healthDelta: 5),
+    leftChoice: CardChoice(
+      label: 'Согреться у костра',
+      healthDelta: 4,
+    ),
     rightChoice: CardChoice(
-      label: 'Обыскать припасы',
-      coinsDelta: 15,
-      givesRandomItem: true,
+      label: 'Заточить клинок бруском',
+      attackDelta: 2,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -524,14 +572,12 @@ const List<EventCard> allEvents = [
     description:
         'Панцирный лесной хищник с ядовитым хвостом-кинжалом атакует из-под упавшего бревна. Опасность эффекта: Кровотечение (35%).',
     leftChoice: CardChoice(
-      label: 'Разбить панцирь',
-      healthDelta: -4,
-      attackDelta: 3,
-      coinsDelta: 20,
+      label: 'Разбить панцирь клинком',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Отсечь жало',
-      healthDelta: -2,
+      label: 'Отсечь жало щитом',
+      healthDelta: -4,
       statusEffect: StatusEffectType.bleed,
       statusChance: 0.35,
     ),
@@ -545,16 +591,14 @@ const List<EventCard> allEvents = [
     description:
         'Гигантские ядовитые грибы лопаются, выбрасывая в воздух облако багровых едких спор. Опасность эффекта: Слепота (40%).',
     leftChoice: CardChoice(
-      label: 'Бежать сквозь споры',
-      healthDelta: -3,
-      coinsDelta: 18,
-      statusEffect: StatusEffectType.blindness,
-      statusChance: 0.4,
+      label: 'Рассечь грибницу мечом',
+      attackDelta: -2,
     ),
     rightChoice: CardChoice(
-      label: 'Прикрыть лицо и ждать',
-      attackDelta: -2,
-      healthDelta: -1,
+      label: 'Бежать сквозь едкие споры',
+      healthDelta: -3,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.4,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -568,11 +612,10 @@ const List<EventCard> allEvents = [
     leftChoice: CardChoice(
       label: 'Испивать волшебную воду',
       healthDelta: 4,
-      attackDelta: 1,
     ),
     rightChoice: CardChoice(
-      label: 'Набрать во флягу',
-      coinsDelta: -6,
+      label: 'Закалить клинок в потоке',
+      attackDelta: 2,
       givesRandomItem: true,
     ),
     level: 2,
@@ -585,16 +628,12 @@ const List<EventCard> allEvents = [
     description:
         'Дюжина горящих глаз окружает вас в чаще. Хищники готовятся к одновременному броску.',
     leftChoice: CardChoice(
-      label: 'Встать к дереву и рубить',
-      healthDelta: -5,
-      attackDelta: 3,
-      coinsDelta: 24,
+      label: 'Встать к дереву и разить',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Прорвать кольцо факелом',
-      healthDelta: -2,
-      attackDelta: -2,
-      coinsDelta: 6,
+      label: 'Прорвать кольцо телом',
+      healthDelta: -5,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -612,13 +651,12 @@ const List<EventCard> allEvents = [
     description: 'Дракон спит в окружении несметных богатств. Его дыхание поднимает дым.',
     leftChoice: CardChoice(
       label: 'Ограбить тихо',
+      healthDelta: -6,
       coinsDelta: 80,
-      healthDelta: -2,
     ),
     rightChoice: CardChoice(
-      label: 'Убить дракона',
-      healthDelta: -10,
-      attackDelta: 6,
+      label: 'Сразить дракона в сердце',
+      attackDelta: -5,
       coinsDelta: 120,
     ),
     level: 3,
@@ -630,15 +668,14 @@ const List<EventCard> allEvents = [
     title: 'Хранилище реликвий',
     description: 'За массивными воротами скрыты реликвии давно павшей цивилизации.',
     leftChoice: CardChoice(
-      label: 'Взять реликвии',
-      coinsDelta: 70,
+      label: 'Взять реликвии силы',
       attackDelta: 3,
+      coinsDelta: 70,
       givesRandomItem: true,
     ),
     rightChoice: CardChoice(
-      label: 'Оставить нетронутым',
+      label: 'Благословение святилища',
       healthDelta: 5,
-      attackDelta: 2,
     ),
     level: 3,
     dungeonId: DungeonId.common,
@@ -649,11 +686,15 @@ const List<EventCard> allEvents = [
     title: 'Торговец из другого измерения',
     description: 'Существо вне времени и пространства предлагает артефакты из других миров.',
     leftChoice: CardChoice(
-      label: 'Купить артефакт иного мира',
-      coinsDelta: -40,
+      label: 'Купить оружие иных миров',
+      attackDelta: 3,
+      coinsDelta: -30,
       givesRandomItem: true,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Принять астральное исцеление',
+      healthDelta: 4,
+    ),
     level: 3,
     dungeonId: DungeonId.common,
   ),
@@ -664,11 +705,15 @@ const List<EventCard> allEvents = [
     description:
         'Древний дух в мерцающих одеждах готов поделиться силой за плату.',
     leftChoice: CardChoice(
-      label: 'Купить реликвию',
-      coinsDelta: -35,
+      label: 'Купить звёздный клинок',
+      attackDelta: 3,
+      coinsDelta: -25,
       givesRandomItem: true,
     ),
-    rightChoice: CardChoice(label: 'Идти дальше'),
+    rightChoice: CardChoice(
+      label: 'Наполниться энергией космоса',
+      healthDelta: 4,
+    ),
     level: 3,
     dungeonId: DungeonId.common,
   ),
@@ -681,16 +726,12 @@ const List<EventCard> allEvents = [
     description:
         'Иссохший костяной исполин с оленьим черепом вместо головы издает леденящий душу вой.',
     leftChoice: CardChoice(
-      label: 'Сеча насмерть',
-      healthDelta: -7,
-      attackDelta: 5,
-      coinsDelta: 45,
+      label: 'Сокрушить исполина клинком',
+      attackDelta: -4,
     ),
     rightChoice: CardChoice(
-      label: 'Сбить пламенем',
-      healthDelta: -4,
-      attackDelta: -2,
-      coinsDelta: 25,
+      label: 'Выдержать леденящий натиск',
+      healthDelta: -7,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -702,18 +743,14 @@ const List<EventCard> allEvents = [
     description:
         'Громадная праматерь логова с раздутым брюхом ползёт навстречу, капая смертоносным ядом. Опасность эффекта: Отравление (45%).',
     leftChoice: CardChoice(
-      label: 'Вонзить меч в пасть',
-      healthDelta: -8,
-      attackDelta: 6,
-      coinsDelta: 50,
-      statusEffect: StatusEffectType.poison,
-      statusChance: 0.45,
+      label: 'Пронзить жвалы клинком',
+      attackDelta: -4,
     ),
     rightChoice: CardChoice(
-      label: 'Стрелять издали',
-      healthDelta: -4,
-      attackDelta: -3,
-      coinsDelta: 30,
+      label: 'Выдержать ядовитый плевок',
+      healthDelta: -8,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.45,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -725,16 +762,12 @@ const List<EventCard> allEvents = [
     description:
         'Чудовищный хищник с саблезубыми клыками и стальными когтями атакует быстрее молнии.',
     leftChoice: CardChoice(
-      label: 'Принять на лезвие',
-      healthDelta: -7,
-      attackDelta: 5,
-      coinsDelta: 40,
+      label: 'Пронзить хищника на скаку',
+      attackDelta: -4,
     ),
     rightChoice: CardChoice(
-      label: 'Перекат под брюхо',
-      healthDelta: -3,
-      attackDelta: -2,
-      coinsDelta: 20,
+      label: 'Перекат под ударом когтей',
+      healthDelta: -6,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -746,16 +779,12 @@ const List<EventCard> allEvents = [
     description:
         'Растение размером с повозку с треском захлопывает шипастые лепестки, сочащиеся кислотой.',
     leftChoice: CardChoice(
-      label: 'Разрубить стебель',
-      healthDelta: -5,
-      attackDelta: 4,
-      coinsDelta: 35,
+      label: 'Разрубить стебель клинком',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Вырваться силой',
+      label: 'Вырваться сквозь кислоту',
       healthDelta: -6,
-      attackDelta: 1,
-      coinsDelta: 25,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -769,12 +798,10 @@ const List<EventCard> allEvents = [
     leftChoice: CardChoice(
       label: 'Не поддаваться чарам',
       attackDelta: -3,
-      coinsDelta: 20,
     ),
     rightChoice: CardChoice(
-      label: 'Броситься на свет',
+      label: 'Броситься в трясину',
       healthDelta: -5,
-      coinsDelta: 40,
       statusEffect: StatusEffectType.blindness,
       statusChance: 0.45,
     ),
@@ -788,16 +815,12 @@ const List<EventCard> allEvents = [
     description:
         'Поражённый скверной полулев-полуорел пикирует с чёрных скал, рассекая воздух когтями.',
     leftChoice: CardChoice(
-      label: 'Выпад в сердце',
-      healthDelta: -8,
-      attackDelta: 5,
-      coinsDelta: 55,
+      label: 'Смертоносный выпад в сердце',
+      attackDelta: -5,
     ),
     rightChoice: CardChoice(
-      label: 'Подрубить крыло щитом',
-      healthDelta: -4,
-      attackDelta: -2,
-      coinsDelta: 25,
+      label: 'Принять пике на щит',
+      healthDelta: -8,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -809,15 +832,14 @@ const List<EventCard> allEvents = [
     description:
         'Окровавленные мегалиты пульсируют тёмной энергией. В центре лежит древняя реликвия леса. Опасность эффекта: Проклятие Мидаса (40%).',
     leftChoice: CardChoice(
-      label: 'Забрать реликвию',
-      coinsDelta: 60,
+      label: 'Впитать тёмную мощь',
+      attackDelta: 3,
       statusEffect: StatusEffectType.midasCurse,
       statusChance: 0.4,
     ),
     rightChoice: CardChoice(
-      label: 'Очистить алтарь',
-      healthDelta: 6,
-      attackDelta: 3,
+      label: 'Очистить древний алтарь',
+      healthDelta: 5,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -828,8 +850,14 @@ const List<EventCard> allEvents = [
     title: 'Грот светящегося мха',
     description:
         'Укромная пещера под корнями векового древа озарена мягким изумрудным исцеляющим сиянием.',
-    leftChoice: CardChoice(label: 'Исцеляющий сон', healthDelta: 8),
-    rightChoice: CardChoice(label: 'Медитация на силу', attackDelta: 5),
+    leftChoice: CardChoice(
+      label: 'Исцеляющий сон',
+      healthDelta: 6,
+    ),
+    rightChoice: CardChoice(
+      label: 'Медитация на силу',
+      attackDelta: 3,
+    ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
   ),
@@ -840,15 +868,12 @@ const List<EventCard> allEvents = [
     description:
         'Исполинские корни шевелятся в глубине трещины земли, пытаясь утащить неосторожного путника.',
     leftChoice: CardChoice(
-      label: 'Прыгнуть через бездну',
-      healthDelta: -4,
-      attackDelta: 2,
-      coinsDelta: 30,
+      label: 'Перерубить живые корни',
+      attackDelta: -3,
     ),
     rightChoice: CardChoice(
-      label: 'Карабкаться по корням',
+      label: 'Карабкаться по трещине',
       healthDelta: -6,
-      coinsDelta: 45,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -860,16 +885,13 @@ const List<EventCard> allEvents = [
     description:
         'Плачущая лесная дева с ветвями вместо волос молит об избавлении от поглотившей её скверны.',
     leftChoice: CardChoice(
-      label: 'Подарить бальзам',
-      healthDelta: -2,
-      coinsDelta: -10,
+      label: 'Подарить целебный бальзам',
+      healthDelta: -3,
       givesRandomItem: true,
     ),
     rightChoice: CardChoice(
-      label: 'Оборвать страдания',
-      healthDelta: -3,
-      attackDelta: 4,
-      coinsDelta: 35,
+      label: 'Оборвать страдания клинком',
+      attackDelta: 2,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
@@ -896,16 +918,14 @@ const List<EventCard> allBossCards = [
     description:
         'Гигантский чёрный волк с пылающими янтарными глазами и зубами, способными перекусить латы. Его рёв созывает стаю со всех концов леса.',
     leftChoice: CardChoice(
-      label: 'Удар в сердце',
-      healthDelta: -5,
-      attackDelta: 2,
-      coinsDelta: 30,
+      label: 'Выдержать яростный бросок',
+      healthDelta: -6,
+      coinsDelta: 25,
     ),
     rightChoice: CardChoice(
-      label: 'Опрокинуть щитом',
-      healthDelta: -2,
-      attackDelta: -2,
-      coinsDelta: 15,
+      label: 'Сразить вожака клинком',
+      attackDelta: -3,
+      coinsDelta: 30,
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
@@ -917,16 +937,14 @@ const List<EventCard> allBossCards = [
     description:
         'Древняя карга, вросшая в коряги мёртвого болота. Вокруг неё вьются ядовитые туманы, а костлявые руки сжимают чудовищный посох.',
     leftChoice: CardChoice(
-      label: 'Разрубить посох',
-      healthDelta: -6,
-      attackDelta: 3,
-      coinsDelta: 40,
+      label: 'Прорваться сквозь скверну',
+      healthDelta: -7,
+      coinsDelta: 30,
     ),
     rightChoice: CardChoice(
-      label: 'Развеять туман',
-      healthDelta: -3,
-      attackDelta: -3,
-      coinsDelta: 20,
+      label: 'Разрубить колдовской посох',
+      attackDelta: -4,
+      coinsDelta: 40,
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
@@ -938,16 +956,14 @@ const List<EventCard> allBossCards = [
     description:
         'Колосс из векового морёного дуба, переплетённых ветвей и оленьих рогов. Само сердце проклятого леса пульсирует в его груди!',
     leftChoice: CardChoice(
-      label: 'Сразить владыку чащи',
+      label: 'Сразиться с владыкой леса',
       healthDelta: -8,
-      attackDelta: 4,
-      coinsDelta: 60,
+      coinsDelta: 40,
     ),
     rightChoice: CardChoice(
-      label: 'Рассечь Сердце Скверны',
-      healthDelta: -4,
-      attackDelta: -4,
-      coinsDelta: 30,
+      label: 'Срубить древнее древо',
+      attackDelta: -5,
+      coinsDelta: 60,
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,

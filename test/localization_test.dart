@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:kki_cardgame/app_localizations.dart';
-import 'package:kki_cardgame/data/dungeons.dart';
 import 'package:kki_cardgame/screens/chronicle_screen.dart';
 import 'package:kki_cardgame/screens/dungeon_select_screen.dart';
 import 'package:kki_cardgame/screens/glossary_screen.dart';
@@ -12,7 +10,6 @@ import 'package:kki_cardgame/screens/tutorial_screen.dart';
 import 'package:kki_cardgame/services/locale_service.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';
-import 'package:kki_cardgame/services/run_chronicle_service.dart';
 import 'package:kki_cardgame/services/unlocked_items_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -115,21 +115,19 @@ class _TutorialScreenState extends State<TutorialScreen> {
     TutorialStep(
       mentorEmoji: '⚔️',
       mentorMessage:
-          'Впереди монстр! Если твоей атаки недостаточно, выбор будет заблокирован. Выбери «Атаковать клинком» (свайп влево) или «Откупиться мясом» (свайп вправо).',
+          'Впереди монстр! Если твоей атаки недостаточно, выбор будет заблокирован. Выбери «Атаковать клинком» (свайп влево) или «Отбиться телом» (свайп вправо).',
       card: EventCard(
         id: 'tut_step_2',
         type: EventType.monster,
         title: 'Пещерный гоблин',
         description: 'Гоблин с ржавым тесаком преграждает путь и скалит зубы.',
         leftChoice: CardChoice(
-          label: 'Атаковать (-2 ⚡, +8 🪙)',
+          label: 'Атаковать (-2 ⚡)',
           attackDelta: -2,
-          coinsDelta: 8,
         ),
         rightChoice: CardChoice(
-          label: 'Отдать припасы (-2 ❤, +1 ⚡)',
+          label: 'Отбиться телом (-2 ❤)',
           healthDelta: -2,
-          attackDelta: 1,
         ),
         level: 1,
         dungeonId: DungeonId.common,
@@ -147,11 +145,14 @@ class _TutorialScreenState extends State<TutorialScreen> {
         title: 'Кованый сундук',
         description: 'Тяжёлый дубовый сундук с бронзовым замком, доверху набитый золотыми монетами.',
         leftChoice: CardChoice(
-          label: 'Забрать золото (+15 🪙)',
+          label: 'Открыть осторожно (+2 ❤, +15 🪙)',
+          healthDelta: 2,
           coinsDelta: 15,
         ),
         rightChoice: CardChoice(
-          label: 'Оставить',
+          label: 'Сбить замок силой (+1 ⚡, +10 🪙)',
+          attackDelta: 1,
+          coinsDelta: 10,
         ),
         level: 1,
         dungeonId: DungeonId.common,
@@ -193,14 +194,14 @@ class _TutorialScreenState extends State<TutorialScreen> {
         title: 'Ядовитые споровики',
         description: 'Из трещин в стене сочатся ядовитые грибы, распыляющие удушливый газ.',
         leftChoice: CardChoice(
-          label: 'Пробежать сквозь газ',
+          label: 'Пробежать сквозь газ (-1 ❤)',
           healthDelta: -1,
           statusEffect: StatusEffectType.poison,
           statusChance: 1.0,
         ),
         rightChoice: CardChoice(
-          label: 'Сжечь споры факелом (+5 🪙)',
-          coinsDelta: 5,
+          label: 'Разрубить очаг мечом (+1 ⚡)',
+          attackDelta: 1,
         ),
         level: 1,
         dungeonId: DungeonId.common,
@@ -218,13 +219,12 @@ class _TutorialScreenState extends State<TutorialScreen> {
         title: 'Тренировочный Голем',
         description: 'Магический голем из цельного камня. Его удары сокрушительны, но награда за победу велика!',
         leftChoice: CardChoice(
-          label: 'Сокрушить ядро (-3 ❤, +2 ⚡, +20 🪙)',
+          label: 'Принять удар на щит (-3 ❤, +20 🪙)',
           healthDelta: -3,
-          attackDelta: 2,
           coinsDelta: 20,
         ),
         rightChoice: CardChoice(
-          label: 'Опрокинуть рычагом (-2 ⚡, +15 🪙)',
+          label: 'Сокрушить ядро (-2 ⚡, +15 🪙)',
           attackDelta: -2,
           coinsDelta: 15,
         ),

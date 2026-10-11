@@ -64,4 +64,66 @@ void main() {
     await tester.pumpAndSettle();
     expect(swiped, isTrue);
   });
+
+  testWidgets('Choice hints with long labels stay within card bounds', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    const longEvent = EventCard(
+      id: 'long_label_card',
+      type: EventType.monster,
+      title: 'Исполинский дракон',
+      description: 'Очень длинное описание для проверки.',
+      leftChoice: CardChoice(
+        label: 'Сокрушительный выпад клинком прямо в сердце чудовища',
+        healthDelta: -5,
+        coinsDelta: 50,
+      ),
+      rightChoice: CardChoice(
+        label: 'Попытаться ускользнуть и скрыться в дальних катакомбах',
+        attackDelta: -3,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              height: 520,
+              child: SwipeCard(
+                event: longEvent,
+                currentCoins: 10,
+                currentAttack: 5,
+                isRevealingChoices: true,
+                onSwipe: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cardContainer = find.descendant(
+      of: find.byType(SwipeCard),
+      matching: find.byType(ClipRRect),
+    ).first;
+    final cardRect = tester.getRect(cardContainer);
+
+    // Both left and right choice hints should fit within the card horizontally
+    final leftTextFinder = find.textContaining('Сокрушительный выпад');
+    final rightTextFinder = find.textContaining('Попытаться ускользнуть');
+
+    expect(leftTextFinder, findsOneWidget);
+    expect(rightTextFinder, findsOneWidget);
+
+    final leftTextRect = tester.getRect(leftTextFinder);
+    final rightTextRect = tester.getRect(rightTextFinder);
+
+    expect(leftTextRect.left, greaterThanOrEqualTo(cardRect.left));
+    expect(rightTextRect.right, lessThanOrEqualTo(cardRect.right + 2));
+  });
 }
