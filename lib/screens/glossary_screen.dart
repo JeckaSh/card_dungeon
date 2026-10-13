@@ -71,7 +71,10 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       isScrollControlled: true,
       builder: (context) => Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 540),
+          constraints: BoxConstraints(
+            maxWidth: 540,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+          ),
           child: Container(
             decoration: const BoxDecoration(
               color: Color(0xFF1A1A2E),
@@ -540,16 +543,52 @@ class _CardDetailSheet extends StatelessWidget {
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
-              _DetailChoice(
-                label: '← ${event.leftChoice.label}',
-                choice: event.leftChoice,
-              ),
-              const SizedBox(height: 12),
-              _DetailChoice(
-                label: '${event.rightChoice.label} →',
-                choice: event.rightChoice,
-              ),
+              if (event.isMultiPhase && event.bossPhases != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF5350).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFEF5350).withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('⚔️ ', style: TextStyle(fontSize: 13)),
+                      Text(
+                        context.l10n.bossMultiPhaseBadge(event.bossPhases!.length),
+                        style: const TextStyle(
+                          color: Color(0xFFEF5350),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                for (int i = 0; i < event.bossPhases!.length; i++) ...[
+                  _PhaseDetailSection(
+                    phaseNumber: i + 1,
+                    phase: event.bossPhases![i],
+                  ),
+                  if (i < event.bossPhases!.length - 1) const SizedBox(height: 14),
+                ],
+              ] else ...[
+                const SizedBox(height: 24),
+                _DetailChoice(
+                  label: '← ${event.leftChoice.label}',
+                  choice: event.leftChoice,
+                ),
+                const SizedBox(height: 12),
+                _DetailChoice(
+                  label: '${event.rightChoice.label} →',
+                  choice: event.rightChoice,
+                ),
+              ],
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -576,6 +615,85 @@ class _CardDetailSheet extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PhaseDetailSection extends StatelessWidget {
+  const _PhaseDetailSection({
+    required this.phaseNumber,
+    required this.phase,
+  });
+
+  final int phaseNumber;
+  final BossPhase phase;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFEF5350).withValues(alpha: 0.25),
+        ),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF5350).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  context.l10n.bossPhaseLabel(phaseNumber),
+                  style: const TextStyle(
+                    color: Color(0xFFEF5350),
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${phase.phaseEmoji} ${phase.title}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            phase.description,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _DetailChoice(
+            label: '← ${phase.leftChoice.label}',
+            choice: phase.leftChoice,
+          ),
+          const SizedBox(height: 8),
+          _DetailChoice(
+            label: '${phase.rightChoice.label} →',
+            choice: phase.rightChoice,
+          ),
+        ],
       ),
     );
   }

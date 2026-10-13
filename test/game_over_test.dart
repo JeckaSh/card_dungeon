@@ -147,6 +147,9 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
+    // Set health upgrade level so hero has 30 HP
+    PlayerStatsService.instance.setLevelsForTest(health: 10, attack: 10);
+
     await tester.pumpWidget(
       const MaterialApp(
         home: GameScreen(
@@ -163,7 +166,19 @@ void main() {
     expect(find.text('Древний Хозяин Леса'), findsOneWidget);
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
-    // Swipe left on the boss to fight ('Сразиться': -8 HP, player has 10 HP, survives with 2 HP)
+    // Phase 1
+    await tester.drag(find.byType(SwipeCard), const Offset(-300, 0));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    // Phase 2
+    await tester.drag(find.byType(SwipeCard), const Offset(-300, 0));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    // Phase 3 - boss defeated
     await tester.drag(find.byType(SwipeCard), const Offset(-300, 0));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

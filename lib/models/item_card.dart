@@ -51,6 +51,21 @@ enum ItemEffectType {
 
   /// Золотой подкуп: нейтрализация угрозы за фиксированную плату
   bribery,
+
+  /// Божественный рунический щит: полное поглощение входящего урона (100%)
+  divineShield,
+
+  /// Зелье каменной кожи: защита от получения яда и кровотечения
+  stoneskin,
+
+  /// Противоядие: мгновенное снятие временных эффектов яда и кровотечения
+  antidote,
+
+  /// Зелье регенерации: восстановление здоровья каждый ход
+  regeneration,
+
+  /// Свиток телепортации: перемещение вперёд на случайное число карт
+  teleport,
 }
 
 /// Расширение для работы с категориями и отображением эффектов предметов.
@@ -69,6 +84,11 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.diceOfFate => 'Удача',
         ItemEffectType.smokeBomb => 'Побег',
         ItemEffectType.bribery => 'Дипломатия',
+        ItemEffectType.divineShield => 'Защита',
+        ItemEffectType.stoneskin => 'Защита',
+        ItemEffectType.antidote => 'Очищение',
+        ItemEffectType.regeneration => 'Исцеление',
+        ItemEffectType.teleport => 'Свиток',
       };
 
   /// Формирует компактный бейдж эффекта с учётом числового параметра [value]
@@ -76,7 +96,7 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.heal => '+$value ❤',
         ItemEffectType.attack => '+$value ⚡',
         ItemEffectType.skip => 'Пропуск',
-        ItemEffectType.shield => '🛡️ ×$value',
+        ItemEffectType.shield => '🛡️ 50%',
         ItemEffectType.invertNext => '🪞 Инверсия',
         ItemEffectType.thornmail => '🌵 Шипы',
         ItemEffectType.transmute => '⚗️ Алхимия',
@@ -85,6 +105,11 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.diceOfFate => '🎲 Кубик',
         ItemEffectType.smokeBomb => '💨 Побег',
         ItemEffectType.bribery => '💰 Подкуп',
+        ItemEffectType.divineShield => '✨🛡️ 100%',
+        ItemEffectType.stoneskin => '🪨 Кожа',
+        ItemEffectType.antidote => '🧪 Противоядие',
+        ItemEffectType.regeneration => '🌿 +2❤/ход',
+        ItemEffectType.teleport => '🌀 1-3 карты',
       };
 }
 

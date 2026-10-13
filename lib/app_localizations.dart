@@ -151,6 +151,15 @@ class AppLocalizations {
       _isRu ? 'Открыто' : 'Unlocked';
   String get shopInChest => _isRu ? 'В сундуке' : 'In chest';
   String get shopCost => _isRu ? 'Стоимость' : 'Cost';
+  String get shopHeroChest => _isRu ? 'Сундук героя' : 'Hero Chest';
+  String get shopHeroChestDesc =>
+      _isRu
+          ? 'Содержит мощные расходники и защитное снаряжение для опытного бойца.'
+          : 'Contains powerful consumables and defensive gear for seasoned warriors.';
+  String get shopHeroChestDescAllCollected =>
+      _isRu
+          ? 'Все предметы героя собраны! Сундук больше недоступен.'
+          : 'All hero items collected! Chest is no longer available.';
 
   // ── Инвентарь ────────────────────────────────────────────────────────────
   String get inventoryTitle => _isRu ? 'Инвентарь' : 'Inventory';
@@ -215,6 +224,10 @@ class AppLocalizations {
       _isRu ? 'Встреть в подземелье' : 'Encounter in dungeon';
   String get glossaryDiscovered =>
       _isRu ? 'Изучено' : 'Discovered';
+  String bossPhaseLabel(int phase) =>
+      _isRu ? 'ФАЗА $phase' : 'PHASE $phase';
+  String bossMultiPhaseBadge(int count) =>
+      _isRu ? 'Многофазный бой ($count фазы)' : 'Multi-phase battle ($count phases)';
 
   // ── Хроника ──────────────────────────────────────────────────────────────
   String get chronicleTitle => _isRu ? 'Хроника' : 'Chronicle';
@@ -331,6 +344,12 @@ class AppLocalizations {
       _isRu ? 'Карта использована' : 'Card Used';
   String gameBuffShield(int charges) =>
       _isRu ? 'Щит ×$charges' : 'Shield ×$charges';
+  String gameBuffDivineShield(int charges) =>
+      _isRu ? 'Бож. щит ×$charges' : 'Divine Shield ×$charges';
+  String gameBuffStoneskin(int turns) =>
+      _isRu ? 'Каменная кожа ×$turns' : 'Stoneskin ×$turns';
+  String gameBuffRegen(int turns) =>
+      _isRu ? 'Регенерация ×$turns (+2❤)' : 'Regen ×$turns (+2❤)';
   String get gameBuffMirror => _isRu ? 'Зеркало' : 'Mirror';
   String get gameBuffClairvoyance =>
       _isRu ? 'Ясновидение' : 'Clairvoyance';
@@ -464,6 +483,11 @@ class AppLocalizations {
         ItemEffectType.diceOfFate => 'Luck',
         ItemEffectType.smokeBomb => 'Escape',
         ItemEffectType.bribery => 'Diplomacy',
+        ItemEffectType.divineShield => 'Defense',
+        ItemEffectType.stoneskin => 'Defense',
+        ItemEffectType.antidote => 'Cleanse',
+        ItemEffectType.regeneration => 'Healing',
+        ItemEffectType.teleport => 'Scroll',
       };
     }
     return type.categoryLabel;
@@ -475,7 +499,7 @@ class AppLocalizations {
         ItemEffectType.heal => '+$value ❤',
         ItemEffectType.attack => '+$value ⚡',
         ItemEffectType.skip => 'Skip',
-        ItemEffectType.shield => '🛡️ ×$value',
+        ItemEffectType.shield => '🛡️ 50%',
         ItemEffectType.invertNext => '🪞 Inversion',
         ItemEffectType.thornmail => '🌵 Thorns',
         ItemEffectType.transmute => '⚗️ Alchemy',
@@ -484,6 +508,11 @@ class AppLocalizations {
         ItemEffectType.diceOfFate => '🎲 Dice',
         ItemEffectType.smokeBomb => '💨 Escape',
         ItemEffectType.bribery => '💰 Bribe',
+        ItemEffectType.divineShield => '✨🛡️ 100%',
+        ItemEffectType.stoneskin => '🪨 Stoneskin',
+        ItemEffectType.antidote => '🧪 Antidote',
+        ItemEffectType.regeneration => '🌿 +2❤/turn',
+        ItemEffectType.teleport => '🌀 1-3 cards',
       };
     }
     return type.getBadge(value);

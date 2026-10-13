@@ -72,7 +72,7 @@ void main() {
 
     expect(find.text('Shop'), findsOneWidget);
     expect(find.text('Your balance'), findsOneWidget);
-    expect(find.text('Magic Chest'), findsOneWidget);
+    expect(find.text('Magic Chest'), findsAtLeastNWidgets(1));
     expect(find.text('Available Cards'), findsOneWidget);
   });
 

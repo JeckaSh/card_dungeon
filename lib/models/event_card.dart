@@ -139,10 +139,42 @@ class CardChoice {
   final double statusChance;
 }
 
+/// Описание одной фазы трёхфазного босс-файта.
+///
+/// Для каждого Boss-[EventCard] с полем [EventCard.bossPhases] [GameScreen]
+/// отображает фазы последовательно: фаза 1 → 2 → 3, после чего босс считается
+/// побеждённым и уровень подземелья повышается.
+///
+/// * [title]       — имя фазы (например, «Ярость стаи»)
+/// * [description] — нарративное описание фазы для карточки
+/// * [leftChoice]  — свайп влево (обычно: здоровье)
+/// * [rightChoice] — свайп вправо (обычно: атака)
+/// * [phaseEmoji]  — эмодзи для отображения в журнале и интерфейсе
+class BossPhase {
+  const BossPhase({
+    required this.title,
+    required this.description,
+    required this.leftChoice,
+    required this.rightChoice,
+    this.phaseEmoji = '⚔️',
+  });
+
+  final String title;
+  final String description;
+  final CardChoice leftChoice;
+  final CardChoice rightChoice;
+
+  /// Эмодзи, отображаемое в баннере фазы и дневнике героя
+  final String phaseEmoji;
+}
+
 /// Модель карточки игрового события или босса.
 ///
 /// Каждая карточка представляет собой отдельную встречу в подземелье:
 /// игрок выбирает между [leftChoice] (свайп влево) и [rightChoice] (свайп вправо).
+///
+/// Для боссов может содержать [bossPhases] — список из 3 фаз, реализующих
+/// трёхэтапный босс-файт вместо простой карточки-монстра.
 class EventCard {
   const EventCard({
     required this.id,
@@ -153,6 +185,7 @@ class EventCard {
     required this.rightChoice,
     this.level = 1,
     this.dungeonId = DungeonId.cursedForest,
+    this.bossPhases,
   });
 
   final String id;
@@ -170,6 +203,14 @@ class EventCard {
   /// [DungeonId.common] ('common' или 'общий') означает, что карта встречается в любом подземелье.
   final String dungeonId;
 
+  /// Список из ровно 3 фаз трёхэтапного босс-файта.
+  ///
+  /// Если `null` — босс работает как однофазный (старое поведение).
+  /// При наличии [GameScreen] показывает фазы последовательно, каждая со своей
+  /// карточкой, заголовком, описанием и выборами. Победа в 3-й фазе =
+  /// полная победа над боссом.
+  final List<BossPhase>? bossPhases;
+
   /// Алиас для [dungeonId]
   String get dungeon => dungeonId;
 
@@ -185,4 +226,7 @@ class EventCard {
   }
 
   bool get isBoss => type == EventType.boss;
+
+  /// Является ли этот босс трёхфазным
+  bool get isMultiPhase => bossPhases != null && bossPhases!.length == 3;
 }

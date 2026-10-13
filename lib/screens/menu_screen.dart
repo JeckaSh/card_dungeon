@@ -174,6 +174,20 @@ class MenuScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Номер версии в левом верхнем углу
+                  Positioned(
+                    top: 14,
+                    left: 16,
+                    child: Text(
+                      'card dungeon v0.0.13',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
                   // Кнопка панели разработчика (дебаг)
                   Positioned(
                     top: 8,

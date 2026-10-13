@@ -117,11 +117,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Initial price with 0 unlocked cards is 50
-    expect(find.textContaining('Открыть сундук (50 🪙)'), findsOneWidget);
+    // Initial price with 0 unlocked cards is 50 (for both chests)
+    expect(find.textContaining('Открыть сундук (50 🪙)'), findsNWidgets(2));
 
-    // Open first chest
-    await tester.tap(find.textContaining('Открыть сундук (50 🪙)'));
+    // Open first chest (magic chest)
+    await tester.tap(find.textContaining('Открыть сундук (50 🪙)').first);
     await tester.pumpAndSettle();
 
     // Reward dialog should appear
@@ -133,10 +133,10 @@ void main() {
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
-    // Price should now be 75
+    // Price for first chest should now be 75
     expect(find.textContaining('Открыть сундук (75 🪙)'), findsOneWidget);
 
-    // Open second chest
+    // Open first chest again
     await tester.tap(find.textContaining('Открыть сундук (75 🪙)'));
     await tester.pumpAndSettle();
 
@@ -172,13 +172,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Should display that all cards are collected
-    expect(find.text('Все карты получены'), findsOneWidget);
+    // Should display that all cards are collected (for both chests)
+    expect(find.text('Все карты получены'), findsNWidgets(2));
     expect(find.textContaining('Все доступные карты собраны! Сундук больше недоступен.'), findsOneWidget);
+    expect(find.textContaining('Все предметы героя собраны! Сундук больше недоступен.'), findsOneWidget);
 
     // The button must be disabled
     final button = tester.widget<ElevatedButton>(
-      find.widgetWithText(ElevatedButton, 'Все карты получены'),
+      find.widgetWithText(ElevatedButton, 'Все карты получены').first,
     );
     expect(button.onPressed, isNull);
   });

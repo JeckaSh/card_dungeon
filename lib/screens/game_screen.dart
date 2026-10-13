@@ -117,8 +117,18 @@ class GameScreenState extends State<GameScreen> {
   String? _lastFeedback;
   int _cardKey = 0;
 
+  // ─── Состояние трёхфазного босс-файта ───────────────────────
+  /// Текущая фаза боссового боя: 0 = не в бою, 1/2/3 = фаза.
+  int _bossPhase = 0;
+
+  /// Зафиксированная карточка текущего босса (для многофазного боя).
+  EventCard? _activeBossCard;
+
   // Активные статусы
   int _shieldCharges = 0;
+  int _divineShieldCharges = 0;
+  int _stoneskinTurns = 0;
+  int _regenerationTurns = 0;
   bool _invertNextChoice = false;
   bool _isRevealingChoices = false;
   int _greedMagnetTurns = 0;
@@ -131,13 +141,54 @@ class GameScreenState extends State<GameScreen> {
 
   // ─── Геттеры ────────────────────────────────
 
-  /// true, если текущая карточка (0-indexed _cardsPassed) должна быть боссом.
-  /// Босс на позициях 19, 39, 59... (т.е. каждая 20-я карта).
-  bool get _isCurrentBoss => (_cardsPassed + 1) % _bossEvery == 0;
+  /// true, если сейчас идёт боссовый бой (включая активные фазы многофазного боя).
+  bool get _isCurrentBoss =>
+      _bossPhase > 0 || (_cardsPassed + 1) % _bossEvery == 0;
 
   EventCard get _currentCard {
-    if (_isCurrentBoss) return _selectBoss();
+    // В ходе многофазного боя возвращаем тот же boss EventCard;
+    // UI сам читает _bossPhase чтобы показать нужную фазу из bossPhases.
+    if (_bossPhase > 0 && _activeBossCard != null) return _activeBossCard!;
+    if ((_cardsPassed + 1) % _bossEvery == 0) {
+      final boss = _selectBoss();
+      if (boss.isMultiPhase) {
+        _activeBossCard = boss;
+        if (_bossPhase == 0) _bossPhase = 1;
+      }
+      return boss;
+    }
     return _deck[_deckPosition % _deck.length];
+  }
+
+  /// Возвращает данные текущей фазы боссового боя или null если босс однофазный.
+  BossPhase? get _currentBossPhase {
+    final boss = _activeBossCard ?? _currentCard;
+    if (!boss.isMultiPhase) return null;
+    if (_bossPhase == 0 && (_cardsPassed + 1) % _bossEvery == 0) {
+      _activeBossCard = boss;
+      _bossPhase = 1;
+    }
+    final idx = _bossPhase - 1;
+    if (idx < 0 || idx >= boss.bossPhases!.length) return null;
+    return boss.bossPhases![idx];
+  }
+
+  /// EventCard-обёртка для текущей фазы (title/description/leftChoice/rightChoice
+  /// заменены данными фазы, isBoss/type/id сохранены из оригинального босса).
+  EventCard get _effectiveCard {
+    final phase = _currentBossPhase;
+    if (phase == null) return _currentCard;
+    final boss = _activeBossCard ?? _currentCard;
+    return EventCard(
+      id: boss.id,
+      type: boss.type,
+      title: '${phase.phaseEmoji} ${phase.title}',
+      description: phase.description,
+      leftChoice: phase.leftChoice,
+      rightChoice: phase.rightChoice,
+      level: boss.level,
+      dungeonId: boss.dungeonId,
+    );
   }
 
   /// Сколько карточек до следующего босса (null — показывать только когда ≤5).
@@ -184,7 +235,12 @@ class GameScreenState extends State<GameScreen> {
     _result = GameResult.playing;
     _lastFeedback = null;
     _cardKey = 0;
+    _bossPhase = 0;
+    _activeBossCard = null;
     _shieldCharges = 0;
+    _divineShieldCharges = 0;
+    _stoneskinTurns = 0;
+    _regenerationTurns = 0;
     _invertNextChoice = false;
     _isRevealingChoices = false;
     _greedMagnetTurns = 0;
@@ -195,6 +251,13 @@ class GameScreenState extends State<GameScreen> {
     _midasCurseTurns = 0;
     _journal.clear();
     _rebuildDeck();
+    if ((_cardsPassed + 1) % _bossEvery == 0) {
+      final boss = _selectBoss();
+      if (boss.isMultiPhase) {
+        _activeBossCard = boss;
+        _bossPhase = 1;
+      }
+    }
     _discoverCurrentCard();
     _addJournalEntry('🗡️', 'Герой вошёл в подземелье: ${widget.dungeon.name}');
     if (widget.initialInventory == null && _inventoryItems.isNotEmpty) {
@@ -311,6 +374,40 @@ class GameScreenState extends State<GameScreen> {
   @visibleForTesting
   List<EventCard> get deck => List.unmodifiable(_deck);
 
+  @visibleForTesting
+  int get shieldCharges => _shieldCharges;
+
+  @visibleForTesting
+  int get divineShieldCharges => _divineShieldCharges;
+
+  @visibleForTesting
+  int get stoneskinTurns => _stoneskinTurns;
+
+  @visibleForTesting
+  int get regenerationTurns => _regenerationTurns;
+
+  @visibleForTesting
+  void setRegenerationForTesting(int turns) =>
+      setState(() => _regenerationTurns = turns);
+
+  @visibleForTesting
+  int get poisonTurns => _poisonTurns;
+
+  @visibleForTesting
+  int get bleedTurns => _bleedTurns;
+
+  @visibleForTesting
+  int get blindnessTurns => _blindnessTurns;
+
+  @visibleForTesting
+  void setPoisonForTesting(int turns) => setState(() => _poisonTurns = turns);
+
+  @visibleForTesting
+  void setBleedForTesting(int turns) => setState(() => _bleedTurns = turns);
+
+  @visibleForTesting
+  void setBlindnessForTesting(int turns) => setState(() => _blindnessTurns = turns);
+
   /// Выбирает боссовую карточку для текущего подземелья по номеру встреченного босса.
   EventCard _selectBoss() {
     final bossNumber = (_cardsPassed + 1) ~/ _bossEvery;
@@ -381,6 +478,20 @@ class GameScreenState extends State<GameScreen> {
         _deck.shuffle(_random);
       }
     }
+    // Если следующая карточка — многофазный босс, сразу активируем фазу 1
+    if ((_cardsPassed + 1) % _bossEvery == 0) {
+      final boss = _selectBoss();
+      if (boss.isMultiPhase) {
+        _activeBossCard = boss;
+        _bossPhase = 1;
+      } else {
+        _activeBossCard = null;
+        _bossPhase = 0;
+      }
+    } else {
+      _activeBossCard = null;
+      _bossPhase = 0;
+    }
     if (_health > 0) _discoverCurrentCard();
   }
 
@@ -389,7 +500,17 @@ class GameScreenState extends State<GameScreen> {
   void _onSwipe(bool isRight) {
     if (_result != GameResult.playing) return;
 
-    final choice = isRight ? _currentCard.rightChoice : _currentCard.leftChoice;
+    // Если начинается многофазный босс и фаза ещё не инициирована — гарантируем фазу 1
+    if (_bossPhase == 0 && (_cardsPassed + 1) % _bossEvery == 0) {
+      final card = _selectBoss();
+      if (card.isMultiPhase) {
+        _activeBossCard = card;
+        _bossPhase = 1;
+      }
+    }
+
+    final effectiveCard = _effectiveCard;
+    final choice = isRight ? effectiveCard.rightChoice : effectiveCard.leftChoice;
     final wasBoss = _isCurrentBoss;
 
     // Проверяем доступность выбора
@@ -434,11 +555,17 @@ class GameScreenState extends State<GameScreen> {
       triggeredBuffs.add('🫞 Зеркало сработало');
     }
 
-    // 2. Рунический щит
-    if (effectiveHealthDelta < 0 && _shieldCharges > 0) {
-      _shieldCharges--;
+    // 2. Щиты (сначала Божественный щит - 100%, затем Рунический щит - 50%)
+    if (effectiveHealthDelta < 0 && _divineShieldCharges > 0) {
+      _divineShieldCharges--;
+      final absorbed = effectiveHealthDelta.abs();
       effectiveHealthDelta = 0;
-      triggeredBuffs.add('🛡️ Щит поглотил урон');
+      triggeredBuffs.add('✨🛡️ Божественный щит поглотил весь урон (-$absorbed ❤)');
+    } else if (effectiveHealthDelta < 0 && _shieldCharges > 0) {
+      _shieldCharges--;
+      final absorbed = (effectiveHealthDelta.abs() / 2).ceil();
+      effectiveHealthDelta += absorbed;
+      triggeredBuffs.add('🛡️ Рунический щит поглотил 50% урона (+$absorbed ❤)');
     }
 
     // 3. Шипы
@@ -449,7 +576,7 @@ class GameScreenState extends State<GameScreen> {
       triggeredBuffs.add('🌵 Шипы дали +$bonusGold 🪙');
     }
 
-    // 4. Магнит жадности
+    // 4. Магнит жадности и Каменная кожа
     if (effectiveCoinsDelta > 0 && _greedMagnetTurns > 0) {
       effectiveCoinsDelta *= 2;
       triggeredBuffs.add('🧲 x2 золото');
@@ -460,16 +587,28 @@ class GameScreenState extends State<GameScreen> {
     if (choice.statusEffect != null && _random.nextDouble() < choice.statusChance) {
       switch (choice.statusEffect!) {
         case StatusEffectType.poison:
-          _poisonTurns = 3;
-          triggeredBuffs.add('🧪 Отравлен на 3 хода!');
+          if (_stoneskinTurns > 0) {
+            triggeredBuffs.add('🪨 Каменная кожа отразила яд!');
+          } else {
+            _poisonTurns = 3;
+            triggeredBuffs.add('🧪 Отравлен на 3 хода!');
+          }
           break;
         case StatusEffectType.bleed:
-          _bleedTurns = 3;
-          triggeredBuffs.add('🩸 Кровотечение на 3 хода!');
+          if (_stoneskinTurns > 0) {
+            triggeredBuffs.add('🪨 Каменная кожа защитила от кровотечения!');
+          } else {
+            _bleedTurns = 3;
+            triggeredBuffs.add('🩸 Кровотечение на 3 хода!');
+          }
           break;
         case StatusEffectType.blindness:
-          _blindnessTurns = 3;
-          triggeredBuffs.add('👁️‍🗨️ Слепота на 3 хода!');
+          if (_stoneskinTurns > 0) {
+            triggeredBuffs.add('🪨 Каменная кожа защитила от слепоты!');
+          } else {
+            _blindnessTurns = 3;
+            triggeredBuffs.add('👁️‍🗨️ Слепота на 3 хода!');
+          }
           break;
         case StatusEffectType.midasCurse:
           _midasCurseTurns = 3;
@@ -496,11 +635,21 @@ class GameScreenState extends State<GameScreen> {
     if (_midasCurseTurns > 0) {
       _midasCurseTurns--;
     }
+    if (_stoneskinTurns > 0) {
+      _stoneskinTurns--;
+    }
+    int regenHeal = 0;
+    if (_regenerationTurns > 0) {
+      regenHeal = 2;
+      _regenerationTurns--;
+      triggeredBuffs.add('🌿 Регенерация (+2 ❤)');
+    }
 
     _isRevealingChoices = false;
 
     setState(() {
-      _health = (_health + effectiveHealthDelta - dotDamage).clamp(0, 999);
+      _health =
+          (_health + effectiveHealthDelta - dotDamage + regenHeal).clamp(0, 999);
       _attack = (_attack + effectiveAttackDelta).clamp(0, 99);
       _coins = (_coins + effectiveCoinsDelta).clamp(0, 999999);
 
@@ -517,6 +666,9 @@ class GameScreenState extends State<GameScreen> {
       }
       if (dotDamage > 0) {
         details.add('-$dotDamage ❤ статус');
+      }
+      if (regenHeal > 0) {
+        details.add('+$regenHeal ❤ регенерация');
       }
       if (effectiveAttackDelta != 0) {
         details.add(
@@ -538,29 +690,71 @@ class GameScreenState extends State<GameScreen> {
       final detailsStr = details.isNotEmpty ? ' (${details.join(', ')})' : '';
       _addJournalEntry(actionEmoji, '$cardTitle: ${choice.label}$detailsStr');
 
-      if (wasBoss && !isRight && _health > 0) {
-        _addJournalEntry('👑', 'Босс $cardTitle повержен!');
-      }
-      // ─────────────────────────────────────────────────────────────
+      // ─── Завершение фазы / победа над боссом ────────────────────────────
+      final bossDefeated = wasBoss && _health > 0;
+      final isMultiPhase = _activeBossCard?.isMultiPhase ?? false;
 
-      _lastFeedback = _buildFeedback(
-        choice,
-        receivedItem: receivedItem,
-        buffsNote: triggeredBuffs.isNotEmpty ? triggeredBuffs.join(', ') : null,
-        wasBoss: wasBoss,
-      );
-
-      if (_health <= 0) {
-        _cardsPassed++;
-        _result = GameResult.gameOver;
-        final deathCause = dotDamage > 0 && effectiveHealthDelta == 0
-            ? 'Герой пал от ран ($cardTitle)'
-            : 'Герой пал — убит $cardTitle';
-        _addJournalEntry('☠️', deathCause);
-        if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
-        _saveChronicle(isVictory: false);
+      if (bossDefeated && isMultiPhase) {
+        // Проверяем, закончились ли все фазы
+        if (_bossPhase < 3) {
+          // Переход к следующей фазе
+          final nextPhase = _bossPhase + 1;
+          final phaseName = _activeBossCard!.bossPhases![nextPhase - 1].title;
+          _addJournalEntry(
+            _activeBossCard!.bossPhases![_bossPhase - 1].phaseEmoji,
+            '$cardTitle: фаза $_bossPhase пройдена!',
+          );
+          _lastFeedback = _buildFeedback(
+            choice,
+            receivedItem: receivedItem,
+            buffsNote: triggeredBuffs.isNotEmpty ? triggeredBuffs.join(', ') : null,
+            bossPhaseComplete: _bossPhase,
+            nextPhaseTitle: phaseName,
+          );
+          _bossPhase = nextPhase;
+          _cardKey++;
+        } else {
+          // Все 3 фазы пройдены — полная победа
+          _addJournalEntry(
+            _activeBossCard!.bossPhases![2].phaseEmoji,
+            '$cardTitle: фаза 3 пройдена — БОСС ПОВЕРЖЕН! 👑',
+          );
+          _addJournalEntry('👑', 'Босс ${_activeBossCard!.title} повержен!');
+          _lastFeedback = _buildFeedback(
+            choice,
+            receivedItem: receivedItem,
+            buffsNote: triggeredBuffs.isNotEmpty ? triggeredBuffs.join(', ') : null,
+            wasBoss: true,
+          );
+          _bossPhase = 0;
+          _activeBossCard = null;
+          _advanceCard(wasBoss: true);
+        }
       } else {
-        _advanceCard(wasBoss: wasBoss);
+        if (bossDefeated) {
+          _addJournalEntry('👑', 'Босс $cardTitle повержен!');
+        }
+        _lastFeedback = _buildFeedback(
+          choice,
+          receivedItem: receivedItem,
+          buffsNote: triggeredBuffs.isNotEmpty ? triggeredBuffs.join(', ') : null,
+          wasBoss: bossDefeated,
+        );
+        if (_health <= 0) {
+          _cardsPassed++;
+          _result = GameResult.gameOver;
+          final deathCause = dotDamage > 0 && effectiveHealthDelta == 0
+              ? 'Герой пал от ран ($cardTitle)'
+              : 'Герой пал — убит $cardTitle';
+          _addJournalEntry('☠️', deathCause);
+          if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
+          _saveChronicle(isVictory: false);
+        } else if (!wasBoss) {
+          _advanceCard(wasBoss: false);
+        } else {
+          // Однофазный босс побеждён или hero died to boss
+          if (_health > 0) _advanceCard(wasBoss: true);
+        }
       }
     });
   }
@@ -589,9 +783,16 @@ class GameScreenState extends State<GameScreen> {
     ItemCard? receivedItem,
     String? buffsNote,
     bool wasBoss = false,
+    int? bossPhaseComplete,
+    String? nextPhaseTitle,
   }) {
     final parts = <String>[];
-    if (wasBoss) parts.add('⚔ Босс повержен!');
+    if (wasBoss) {
+      parts.add('⚔ Босс повержен! 👑');
+    } else if (bossPhaseComplete != null) {
+      parts.add('✅ Фаза $bossPhaseComplete пройдена!');
+      if (nextPhaseTitle != null) parts.add('Следующая: $nextPhaseTitle');
+    }
     if (buffsNote != null) parts.add(buffsNote);
     if (receivedItem != null) parts.add('Получено: ${receivedItem.title}');
     if (choice.healthDelta != 0) {
@@ -644,6 +845,8 @@ class GameScreenState extends State<GameScreen> {
         case ItemEffectType.skip:
           final wasBoss = _isCurrentBoss;
           final skippedCard = _currentCard.title;
+          _bossPhase = 0;
+          _activeBossCard = null;
           _advanceCard(wasBoss: wasBoss);
           _lastFeedback = wasBoss
               ? '⏩ Пропуск хода: босс обойдён стороной!'
@@ -660,14 +863,102 @@ class GameScreenState extends State<GameScreen> {
         case ItemEffectType.shield:
           _shieldCharges += item.value;
           _lastFeedback =
-              'Рунический щит активирован! (+${item.value} заряд) 🛡️';
+              'Рунический щит: +${item.value} заряд (50% защита) 🛡️';
           _addJournalEntry(
             '🛡️',
             'Использован ${item.title}: +${item.value} 🛡️ (всего $_shieldCharges)',
           );
           resultTitle = 'Щит активирован (+${item.value} 🛡️)';
           resultDescription =
-              'Рунический щит готов поглотить следующий урон по здоровью.\nВсего зарядов щита: $_shieldCharges.';
+              'Рунический щит готов поглотить половину следующего урона по здоровью (50% защита).\nВсего зарядов щита: $_shieldCharges.';
+          break;
+        case ItemEffectType.divineShield:
+          _divineShieldCharges += item.value;
+          _lastFeedback =
+              'Божественный щит: +${item.value} заряд (100% защита) ✨🛡️';
+          _addJournalEntry(
+            '✨🛡️',
+            'Использован ${item.title}: +${item.value} ✨🛡️ (всего $_divineShieldCharges)',
+          );
+          resultTitle = 'Божественный щит (+${item.value} ✨🛡️)';
+          resultDescription =
+              'Божественный рунический щит активирован!\nСледующий урон по здоровью будет полностью поглощён (100% защита).\nВсего зарядов божественного щита: $_divineShieldCharges.';
+          break;
+        case ItemEffectType.stoneskin:
+          _stoneskinTurns += item.value;
+          _lastFeedback =
+              'Каменная кожа: защита от яда, кровотечения и слепоты на +${item.value} х.! 🪨';
+          _addJournalEntry(
+            '🪨',
+            'Использовано ${item.title}: защита от яда, кровотечения и слепоты на $_stoneskinTurns х.',
+          );
+          resultTitle = 'Каменная кожа 🪨';
+          resultDescription =
+              'Кожа героя становится твёрдой, как гранит!\nНа протяжении $_stoneskinTurns ходов вы полностью защищены от получения эффектов яда, кровотечения и слепоты.';
+          break;
+        case ItemEffectType.antidote:
+          final hadPoison = _poisonTurns > 0;
+          final hadBleed = _bleedTurns > 0;
+          final hadBlindness = _blindnessTurns > 0;
+          _poisonTurns = 0;
+          _bleedTurns = 0;
+          _blindnessTurns = 0;
+          final List<String> cleansed = [];
+          if (hadPoison) cleansed.add('яд');
+          if (hadBleed) cleansed.add('кровотечение');
+          if (hadBlindness) cleansed.add('слепота');
+          final cleansedText = cleansed.isNotEmpty
+              ? '${cleansed.join(', ')} нейтрализованы!'
+              : 'персонаж очищен от токсинов и негативных эффектов!';
+          _lastFeedback = 'Противоядие: $cleansedText 🧪';
+          _addJournalEntry(
+            '🧪',
+            'Использовано ${item.title}: $cleansedText',
+          );
+          resultTitle = 'Противоядие 🧪';
+          resultDescription =
+              'Противоядие нейтрализует опасные токсины, останавливает кровотечение и возвращает зрение.\nВременные эффекты яда, кровотечения и слепоты полностью сняты с персонажа.';
+          break;
+        case ItemEffectType.regeneration:
+          _regenerationTurns += item.value;
+          _lastFeedback =
+              'Регенерация: +2 ❤ каждый ход на +${item.value} х.! 🌿';
+          _addJournalEntry(
+            '🌿',
+            'Использовано ${item.title}: регенерация (+2 ❤/ход) на $_regenerationTurns х.',
+          );
+          resultTitle = 'Регенерация 🌿';
+          resultDescription =
+              'Целебное зелье активирует регенерацию!\nВ течение $_regenerationTurns ходов вы будете восстанавливать по 2 очка здоровья каждый ход.';
+          break;
+        case ItemEffectType.teleport:
+          if (_isCurrentBoss) {
+            _inventoryItems.insert(index, item);
+            _lastFeedback =
+                'Свиток телепортации нельзя использовать в бою с боссом! ⛔';
+            resultTitle = 'Телепортация невозможна ⛔';
+            resultDescription =
+                'Древняя магия босса блокирует пространственное перемещение! Свиток нельзя использовать во время битвы с боссом. Предмет сохранён в инвентаре.';
+          } else {
+            final skipCount = 1 + _random.nextInt(3);
+            int actualSkipped = 0;
+            for (int i = 0; i < skipCount; i++) {
+              if (_isCurrentBoss) break;
+              _advanceCard(wasBoss: false);
+              actualSkipped++;
+              if (_isCurrentBoss) break;
+            }
+            final hitBoss = _isCurrentBoss;
+            _lastFeedback =
+                'Телепортация: перемещение на $actualSkipped карт вперёд! 🌀';
+            _addJournalEntry(
+              '🌀',
+              'Использован ${item.title}: перемещение на $actualSkipped карт вперёд${hitBoss ? ' (остановка перед боссом)' : ''}',
+            );
+            resultTitle = 'Телепортация (+ $actualSkipped) 🌀';
+            resultDescription =
+                'Пространство исказилось! Свиток перенёс вас вперёд на $actualSkipped карт.\nТекущая карта: "${_currentCard.title}".${hitBoss ? '\n\n⚠️ Телепортация остановилась перед боссом!' : ''}';
+          }
           break;
         case ItemEffectType.invertNext:
           _invertNextChoice = true;
@@ -792,15 +1083,18 @@ class GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.smokeBomb:
           final wasBoss = _isCurrentBoss;
+          final ec = _effectiveCard;
           final bestCoins = max(
             0,
             max(
-              _currentCard.leftChoice.coinsDelta,
-              _currentCard.rightChoice.coinsDelta,
+              ec.leftChoice.coinsDelta,
+              ec.rightChoice.coinsDelta,
             ),
           ).toInt();
           if (bestCoins > 0) _coins = (_coins + bestCoins).clamp(0, 999999);
           final skippedCard = _currentCard.title;
+          _bossPhase = 0;
+          _activeBossCard = null;
           _advanceCard(wasBoss: wasBoss);
           _lastFeedback = wasBoss
               ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
@@ -818,17 +1112,18 @@ class GameScreenState extends State<GameScreen> {
           if (_coins >= 15) {
             final wasBoss = _isCurrentBoss;
             _coins -= 15;
+            final ec2 = _effectiveCard;
             final leftScore =
-                _currentCard.leftChoice.coinsDelta +
-                _currentCard.leftChoice.healthDelta +
-                _currentCard.leftChoice.attackDelta;
+                ec2.leftChoice.coinsDelta +
+                ec2.leftChoice.healthDelta +
+                ec2.leftChoice.attackDelta;
             final rightScore =
-                _currentCard.rightChoice.coinsDelta +
-                _currentCard.rightChoice.healthDelta +
-                _currentCard.rightChoice.attackDelta;
+                ec2.rightChoice.coinsDelta +
+                ec2.rightChoice.healthDelta +
+                ec2.rightChoice.attackDelta;
             final bestChoice = rightScore >= leftScore
-                ? _currentCard.rightChoice
-                : _currentCard.leftChoice;
+                ? ec2.rightChoice
+                : ec2.leftChoice;
             _health = (_health + max(0, bestChoice.healthDelta).toInt()).clamp(
               0,
               999,
@@ -850,6 +1145,8 @@ class GameScreenState extends State<GameScreen> {
               if (bribeItem != null) _inventoryItems.add(bribeItem);
             }
             final skippedCard = _currentCard.title;
+            _bossPhase = 0;
+            _activeBossCard = null;
             _advanceCard(wasBoss: wasBoss);
             _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
             _addJournalEntry(
@@ -976,6 +1273,16 @@ class GameScreenState extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final isBoss = _isCurrentBoss;
+    if (isBoss && _bossPhase == 0) {
+      final boss = _selectBoss();
+      if (boss.isMultiPhase) {
+        _activeBossCard = boss;
+        _bossPhase = 1;
+      }
+    }
+    final bossPhase = _bossPhase; // 0 = нет, 1/2/3 = фаза
+    final isMultiPhaseBoss =
+        isBoss && (_activeBossCard?.isMultiPhase ?? false) && bossPhase > 0;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -1038,6 +1345,9 @@ class GameScreenState extends State<GameScreen> {
                   if (_result == GameResult.playing)
                     _ActiveBuffsBar(
                       shieldCharges: _shieldCharges,
+                      divineShieldCharges: _divineShieldCharges,
+                      stoneskinTurns: _stoneskinTurns,
+                      regenerationTurns: _regenerationTurns,
                       invertNextChoice: _invertNextChoice,
                       isRevealingChoices: _isRevealingChoices,
                       greedMagnetTurns: _greedMagnetTurns,
@@ -1074,15 +1384,22 @@ class GameScreenState extends State<GameScreen> {
                         ),
                       ),
                     ),
-                  // Предупреждение о боссе
-                  if (_result == GameResult.playing && isBoss)
+                  // Предупреждение о боссе / индикатор фазы
+                  if (_result == GameResult.playing && isBoss) ...[
                     _BossWarningBanner(dungeonLevel: _dungeonLevel),
+                    if (isMultiPhaseBoss)
+                      _BossPhaseIndicator(
+                        bossName: _activeBossCard!.title,
+                        currentPhase: bossPhase,
+                        totalPhases: 3,
+                      ),
+                  ],
                   Expanded(
                     child: Center(
                       child: _result == GameResult.playing
                           ? SwipeCard(
                               key: ValueKey(_cardKey),
-                              event: _currentCard,
+                              event: _effectiveCard,
                               currentCoins: _coins,
                               currentAttack: _attack,
                               hasUnlockedItems:
@@ -1241,11 +1558,105 @@ class _BossWarningBanner extends StatelessWidget {
   }
 }
 
+// ─── Индикатор фазы босса ────────────────────────────────────
+
+class _BossPhaseIndicator extends StatelessWidget {
+  const _BossPhaseIndicator({
+    required this.bossName,
+    required this.currentPhase,
+    required this.totalPhases,
+  });
+
+  final String bossName;
+  final int currentPhase;
+  final int totalPhases;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF7B0000), Color(0xFFB71C1C)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEF5350).withValues(alpha: 0.4),
+            blurRadius: 12,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.crisis_alert, color: Colors.white, size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  bossName,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Фаза $currentPhase / $totalPhases',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Полоска прогресса фаз
+          Row(
+            children: List.generate(totalPhases, (i) {
+              final filled = i < currentPhase;
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: i < totalPhases - 1 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: filled
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Панель активных баффов ─────────────────────────────────
 
 class _ActiveBuffsBar extends StatelessWidget {
   const _ActiveBuffsBar({
     required this.shieldCharges,
+    this.divineShieldCharges = 0,
+    this.stoneskinTurns = 0,
+    this.regenerationTurns = 0,
     required this.invertNextChoice,
     required this.isRevealingChoices,
     required this.greedMagnetTurns,
@@ -1257,6 +1668,9 @@ class _ActiveBuffsBar extends StatelessWidget {
   });
 
   final int shieldCharges;
+  final int divineShieldCharges;
+  final int stoneskinTurns;
+  final int regenerationTurns;
   final bool invertNextChoice;
   final bool isRevealingChoices;
   final int greedMagnetTurns;
@@ -1268,6 +1682,9 @@ class _ActiveBuffsBar extends StatelessWidget {
 
   bool get _hasAnyBuff =>
       shieldCharges > 0 ||
+      divineShieldCharges > 0 ||
+      stoneskinTurns > 0 ||
+      regenerationTurns > 0 ||
       invertNextChoice ||
       isRevealingChoices ||
       greedMagnetTurns > 0 ||
@@ -1296,11 +1713,29 @@ class _ActiveBuffsBar extends StatelessWidget {
           runSpacing: 6,
           alignment: WrapAlignment.center,
           children: [
+            if (divineShieldCharges > 0)
+              _BuffChip(
+                emoji: '✨🛡️',
+                label: context.l10n.gameBuffDivineShield(divineShieldCharges),
+                color: const Color(0xFFFFD700),
+              ),
             if (shieldCharges > 0)
               _BuffChip(
                 emoji: '🛡️',
                 label: context.l10n.gameBuffShield(shieldCharges),
                 color: const Color(0xFF29B6F6),
+              ),
+            if (stoneskinTurns > 0)
+              _BuffChip(
+                emoji: '🪨',
+                label: context.l10n.gameBuffStoneskin(stoneskinTurns),
+                color: const Color(0xFF78909C),
+              ),
+            if (regenerationTurns > 0)
+              _BuffChip(
+                emoji: '🌿',
+                label: context.l10n.gameBuffRegen(regenerationTurns),
+                color: const Color(0xFF66BB6A),
               ),
             if (invertNextChoice)
               _BuffChip(

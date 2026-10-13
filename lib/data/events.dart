@@ -909,8 +909,10 @@ const List<EventCard> allEvents = [
 /// * `type == EventType.boss`;
 /// * [level] указывает номер этажа, на котором босс появляется;
 /// * [dungeonId] привязывает босса к конкретному подземелью;
+/// * [bossPhases] задаёт 3 фазы трёхэтапного босс-файта;
 /// * Победа над боссом повышает этаж подземелья или приводит к финальной победе!
 const List<EventCard> allBossCards = [
+  // ── Босс 1: Альфа-вожак Ночной Стаи ────────────────────────────────────
   EventCard(
     id: 'forest_boss_packleader',
     type: EventType.boss,
@@ -929,7 +931,65 @@ const List<EventCard> allBossCards = [
     ),
     level: 1,
     dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🐺',
+        title: 'Фаза I — Ярость стаи',
+        description:
+            'Вожак испускает протяжный вой — со всех сторон выскакивают волки! '
+            'Тебя окружают, не давая пространства для манёвра. '
+            'Нужно прорваться сквозь кольцо, прежде чем доберёшься до самого вожака.',
+        leftChoice: CardChoice(
+          label: 'Прикрыться щитом, сдержать натиск',
+          healthDelta: -4,
+          coinsDelta: 10,
+        ),
+        rightChoice: CardChoice(
+          label: 'Прорубить дорогу сквозь стаю',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🔥',
+        title: 'Фаза II — Бешеный рывок',
+        description:
+            'Вожак теряет разум от ярости — глаза горят алым! '
+            'Он несётся как таран. Скорость невероятна, земля содрогается от прыжков.',
+        leftChoice: CardChoice(
+          label: 'Отскочить и принять удар плечом',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Подрезать сухожилие в прыжке',
+          attackDelta: -3,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💀',
+        title: 'Фаза III — Последний рык',
+        description:
+            'Раненый, но полный злобы — вожак делает последнее отчаянное усилие. '
+            'Он метит прямо в горло. Победитель будет только один!',
+        leftChoice: CardChoice(
+          label: 'Вынести удар и добить зверя',
+          healthDelta: -6,
+          coinsDelta: 25,
+        ),
+        rightChoice: CardChoice(
+          label: 'Нанести решающий удар в сердце',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+    ],
   ),
+
+  // ── Босс 2: Болотная Ведьма Моррига ─────────────────────────────────────
   EventCard(
     id: 'forest_boss_swamp_hag',
     type: EventType.boss,
@@ -948,7 +1008,68 @@ const List<EventCard> allBossCards = [
     ),
     level: 2,
     dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🌫️',
+        title: 'Фаза I — Ядовитый туман',
+        description:
+            'Моррига взмахивает посохом — болото выдыхает тяжёлый зелёный туман. '
+            'В нём прячутся костяные руки мертвецов. '
+            'Нужно прорваться сквозь него, прежде чем яд разъест броню.',
+        leftChoice: CardChoice(
+          label: 'Задержать дыхание и прорваться',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.6,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассеять туман ударом клинка',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🦴',
+        title: 'Фаза II — Проклятие болота',
+        description:
+            'Ведьма выкрикивает заклинание — болото само поднимается, хватает ноги! '
+            'Моррига насылает проклятие: твоё золото начинает таять прямо в кошеле.',
+        leftChoice: CardChoice(
+          label: 'Вырваться из хватки болота с трудом',
+          healthDelta: -6,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.midasCurse,
+          statusChance: 0.55,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрубить корни и ударить ведьму',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '☠️',
+        title: 'Фаза III — Посох сломан',
+        description:
+            'Посох трескается! Моррига воет от боли, но собирает последние силы. '
+            'Она призывает духов болота в отчаянной попытке выжить. '
+            'Нанеси последний удар!',
+        leftChoice: CardChoice(
+          label: 'Пережить последний выброс скверны',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Добить ведьму ударом в посох',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
   ),
+
+  // ── Босс 3: Древний Хозяин Леса ─────────────────────────────────────────
   EventCard(
     id: 'forest_boss_ancient_leshy',
     type: EventType.boss,
@@ -967,5 +1088,64 @@ const List<EventCard> allBossCards = [
     ),
     level: 3,
     dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🌲',
+        title: 'Фаза I — Гнев корней',
+        description:
+            'Хозяин Леса ударяет кулаком в землю — корни вздымаются отовсюду! '
+            'Острые деревянные шипы хлещут со всех сторон. '
+            'Лес сам встаёт на защиту своего владыки.',
+        leftChoice: CardChoice(
+          label: 'Перекатиться сквозь корни',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Срубить корни на подходе',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🦌',
+        title: 'Фаза II — Призыв духов леса',
+        description:
+            'Рога Хозяина пылают зелёным огнём. Он призывает духов-хранителей леса — '
+            'полупрозрачные фигуры зверей набрасываются на тебя, лишая ориентации.',
+        leftChoice: CardChoice(
+          label: 'Отбиваться от духов вслепую',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.6,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассеять духов концентрированным ударом',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💥',
+        title: 'Фаза III — Сердце леса',
+        description:
+            'Хозяин раскрывает грудь — там пульсирует тёмное сердце проклятого леса! '
+            'Один удар в него — и лес падёт навсегда. '
+            'Но колосс бросает на тебя всю свою мощь в последнем ударе.',
+        leftChoice: CardChoice(
+          label: 'Принять последний удар колосса',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Пронзить тёмное сердце клинком',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
   ),
 ];

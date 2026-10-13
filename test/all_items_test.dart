@@ -258,4 +258,79 @@ void main() {
     expect(find.text('15'), findsOneWidget);
     expect(find.text('50'), findsOneWidget);
   });
+
+  testWidgets('divine_runic_shield activates divine shield charge', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final divineShield = allItemCards.firstWhere((i) => i.id == 'divine_runic_shield');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [divineShield])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('Бож. щит ×1'), findsOneWidget);
+  });
+
+  testWidgets('potion_stoneskin activates stoneskin buff', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final stoneskin = allItemCards.firstWhere((i) => i.id == 'potion_stoneskin');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [stoneskin])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('Каменная кожа ×3'), findsOneWidget);
+  });
+
+  testWidgets('potion_antidote can be used from inventory', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final antidote = allItemCards.firstWhere((i) => i.id == 'potion_antidote');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [antidote])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+  });
+
+  testWidgets('potion_regeneration activates regen buff', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final regen = allItemCards.firstWhere((i) => i.id == 'potion_regeneration');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [regen])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+    expect(find.textContaining('Регенерация ×3'), findsOneWidget);
+  });
+
+  testWidgets('scroll_teleport can be used from inventory on non-boss card', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final teleport = allItemCards.firstWhere((i) => i.id == 'scroll_teleport');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [teleport])),
+    );
+    await tester.pumpAndSettle();
+
+    await openInventoryAndUse(tester);
+  });
 }
+
+

@@ -242,4 +242,20 @@ class PlayerStatsService {
     _startingCardsLevel = 0;
     _loaded = true;
   }
+
+  /// Для тестов: установка уровней улучшений напрямую
+  void setLevelsForTest({
+    int? health,
+    int? attack,
+    int? merchant,
+    int? startingCards,
+  }) {
+    if (health != null) _healthLevel = health.clamp(0, maxHealthLevel);
+    if (attack != null) _attackLevel = attack.clamp(0, maxAttackLevel);
+    if (merchant != null) _merchantLevel = merchant.clamp(0, maxMerchantLevel);
+    if (startingCards != null) {
+      _startingCardsLevel = startingCards.clamp(0, maxStartingCardsLevel);
+    }
+    _loaded = true;
+  }
 }
