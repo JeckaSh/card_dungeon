@@ -9,6 +9,7 @@ import '../data/items.dart';
 import '../models/dungeon.dart';
 import '../models/event_card.dart';
 import '../models/item_card.dart';
+import '../services/daily_quests_service.dart';
 import '../services/discovered_events.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
@@ -420,6 +421,7 @@ class GameScreenState extends State<GameScreen> {
 
   void _discoverCurrentCard() {
     DiscoveredEventsService.instance.markDiscovered(_currentCard.id);
+    DailyQuestsService.instance.onCardEncountered(_currentCard.type);
   }
 
   /// Добавляет запись в дневник героя.
@@ -467,6 +469,7 @@ class GameScreenState extends State<GameScreen> {
         _addJournalEntry('🏆', 'Подземелье успешно пройдено!');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
         _saveChronicle(isVictory: true);
+        DailyQuestsService.instance.onDungeonFinished(isVictory: true);
         return;
       }
       _dungeonLevel = nextLevel;
@@ -720,6 +723,7 @@ class GameScreenState extends State<GameScreen> {
             '$cardTitle: фаза 3 пройдена — БОСС ПОВЕРЖЕН! 👑',
           );
           _addJournalEntry('👑', 'Босс ${_activeBossCard!.title} повержен!');
+          DailyQuestsService.instance.onBossKilled();
           _lastFeedback = _buildFeedback(
             choice,
             receivedItem: receivedItem,
@@ -733,6 +737,7 @@ class GameScreenState extends State<GameScreen> {
       } else {
         if (bossDefeated) {
           _addJournalEntry('👑', 'Босс $cardTitle повержен!');
+          DailyQuestsService.instance.onBossKilled();
         }
         _lastFeedback = _buildFeedback(
           choice,
@@ -749,6 +754,7 @@ class GameScreenState extends State<GameScreen> {
           _addJournalEntry('☠️', deathCause);
           if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
           _saveChronicle(isVictory: false);
+          DailyQuestsService.instance.onDungeonFinished(isVictory: false);
         } else if (!wasBoss) {
           _advanceCard(wasBoss: false);
         } else {
@@ -845,20 +851,42 @@ class GameScreenState extends State<GameScreen> {
         case ItemEffectType.skip:
           final wasBoss = _isCurrentBoss;
           final skippedCard = _currentCard.title;
-          _bossPhase = 0;
-          _activeBossCard = null;
-          _advanceCard(wasBoss: wasBoss);
-          _lastFeedback = wasBoss
-              ? '⏩ Пропуск хода: босс обойдён стороной!'
-              : 'Событие пропущено!';
-          _addJournalEntry(
-            '⏩',
-            'Использован ${item.title}: пропущено "$skippedCard"',
-          );
-          resultTitle = wasBoss ? 'Босс пропущен ⏩' : 'Событие пропущено';
-          resultDescription = wasBoss
-              ? 'Магический свиток перенёс вас мимо босса "$skippedCard"! Уровень подземелья успешно пройден без боя и потерь.'
-              : 'Свиток перенёс вас в безопасное место: карта "$skippedCard" успешно обойдена стороной без урона и потерь.';
+          final boss = _activeBossCard ?? _currentCard;
+          final isMultiPhase = wasBoss && boss.isMultiPhase;
+          final currentPhase = isMultiPhase ? (_bossPhase == 0 ? 1 : _bossPhase) : 0;
+
+          if (isMultiPhase && currentPhase < 3) {
+            final skippedPhase = currentPhase;
+            final nextPhase = currentPhase + 1;
+            final nextPhaseTitle = boss.bossPhases![nextPhase - 1].title;
+            _activeBossCard ??= boss;
+            _bossPhase = nextPhase;
+            _cardKey++;
+            _lastFeedback =
+                '⏩ Фаза $skippedPhase босса пропущена! Следующая: $nextPhaseTitle';
+            _addJournalEntry(
+              '⏩',
+              'Использован ${item.title}: пропущена фаза $skippedPhase босса "$skippedCard"',
+            );
+            resultTitle = 'Фаза $skippedPhase пропущена ⏩';
+            resultDescription =
+                'Магический свиток перенёс вас мимо фазы $skippedPhase босса "$skippedCard"!\nСледующая фаза: $nextPhaseTitle.';
+          } else {
+            _bossPhase = 0;
+            _activeBossCard = null;
+            _advanceCard(wasBoss: wasBoss);
+            _lastFeedback = wasBoss
+                ? '⏩ Пропуск хода: босс обойдён стороной!'
+                : 'Событие пропущено!';
+            _addJournalEntry(
+              '⏩',
+              'Использован ${item.title}: пропущено "$skippedCard"',
+            );
+            resultTitle = wasBoss ? 'Босс пропущен ⏩' : 'Событие пропущено';
+            resultDescription = wasBoss
+                ? 'Магический свиток перенёс вас мимо босса "$skippedCard"! Уровень подземелья успешно пройден без боя и потерь.'
+                : 'Свиток перенёс вас в безопасное место: карта "$skippedCard" успешно обойдена стороной без урона и потерь.';
+          }
           break;
         case ItemEffectType.shield:
           _shieldCharges += item.value;
@@ -984,7 +1012,7 @@ class GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.transmute:
           if (_coins >= 10) {
-            final maxBundles = 10; // Ограничение: максимум 100 монет (10 * 10)
+            final maxBundles = 5; // Ограничение: максимум 50 монет (5 * 10)
             final bundles = min(_coins ~/ 10, maxBundles);
             final usedCoins = bundles * 10;
             _coins -= usedCoins;
@@ -1093,20 +1121,42 @@ class GameScreenState extends State<GameScreen> {
           ).toInt();
           if (bestCoins > 0) _coins = (_coins + bestCoins).clamp(0, 999999);
           final skippedCard = _currentCard.title;
-          _bossPhase = 0;
-          _activeBossCard = null;
-          _advanceCard(wasBoss: wasBoss);
-          _lastFeedback = wasBoss
-              ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
-              : '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
-          _addJournalEntry(
-            '💨',
-            'Дымовая шашка: побег от "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}',
-          );
-          resultTitle = wasBoss ? 'Побег от босса 💨' : 'Побег в дыму 💨';
-          resultDescription = wasBoss
-              ? 'Вы бросили дымовую шашку и ослепили босса! "$skippedCard" остался позади, а уровень подземелья успешно пройден${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}!'
-              : 'Вы бросили дымовую шашку и скрылись. Опасность "$skippedCard" благополучно пройдена стороной${bestCoins > 0 ? ', а в суматохе подобрано +$bestCoins 🪙' : ''}!';
+          final boss = _activeBossCard ?? _currentCard;
+          final isMultiPhase = wasBoss && boss.isMultiPhase;
+          final currentPhase = isMultiPhase ? (_bossPhase == 0 ? 1 : _bossPhase) : 0;
+
+          if (isMultiPhase && currentPhase < 3) {
+            final skippedPhase = currentPhase;
+            final nextPhase = currentPhase + 1;
+            final nextPhaseTitle = boss.bossPhases![nextPhase - 1].title;
+            _activeBossCard ??= boss;
+            _bossPhase = nextPhase;
+            _cardKey++;
+            _lastFeedback =
+                '💨 Дымовая шашка: фаза $skippedPhase пройдена! Следующая: $nextPhaseTitle${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
+            _addJournalEntry(
+              '💨',
+              'Дымовая шашка: побег от фазы $skippedPhase босса "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}',
+            );
+            resultTitle = 'Побег от фазы $skippedPhase 💨';
+            resultDescription =
+                'Вы бросили дымовую шашку и ослепили босса на фазе $skippedPhase! Следующая фаза: $nextPhaseTitle${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}.';
+          } else {
+            _bossPhase = 0;
+            _activeBossCard = null;
+            _advanceCard(wasBoss: wasBoss);
+            _lastFeedback = wasBoss
+                ? '💨 Дымовая шашка: босс ослеплён и пройден!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}'
+                : '💨 Дымовая шашка: чистый побег!${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}';
+            _addJournalEntry(
+              '💨',
+              'Дымовая шашка: побег от "$skippedCard"${bestCoins > 0 ? ' (+$bestCoins 🪙)' : ''}',
+            );
+            resultTitle = wasBoss ? 'Побег от босса 💨' : 'Побег в дыму 💨';
+            resultDescription = wasBoss
+                ? 'Вы бросили дымовую шашку и ослепили босса! "$skippedCard" остался позади, а уровень подземелья успешно пройден${bestCoins > 0 ? ', при этом подобрано +$bestCoins 🪙' : ''}!'
+                : 'Вы бросили дымовую шашку и скрылись. Опасность "$skippedCard" благополучно пройдена стороной${bestCoins > 0 ? ', а в суматохе подобрано +$bestCoins 🪙' : ''}!';
+          }
           break;
         case ItemEffectType.bribery:
           if (_coins >= 15) {
@@ -1145,17 +1195,40 @@ class GameScreenState extends State<GameScreen> {
               if (bribeItem != null) _inventoryItems.add(bribeItem);
             }
             final skippedCard = _currentCard.title;
-            _bossPhase = 0;
-            _activeBossCard = null;
-            _advanceCard(wasBoss: wasBoss);
-            _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
-            _addJournalEntry(
-              '💰',
-              'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
-            );
-            resultTitle = 'Подкуп удался (-15 🪙) 💰';
-            resultDescription =
-                'Золото решило вопрос: потрачено 15 🪙, применён лучший исход события без боя и потерь!${bribeItem != null ? ' Также получен предмет: "${bribeItem.title}".' : ''}\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
+            final boss = _activeBossCard ?? _currentCard;
+            final isMultiPhase = wasBoss && boss.isMultiPhase;
+            final currentPhase = isMultiPhase ? (_bossPhase == 0 ? 1 : _bossPhase) : 0;
+
+            if (isMultiPhase && currentPhase < 3) {
+              final skippedPhase = currentPhase;
+              final nextPhase = currentPhase + 1;
+              final nextPhaseTitle = boss.bossPhases![nextPhase - 1].title;
+              _activeBossCard ??= boss;
+              _bossPhase = nextPhase;
+              _cardKey++;
+              _lastFeedback =
+                  '💰 Подкуп удался (-15 🪙): фаза $skippedPhase нейтрализована! Следующая: $nextPhaseTitle';
+              _addJournalEntry(
+                '💰',
+                'Подкуп (-15 🪙): нейтрализована фаза $skippedPhase "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
+              );
+              resultTitle = 'Фаза $skippedPhase нейтрализована 💰';
+              resultDescription =
+                  'За 15 монет вы откупились от фазы $skippedPhase босса "$skippedCard"! Следующая фаза: $nextPhaseTitle${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.';
+            } else {
+              _bossPhase = 0;
+              _activeBossCard = null;
+              _advanceCard(wasBoss: wasBoss);
+              _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
+              _addJournalEntry(
+                '💰',
+                'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
+              );
+              resultTitle = wasBoss ? 'Босс подкуплен 💰' : 'Угроза нейтрализована';
+              resultDescription = wasBoss
+                  ? 'За 15 монет вы успешно откупились от босса "$skippedCard"! Уровень подземелья пройден без боя${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.'
+                  : 'За 15 монет вы благополучно избежали опасности "$skippedCard"${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.';
+            }
           } else {
             _inventoryItems.insert(index, item);
             _lastFeedback = 'Недостаточно монет (нужно 15 🪙)!';

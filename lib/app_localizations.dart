@@ -41,6 +41,7 @@ class AppLocalizations {
   String get menuDungeon => _isRu ? 'В подземелье' : 'Enter Dungeon';
   String get menuShop => _isRu ? 'Магазин' : 'Shop';
   String get menuInventory => _isRu ? 'Инвентарь' : 'Inventory';
+  String get menuQuests => _isRu ? 'Задания' : 'Quests';
   String get menuGlossary => _isRu ? 'Глоссарий' : 'Glossary';
   String get menuChronicle => _isRu ? 'Хроника' : 'Chronicle';
   String get menuTutorial => _isRu ? 'Обучение' : 'Tutorial';
@@ -96,7 +97,7 @@ class AppLocalizations {
         return 'A dark thicket enveloped in ancient magic and teeming with dangerous beasts. The branches whisper ominous spells, and the paths change with every step. 3 challenging levels with mighty bosses.';
       }
       if (id == 'catacombs') {
-        return 'Ancient underground labyrinths of a forgotten crypt. Filled with skeletons, poison traps, and ancient secrets. 4 challenging levels.';
+        return 'Gloomy subterranean labyrinths of a forgotten necropolis. Plague rats, bats, and skeletons lurk on the first floor. Vampires and toxic zombies await deeper below, and their monstrous empowered forms hide in the dark abyss. 3 challenging levels.';
       }
     }
     return fallback;
@@ -160,6 +161,19 @@ class AppLocalizations {
       _isRu
           ? 'Все предметы героя собраны! Сундук больше недоступен.'
           : 'All hero items collected! Chest is no longer available.';
+
+  // ── Валюты ────────────────────────────────────────────────────────────────
+  String get currencyCoins => _isRu ? 'Монеты' : 'Coins';
+  String get currencySilverKeys => _isRu ? 'Серебряные ключи' : 'Silver Keys';
+  String get currencyGoldKeys => _isRu ? 'Золотые ключи' : 'Gold Keys';
+  String get currencySilverKeysShort => _isRu ? 'Сер. ключи' : 'Silver Keys';
+  String get currencyGoldKeysShort => _isRu ? 'Зол. ключи' : 'Gold Keys';
+  String get currencyCoinsTooltip =>
+      _isRu ? 'Монеты — награда за забеги и задания' : 'Coins — earned from runs and quests';
+  String get currencySilverKeysTooltip =>
+      _isRu ? 'Серебряные ключи — пока недоступны для получения' : 'Silver keys — not yet obtainable';
+  String get currencyGoldKeysTooltip =>
+      _isRu ? 'Золотые ключи — пока недоступны для получения' : 'Gold keys — not yet obtainable';
 
   // ── Инвентарь ────────────────────────────────────────────────────────────
   String get inventoryTitle => _isRu ? 'Инвентарь' : 'Inventory';
@@ -456,7 +470,7 @@ class AppLocalizations {
         'runic_shield' => 'Next incoming health damage will be fully absorbed.',
         'mirror_distortion' => 'Next turn: all losses turn into equal gains.',
         'thornmail' => 'Next hit: converts damage into double gold.',
-        'philosophers_stone' => 'Converts coins (×10, max 100🪙) into attack (+1) and health (+2).',
+        'philosophers_stone' => 'Converts coins (×10, max 50🪙) into attack (+1) and health (+2).',
         'shadow_pact' => 'Sacrifice half HP → double coins + random card.',
         'greed_magnet' => 'Doubles all coins gained in events for 3 turns.',
         'dice_of_fate' => 'Random outcome: losses, an artifact, or jackpot (+5❤ +2⚡ +25🪙).',
@@ -590,6 +604,11 @@ class AppLocalizations {
   String get debugSetCoinsLabel =>
       _isRu ? 'Установить баланс' : 'Set balance';
   String get debugApply => _isRu ? 'Применить' : 'Apply';
+  String get debugKeysTitle => _isRu ? 'Ключи (валюты)' : 'Keys (Currencies)';
+  String debugSilverKeysBalance(int count) =>
+      _isRu ? 'Серебряные ключи: $count 🗝️' : 'Silver keys: $count 🗝️';
+  String debugGoldKeysBalance(int count) =>
+      _isRu ? 'Золотые ключи: $count 🔑' : 'Gold keys: $count 🔑';
   String get debugHeroStatsTitle =>
       _isRu ? 'Прокачка характеристик героя' : 'Hero Stat Upgrades';
   String debugHeroStatsSubtitle({
@@ -642,6 +661,160 @@ class AppLocalizations {
       _isRu ? 'Записей: $count / $max' : 'Records: $count / $max';
   String get debugClearChronicle =>
       _isRu ? 'Очистить хронику' : 'Clear Chronicle';
+
+  // ── Задания и Ежедневные награды ─────────────────────────────────────────
+  String get questsTitle => _isRu ? 'Задания' : 'Quests';
+  String get questsSubtitle =>
+      _isRu ? 'Ежедневные награды и серия входов' : 'Daily rewards and login streak';
+  String get questsDailySection =>
+      _isRu ? 'Ежедневный вход' : 'Daily Login';
+  String get questsWeeklyStreak =>
+      _isRu ? 'Серия входов (7 дней)' : 'Login Streak (7 Days)';
+  String questsStreakProgress(int current, int total) =>
+      _isRu ? 'День $current из $total' : 'Day $current of $total';
+  String get dailyResetNote =>
+      _isRu ? 'Смена дня в 00:00 по МСК (UTC+3)' : 'Day resets at 00:00 MSK (UTC+3)';
+  String dailyNextResetIn(String time) =>
+      _isRu ? 'До обновления: $time' : 'Resets in: $time';
+  String get dailyRewardTitle =>
+      _isRu ? 'Награда за вход' : 'Daily Login Reward';
+  String get dailyRewardSubtitle =>
+      _isRu
+          ? 'Заходите в игру каждый день, чтобы увеличивать награду!'
+          : 'Log in daily to increase your rewards!';
+  String dailyRewardDayNumber(int day) =>
+      _isRu ? 'День $day' : 'Day $day';
+  String dailyRewardCoinsAmount(int amount) =>
+      _isRu ? '+$amount монет' : '+$amount coins';
+  String get dailyRewardClaimButton =>
+      _isRu ? 'Забрать награду' : 'Claim Reward';
+  String get dailyRewardClaimedStatus =>
+      _isRu ? 'Получено' : 'Claimed';
+  String get dailyRewardClaimedToday =>
+      _isRu ? 'Получено сегодня' : 'Claimed today';
+  String get dailyRewardLocked =>
+      _isRu ? 'Заблокировано' : 'Locked';
+  String get dailyRewardJackpotBadge =>
+      _isRu ? 'Супернаграда 👑' : 'Grand Prize 👑';
+  String dailyRewardReceivedMessage(int amount) =>
+      _isRu ? 'Получено $amount монет!' : 'Received $amount coins!';
+  String get dailyRewardResetAfterSeven =>
+      _isRu
+          ? 'После 7-го дня счётчик начнётся заново с 1-го дня.'
+          : 'After day 7, the streak restarts from day 1.';
+  String get questsUpcomingTitle =>
+      _isRu ? 'Задания подземелья' : 'Dungeon Quests';
+  String get questsUpcomingDesc =>
+      _isRu
+          ? 'Скоро здесь появятся новые испытания с ценными наградами!'
+          : 'New dungeon challenges with valuable rewards are coming soon!';
+  String get questsComingSoonBadge =>
+      _isRu ? 'Скоро' : 'Coming Soon';
+
+  // ── Ежедневные задания ───────────────────────────────────────────────────
+  String get dailyQuestsSection =>
+      _isRu ? 'Ежедневные задания' : 'Daily Quests';
+  String get dailyQuestsSubtitle =>
+      _isRu
+          ? 'Выполняйте задания каждый день и получайте монеты'
+          : 'Complete daily quests to earn bonus coins';
+
+  String questPlayDungeonsTitle(int count) {
+    if (_isRu) {
+      if (count == 1) return 'Сыграть 1 подземелье';
+      return 'Сыграть $count подземелья';
+    }
+    return 'Play $count ${count == 1 ? "dungeon" : "dungeons"}';
+  }
+
+  String get questPlayDungeonsDesc =>
+      _isRu
+          ? 'Завершите забег победой или поражением'
+          : 'Finish a run by victory or defeat';
+
+  String questKillBossesTitle(int count) {
+    if (_isRu) {
+      if (count == 5) return 'Убить 5 боссов';
+      return 'Убить $count босса';
+    }
+    return 'Defeat $count bosses';
+  }
+
+  String get questKillBossesDesc =>
+      _isRu
+          ? 'Одолейте боссов на этажах подземелий'
+          : 'Defeat bosses on dungeon floors';
+
+  String get questClearDungeonTitle =>
+      _isRu ? 'Пройти 1 подземелье' : 'Complete 1 dungeon';
+
+  String get questClearDungeonDesc =>
+      _isRu
+          ? 'Одержите полную победу в любом подземелье'
+          : 'Achieve complete victory in any dungeon';
+
+  String questEncounterCardsTitle(int count, EventType? type) {
+    final typeName = questEventTypeName(type);
+    if (_isRu) {
+      return 'Встретить $count карт: $typeName';
+    }
+    return 'Encounter $count $typeName cards';
+  }
+
+  String get questEncounterCardsDesc =>
+      _isRu
+          ? 'Исследуйте подземелья и открывайте карты'
+          : 'Explore dungeons and encounter cards';
+
+  String questEventTypeName(EventType? type) {
+    if (type == null) return _isRu ? 'Любые' : 'Any';
+    switch (type) {
+      case EventType.monster:
+        return _isRu ? 'Монстры' : 'Monsters';
+      case EventType.trap:
+        return _isRu ? 'Ловушки' : 'Traps';
+      case EventType.treasure:
+        return _isRu ? 'Сокровища' : 'Treasures';
+      case EventType.merchant:
+        return _isRu ? 'Торговцы' : 'Merchants';
+      case EventType.rest:
+        return _isRu ? 'Привалы' : 'Rest Sites';
+      case EventType.mystery:
+        return _isRu ? 'Тайны' : 'Mysteries';
+      case EventType.boss:
+        return _isRu ? 'Боссы' : 'Bosses';
+    }
+  }
+
+  String questProgressText(int current, int total) => '$current / $total';
+  String questRewardBadgeText(int amount) => '+$amount 🪙';
+  String questClaimButtonText(int amount) =>
+      _isRu ? 'Забрать (+$amount 🪙)' : 'Claim (+$amount 🪙)';
+  String get questClaimedBadgeText =>
+      _isRu ? 'Получено' : 'Claimed';
+  String get questInProgressBadgeText =>
+      _isRu ? 'В процессе' : 'In Progress';
+  String questCompletedNotification(int amount) =>
+      _isRu ? 'Задание выполнено! Получено +$amount монет!' : 'Quest completed! Received +$amount coins!';
+
+  // ── Дебаг ежедневных наград и заданий ─────────────────────────────────────
+  String get debugDailyTitle =>
+      _isRu ? 'Ежедневные награды (стрик)' : 'Daily Rewards (Streak)';
+  String get debugDailyResetToday =>
+      _isRu ? 'Сбросить получение за сегодня' : 'Reset today\'s claim';
+  String get debugDailyResetAll =>
+      _isRu ? 'Сбросить весь стрик' : 'Reset whole streak';
+  String debugDailySetStreak(int day) =>
+      _isRu ? 'Установить день $day' : 'Set day $day';
+
+  String get debugQuestsTitle =>
+      _isRu ? 'Ежедневные задания' : 'Daily Quests';
+  String get debugQuestsCompleteAll =>
+      _isRu ? 'Выполнить задания' : 'Complete all quests';
+  String get debugQuestsReroll =>
+      _isRu ? 'Сгенерировать новые' : 'Reroll quests';
+  String get debugQuestsReset =>
+      _isRu ? 'Сбросить прогресс' : 'Reset progress';
 }
 
 /// Удобный extension для доступа к локализации из [BuildContext].

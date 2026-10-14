@@ -63,7 +63,7 @@ const List<ItemCard> magicChestItems = [
     id: 'philosophers_stone',
     title: 'Философский камень',
     description:
-        'Конвертирует монеты (×10, макс. 100🪙) в атаку (+1) и здоровье (+2).',
+        'Конвертирует монеты (×10, макс. 50🪙) в атаку (+1) и здоровье (+2).',
     effectType: ItemEffectType.transmute,
     value: 0,
     icon: Icons.science,

@@ -97,8 +97,8 @@ void main() {
     expect(state.poisonTurns, equals(3));
     expect(state.bleedTurns, equals(2));
     expect(state.blindnessTurns, equals(3));
-    expect(find.textContaining('Яд'), findsOneWidget);
-    expect(find.textContaining('Кровотечение'), findsOneWidget);
+    expect(find.textContaining('Яд ×3'), findsOneWidget);
+    expect(find.textContaining('Кровотечение ×2'), findsOneWidget);
     expect(find.textContaining('Слепота ×3'), findsOneWidget);
 
     await openInventoryAndUse(tester);
@@ -106,8 +106,8 @@ void main() {
     expect(state.poisonTurns, equals(0));
     expect(state.bleedTurns, equals(0));
     expect(state.blindnessTurns, equals(0));
-    expect(find.textContaining('Яд'), findsNothing);
-    expect(find.textContaining('Кровотечение'), findsNothing);
+    expect(find.textContaining('Яд ×3'), findsNothing);
+    expect(find.textContaining('Кровотечение ×2'), findsNothing);
     expect(find.textContaining('Слепота ×3'), findsNothing);
   });
 

@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/menu_screen.dart';
+import 'services/daily_quests_service.dart';
+import 'services/daily_reward_service.dart';
 import 'services/locale_service.dart';
+import 'services/player_coins_service.dart';
 
 /// Точка входа в мобильное приложение Card Dungeon.
 ///
@@ -14,7 +17,12 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  await LocaleService.instance.load();
+  await Future.wait([
+    LocaleService.instance.load(),
+    PlayerCoinsService.instance.load(),
+    DailyRewardService.instance.load(),
+    DailyQuestsService.instance.load(),
+  ]);
   runApp(const DungeonCardsApp());
 }
 

@@ -58,8 +58,9 @@ void main() {
 
     expect(find.text('Dungeons'), findsOneWidget);
     expect(find.text('Cursed Forest'), findsOneWidget);
-    expect(find.text('Levels count: 3'), findsOneWidget);
-    expect(find.text('Enter Dungeon'), findsOneWidget);
+    expect(find.text('Forgotten Catacombs'), findsOneWidget);
+    expect(find.text('Levels count: 3'), findsWidgets);
+    expect(find.text('Enter Dungeon'), findsWidgets);
   });
 
   testWidgets('ShopScreen displays English strings when en locale is set', (tester) async {

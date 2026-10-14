@@ -896,6 +896,599 @@ const List<EventCard> allEvents = [
     level: 3,
     dungeonId: DungeonId.cursedForest,
   ),
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ЗАБРОШЕННЫЕ КАТАКОМБЫ: УРОВЕНЬ 1 — Верхние Склепы и Колумбарии
+  //  (Монстры: крысы, летучие мыши, скелеты)
+  // ═══════════════════════════════════════════════════════════════
+  EventCard(
+    id: 'catacombs_plague_rat',
+    type: EventType.monster,
+    title: 'Чумная крыса',
+    description:
+        'Громадный грызун с облезлой шкурой и горящими алыми глазами скалится из трещины в саркофаге. Опасность эффекта: Отравление (35%).',
+    leftChoice: CardChoice(
+      label: 'Пронзить клинком',
+      attackDelta: -1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отшвырнуть сапогом',
+      healthDelta: -2,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.35,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_hungry_rat_swarm',
+    type: EventType.monster,
+    title: 'Стая голодных крыс',
+    description:
+        'Пол под ногами словно оживает — сотни пищащих челюстей бросаются на блеск снаряжения. Опасность эффекта: Кровотечение (35%).',
+    leftChoice: CardChoice(
+      label: 'Разогнать стаю ударами плашмя',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Прорваться сквозь живую волну',
+      healthDelta: -3,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.35,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_cave_bats',
+    type: EventType.monster,
+    title: 'Пещерные нетопыри',
+    description:
+        'Внезапный шелест сотен кожистых крыльев под потолком сбивает дыхание. Стая кружит вокруг факела.',
+    leftChoice: CardChoice(
+      label: 'Сбить взмахом оружия',
+      attackDelta: -1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Прикрыться плащом',
+      healthDelta: -2,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_vampire_bat',
+    type: EventType.monster,
+    title: 'Кровососущий нетопырь',
+    description:
+        'Крупный нетопырь с бритвенно-острыми клыками бесшумно пикирует во тьме склепа. Опасность эффекта: Кровотечение (40%).',
+    leftChoice: CardChoice(
+      label: 'Разрубить на лету',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Подставить наруч',
+      healthDelta: -2,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.4,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_skeleton_warrior',
+    type: EventType.monster,
+    title: 'Скелет-воин',
+    description:
+        'Покрытые патиной ржавые доспехи гремят при каждом шаге. Неживой воин сжимает зазубренный меч обеими руками.',
+    leftChoice: CardChoice(
+      label: 'Парировать и расколоть череп',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Принять удар на щит',
+      healthDelta: -3,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_skeleton_archer',
+    type: EventType.monster,
+    title: 'Скелет-лучник',
+    description:
+        'Костлявые пальцы бесшумно натягивают истлевшую тетиву в глубине тёмной ниши склепа.',
+    leftChoice: CardChoice(
+      label: 'Сблизиться и срубить лук',
+      attackDelta: -1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Увернуться от костяной стрелы',
+      healthDelta: -2,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_skeleton_halberdier',
+    type: EventType.monster,
+    title: 'Костяной страж',
+    description:
+        'Высокий скелет в церемониальном шлеме преграждает проход массивной костяной глефой.',
+    leftChoice: CardChoice(
+      label: 'Перерубить древко глефы',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Пойти на таран плечом',
+      healthDelta: -3,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_bone_trap',
+    type: EventType.trap,
+    title: 'Костяная растяжка',
+    description:
+        'Под слоем вековой пыли натянут тонкий сухожильный шнур. Сверху угрожающе качается каменный блок. Опасность эффекта: Кровотечение (30%).',
+    leftChoice: CardChoice(
+      label: 'Аккуратно обезвредить лезвием',
+      attackDelta: -1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отпрыгнуть в сторону',
+      healthDelta: -2,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.3,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_crypt_well',
+    type: EventType.rest,
+    title: 'Затхлый колодец склепа',
+    description:
+        'Среди разрушенных надгробий бьёт чистый подземный родник, свободный от могильного тлена.',
+    leftChoice: CardChoice(
+      label: 'Напиться ключевой воды',
+      healthDelta: 3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Омыть и заточить клинок',
+      attackDelta: 1,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_dusty_altar',
+    type: EventType.mystery,
+    title: 'Алтарь усопших',
+    description:
+        'Каменная чаша на постаменте слабо фосфоресцирует мягким светом давно забытых погребальных ритуалов.',
+    leftChoice: CardChoice(
+      label: 'Поклониться древнему свету',
+      healthDelta: 2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Зачерпнуть погребальный пепел силы',
+      attackDelta: 1,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_spike_crypt',
+    type: EventType.trap,
+    title: 'Осыпающийся колумбарий',
+    description:
+        'Старые погребальные урны с грохотом рушатся со стен, обнажая острые шипы в нишах.',
+    leftChoice: CardChoice(
+      label: 'Разбить летящие обломки мечом',
+      attackDelta: -1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Прикрыть голову руками',
+      healthDelta: -2,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+  ),
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ЗАБРОШЕННЫЕ КАТАКОМБЫ: УРОВЕНЬ 2 — Затопленный Некрополь и Гробницы
+  //  (Монстры: вампиры, зомби, гули)
+  // ═══════════════════════════════════════════════════════════════
+  EventCard(
+    id: 'catacombs_rot_zombie',
+    type: EventType.monster,
+    title: 'Гнилостный зомби',
+    description:
+        'Раздувшееся от трупных газов тело шаркает навстречу, источая удушливый ядовитый смрад. Опасность эффекта: Отравление (45%).',
+    leftChoice: CardChoice(
+      label: 'Отсечь голову быстрым взмахом',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Принять удар гнилых кулаков',
+      healthDelta: -4,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.45,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_zombie_berserker',
+    type: EventType.monster,
+    title: 'Чумной зомби-берсерк',
+    description:
+        'Мертвец исполинского роста с торчащими в груди обломками копий яростно мчится вперед, круша погребальные плиты.',
+    leftChoice: CardChoice(
+      label: 'Встретить сокрушительным ударом',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Выдержать бешеный натиск',
+      healthDelta: -5,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_crawling_ghoul',
+    type: EventType.monster,
+    title: 'Могильный трупоед',
+    description:
+        'Горбатая тварь с длинными серповидными когтями отрывается от костей и с истошным воем бросается на живую плоть. Опасность эффекта: Кровотечение (45%).',
+    leftChoice: CardChoice(
+      label: 'Пронзить горло твари',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отбиться от когтей',
+      healthDelta: -4,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.45,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_fledgling_vampire',
+    type: EventType.monster,
+    title: 'Кровожадный вампир',
+    description:
+        'Новообращённый кровопийца с горящими безумием глазами жаждет свежей горячей крови. Опасность эффекта: Кровотечение (40%).',
+    leftChoice: CardChoice(
+      label: 'Пронзить сердце вампира',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Защитить шею латным воротником',
+      healthDelta: -5,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.4,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_vampire_noble',
+    type: EventType.monster,
+    title: 'Вампир-аристократ',
+    description:
+        'Безупречно одетый вельможа ночи с ироничной усмешкой обнажает дуэльную шпагу. Его движения неуловимо быстры. Опасность эффекта: Слепота (45%).',
+    leftChoice: CardChoice(
+      label: 'Разбить изящную стойку силой',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Парировать серию смертоносных уколов',
+      healthDelta: -5,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.45,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_vampire_huntress',
+    type: EventType.monster,
+    title: 'Вампирша-охотница',
+    description:
+        'Хищница в кожаных одеяниях бесшумно спрыгивает со свода склепа с изогнутыми кинжалами.',
+    leftChoice: CardChoice(
+      label: 'Сбить в воздухе тяжелым ударом',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Увернуться от парных кинжалов',
+      healthDelta: -4,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_vampire_thrall',
+    type: EventType.monster,
+    title: 'Обращённый послушник',
+    description:
+        'Фанатичный смертный слуга вампиров готов отдать жизнь за своих хозяев и бросается в самоубийственную атаку.',
+    leftChoice: CardChoice(
+      label: 'Обезоружить фанатика',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Принять удар кинжала на доспех',
+      healthDelta: -4,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_poisonous_bloater',
+    type: EventType.monster,
+    title: 'Чумной утопленник',
+    description:
+        'Труп из затопленного зала катакомб исторгает облако ядовитых спор при приближении. Опасность эффекта: Отравление (50%).',
+    leftChoice: CardChoice(
+      label: 'Рассечь тело издалека',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Задержать дыхание и пройти сквозь споры',
+      healthDelta: -5,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.5,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_coffin_trap',
+    type: EventType.trap,
+    title: 'Заминированный гроб',
+    description:
+        'Крышка древнего гроба сдвинута, но под ней спрятан коварный механизм с выбросом яда. Опасность эффекта: Отравление (40%).',
+    leftChoice: CardChoice(
+      label: 'Обезвредить скрытый клапан',
+      attackDelta: -2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отпрыгнуть от струи газа',
+      healthDelta: -4,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.4,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_safe_alcove_2',
+    type: EventType.rest,
+    title: 'Тайная усыпальница',
+    description:
+        'Небольшая потайная комната за массивной барельефной плитой дарит желанную передышку от нежити.',
+    leftChoice: CardChoice(
+      label: 'Перевязать раны в тишине',
+      healthDelta: 4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Заточить оружие о надгробие',
+      attackDelta: 2,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_blood_altar',
+    type: EventType.mystery,
+    title: 'Кровавая купель',
+    description:
+        'Чаша из черного обсидиана заполнена теплой багровой эссенцией, пульсирующей тёмной силой. Опасность эффекта: Проклятие Мидаса (40%).',
+    leftChoice: CardChoice(
+      label: 'Окропить клинок эссенцией ночи',
+      attackDelta: 3,
+      statusEffect: StatusEffectType.midasCurse,
+      statusChance: 0.4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отвергнуть тёмный зов и помолиться',
+      healthDelta: 3,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+  ),
+
+  // ═══════════════════════════════════════════════════════════════
+  //  ЗАБРОШЕННЫЕ КАТАКОМБЫ: УРОВЕНЬ 3 — Бездна Вечной Тьмы и Королевский Некрополь
+  //  (Усиленные варианты: исполинские твари, высшие вампиры, древние титаны)
+  // ═══════════════════════════════════════════════════════════════
+  EventCard(
+    id: 'catacombs_empowered_rat_matriarch',
+    type: EventType.monster,
+    title: 'Исполинская чумная праматерь',
+    description:
+        'Мутировавшая королева крыс размером с медведя с кожистыми наростами и ядовитыми жвалами. Опасность эффекта: Отравление (55%).',
+    leftChoice: CardChoice(
+      label: 'Сразить чудовище в уязвимое брюхо',
+      attackDelta: -4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Выдержать сокрушительный таран',
+      healthDelta: -7,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.55,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_shadow_bats',
+    type: EventType.monster,
+    title: 'Призрачная стая нетопырей',
+    description:
+        'Сотни гигантских нетопырей, сотканных из чистой тьмы и могильного тумана, затмевают взор. Опасность эффекта: Слепота (60%).',
+    leftChoice: CardChoice(
+      label: 'Рассечь теневую стаю вихрем ударов',
+      attackDelta: -4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Вытерпеть призрачные укусы',
+      healthDelta: -6,
+      statusEffect: StatusEffectType.blindness,
+      statusChance: 0.6,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_bone_juggernaut',
+    type: EventType.monster,
+    title: 'Костяной джаггернаут',
+    description:
+        'Усиленный сплав сотен скелетов воинов образовал ходячую костяную башню, сметающую колонны залов катакомб.',
+    leftChoice: CardChoice(
+      label: 'Разбить осевой сустав колосса',
+      attackDelta: -5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Принять удар гигантской костяной дубины',
+      healthDelta: -8,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_dread_lich',
+    type: EventType.monster,
+    title: 'Костяной чародей пустоты',
+    description:
+        'Древний скелет в истлевшей архимагической мантии сплетает губительные сферы некромантии. Опасность эффекта: Проклятие Мидаса (50%).',
+    leftChoice: CardChoice(
+      label: 'Прервать чтение заклинания выпадом',
+      attackDelta: -4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Поглотить взрыв тёмной энергии щитом',
+      healthDelta: -7,
+      statusEffect: StatusEffectType.midasCurse,
+      statusChance: 0.5,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_zombie_titan',
+    type: EventType.monster,
+    title: 'Чумной колосс-исполин',
+    description:
+        'Сшитый из десятков тел гигантский зомби распространяет заразу каждым тяжелым шагом. Опасность эффекта: Отравление (50%).',
+    leftChoice: CardChoice(
+      label: 'Рассечь скрепляющие швы чудовища',
+      attackDelta: -4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Выстоять под сокрушительной поступью',
+      healthDelta: -8,
+      statusEffect: StatusEffectType.poison,
+      statusChance: 0.5,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_nosferatu_elder',
+    type: EventType.monster,
+    title: 'Старейшина Носферату',
+    description:
+        'Тысячелетний патриарх вампиров с когтистыми лапами и пепельной кожей подчиняет саму тень. Опасность эффекта: Кровотечение (60%).',
+    leftChoice: CardChoice(
+      label: 'Пронзить сердце древнего владыки',
+      attackDelta: -5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Отразить сокрушительный бросок из тьмы',
+      healthDelta: -8,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.6,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_vampire_archon',
+    type: EventType.monster,
+    title: 'Архивампир Кровавой Луны',
+    description:
+        'Верховный лорд вампиров в латах из закалённой крови разит мечом, вытягивающим жизненную силу.',
+    leftChoice: CardChoice(
+      label: 'Перерубить кровавый клинок',
+      attackDelta: -5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Выдержать вампирический вихрь ударов',
+      healthDelta: -7,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_guillotine',
+    type: EventType.trap,
+    title: 'Коридор падающих секир',
+    description:
+        'Древняя защитная система царской усыпальницы: тяжелые зазубренные гильотины с грохотом рассекают коридор. Опасность эффекта: Кровотечение (50%).',
+    leftChoice: CardChoice(
+      label: 'Заблокировать рычаг механизма клинком',
+      attackDelta: -3,
+    ),
+    rightChoice: CardChoice(
+      label: 'Проскочить сквозь смертоносные лезвия',
+      healthDelta: -6,
+      statusEffect: StatusEffectType.bleed,
+      statusChance: 0.5,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_crypt_sanctuary',
+    type: EventType.rest,
+    title: 'Осквернённое святилище',
+    description:
+        'Древняя часовня в самом сердце катакомб. Священная аура ещё теплится среди руин.',
+    leftChoice: CardChoice(
+      label: 'Помолиться об исцелении ран',
+      healthDelta: 5,
+    ),
+    rightChoice: CardChoice(
+      label: 'Освятить боевой клинок молитвой',
+      attackDelta: 3,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
+  EventCard(
+    id: 'catacombs_empowered_black_obelisk',
+    type: EventType.mystery,
+    title: 'Чёрный обелиск Смерти',
+    description:
+        'Монолит из полированного черного базальта вибрирует мощной первозданной магией загробного мира.',
+    leftChoice: CardChoice(
+      label: 'Прикоснуться и впитать силу Бездны',
+      attackDelta: 4,
+    ),
+    rightChoice: CardChoice(
+      label: 'Очистить монумент священным светом',
+      healthDelta: 4,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+  ),
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -1142,6 +1735,233 @@ const List<EventCard> allBossCards = [
         ),
         rightChoice: CardChoice(
           label: 'Пронзить тёмное сердце клинком',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
+  ),
+
+  // ═══════════════════════════════════════════════════════════════
+  //  БОССЫ ЗАБРОШЕННЫХ КАТАКОМБ (появляются на каждом 20-м ходу)
+  // ═══════════════════════════════════════════════════════════════
+
+  // ── Босс 1: Костяной Голем Катакомб ───────────────────────────────────────
+  EventCard(
+    id: 'catacombs_boss_bone_colossus',
+    type: EventType.boss,
+    title: 'Костяной Голем Катакомб',
+    description:
+        'Ужасающее чудовище, скреплённое тёмной магией из тысяч черепов и костей павших в некрополе воинов.',
+    leftChoice: CardChoice(
+      label: 'Выдержать таран костяного гиганта',
+      healthDelta: -6,
+      coinsDelta: 25,
+    ),
+    rightChoice: CardChoice(
+      label: 'Разрубить удерживающие чары',
+      attackDelta: -3,
+      coinsDelta: 35,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🦴',
+        title: 'Фаза I — Стена из костей',
+        description:
+            'Голем смыкает костяные щиты и обрушивает на героя град осколков. Подобраться близко невероятно трудно.',
+        leftChoice: CardChoice(
+          label: 'Укрыться за надгробием от шквала костей',
+          healthDelta: -3,
+          coinsDelta: 10,
+        ),
+        rightChoice: CardChoice(
+          label: 'Расколоть костяной щит мощным выпадом',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🌪️',
+        title: 'Фаза II — Вихрь осколков',
+        description:
+            'Голем начинает вращаться вокруг своей оси! Острые костяные иглы летят во все стороны, разрезая доспехи.',
+        leftChoice: CardChoice(
+          label: 'Принять удар шипов на кирасу',
+          healthDelta: -4,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.4,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вклиниться в центр вихря и рассечь ядро',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💥',
+        title: 'Фаза III — Сокрушительный обвал',
+        description:
+            'Ядро голема трещит! В агонии чудовище рушится на тебя всей своей колоссальной массой. Нанеси решающий удар!',
+        leftChoice: CardChoice(
+          label: 'Сдержать падение костяной громады',
+          healthDelta: -6,
+          coinsDelta: 25,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить меч в пылающее сердце-рубин',
+          attackDelta: -3,
+          coinsDelta: 35,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 2: Лорд Вампиров Валериан ─────────────────────────────────────────
+  EventCard(
+    id: 'catacombs_boss_vampire_lord',
+    type: EventType.boss,
+    title: 'Лорд Вампиров Валериан',
+    description:
+        'Владыка склепов и повелитель ночи. Его клинок жаждет крови смертных, а в глазах горит вековая ненависть.',
+    leftChoice: CardChoice(
+      label: 'Выдержать молниеносный натиск',
+      healthDelta: -7,
+      coinsDelta: 30,
+    ),
+    rightChoice: CardChoice(
+      label: 'Контратаковать священной сталью',
+      attackDelta: -4,
+      coinsDelta: 40,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🗡️',
+        title: 'Фаза I — Танец кровавой рапиры',
+        description:
+            'Валериан движется словно смазанная тень. Его рапира наносит десятки молниеносных выпадов, ища брешь в броне.',
+        leftChoice: CardChoice(
+          label: 'Принять серию колющих ударов',
+          healthDelta: -4,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Выбить рапиру тяжелым парированием',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🦇',
+        title: 'Фаза II — Облик стаи нетопырей',
+        description:
+            'Тело лорда рассыпается сотнями кровожадных нетопырей! Тьма кружит в воздухе, ослепляя героя и раздирая плоть.',
+        leftChoice: CardChoice(
+          label: 'Отбиваться вслепую от стаи',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разогнать стаю круговым взмахом',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🩸',
+        title: 'Фаза III — Кровавое затмение',
+        description:
+            'Валериан принимает истинный облик первородного вампира с огромными кожистыми крыльями. Время положить конец его правлению!',
+        leftChoice: CardChoice(
+          label: 'Пережить ярость первородного вампира',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Пронзить сердце древнего владыки',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 3: Архилич Волкар — Владыка Катакомб ──────────────────────────────
+  EventCard(
+    id: 'catacombs_boss_archlich',
+    type: EventType.boss,
+    title: 'Архилич Волкар — Владыка Катакомб',
+    description:
+        'Древний повелитель смерти, правящий некрополем тысячи лет. Его филактерия наделяет его бессмертием и абсолютной властью над мертвецами.',
+    leftChoice: CardChoice(
+      label: 'Принять волну губительной некромантии',
+      healthDelta: -8,
+      coinsDelta: 40,
+    ),
+    rightChoice: CardChoice(
+      label: 'Расколоть филактерию силой',
+      attackDelta: -5,
+      coinsDelta: 60,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '💀',
+        title: 'Фаза I — Легион проклятых',
+        description:
+            'Волкар поднимает посох, и земля разверзается! Орды костяных рук и оживших мертвецов встают на защиту хозяина.',
+        leftChoice: CardChoice(
+          label: 'Сдержать натиск мертвецов щитом',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Прорубить коридор сквозь нежить к личу',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🔮',
+        title: 'Фаза II — Похищение душ',
+        description:
+            'Лич начинает высасывать жизненную силу из всего живого. Зелёное пламя душ кружится в его костлявых ладонях.',
+        leftChoice: CardChoice(
+          label: 'Противостоять высасыванию души волей',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.midasCurse,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Сбить концентрацию лича броском клинка',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '⚡',
+        title: 'Фаза III — Расколотая филактерия',
+        description:
+            'Защитный купол филактерии пал! Волкар воет в агонии и выпускает всю оставшуюся энергию смерти в финальном катаклизме.',
+        leftChoice: CardChoice(
+          label: 'Выдержать финальный взрыв Бездны',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Уничтожить филактерию и лича одним ударом',
           attackDelta: -5,
           coinsDelta: 60,
         ),

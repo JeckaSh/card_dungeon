@@ -8,6 +8,7 @@ import '../models/item_card.dart';
 import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/unlocked_items_service.dart';
+import '../widgets/currencies_bar.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
@@ -235,65 +236,8 @@ class _ShopScreenState extends State<ShopScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Баланс монет
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFFFFD700,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                              color: const Color(
-                                0xFFFFD700,
-                              ).withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFFFD700,
-                                  ).withValues(alpha: 0.15),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.monetization_on,
-                                  color: Color(0xFFFFD700),
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l10n.shopYourBalance,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.6,
-                                      ),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$balance 🪙',
-                                    style: const TextStyle(
-                                      color: Color(0xFFFFD700),
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Панель валют (монеты, серебряные и золотые ключи)
+                        const PlayerCurrenciesBar(),
                         const SizedBox(height: 24),
 
                         // ── Магический сундук ────────────────────────────────

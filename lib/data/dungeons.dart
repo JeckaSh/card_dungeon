@@ -14,15 +14,26 @@ const Dungeon cursedForestDungeon = Dungeon(
   isAvailable: true,
 );
 
-/// Будущее подземелье (в разработке) для демонстрации расширяемости
+/// Второе подземелье: «Заброшенные катакомбы»
 const Dungeon catacombsDungeon = Dungeon(
   id: 'catacombs',
   name: 'Заброшенные катакомбы',
   description:
-      'Древние подземные лабиринты забытого склепа. Полны скелетов, ядовитых ловушек и древних тайн. 4 уровня испытаний.',
-  levelsCount: 4,
+      'Мрачные подземные лабиринты забытого некрополя. На первом этаже рыщут чумные крысы, летучие мыши и скелеты. Глубже поджидают кровожадные вампиры и ядовитые зомби, а в самой бездне таятся их чудовищные усиленные формы. 3 уровня испытаний.',
+  levelsCount: 3,
   icon: Icons.castle_rounded,
   accentColor: Color(0xFFAB47BC),
+  isAvailable: true,
+);
+
+/// Третье подземелье: Древние пещеры»
+const Dungeon elderCavesDungeon = Dungeon(
+  id: 'elderCaves',
+  name: 'Древние пещеры',
+  description: 'Древние пещеры, населённые гоблинами и орками',
+  levelsCount: 3,
+  icon: Icons.castle_rounded,
+  accentColor: Color.fromARGB(255, 193, 126, 20),
   isAvailable: false,
 );
 
@@ -33,6 +44,7 @@ const Dungeon catacombsDungeon = Dungeon(
 const List<Dungeon> allDungeons = [
   cursedForestDungeon,
   catacombsDungeon,
+  elderCavesDungeon,
 ];
 
 /// Возвращает подземелье по его строковому [id].

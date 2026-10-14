@@ -9,6 +9,6 @@ void main() {
     expect(find.text('Подземелье'), findsOneWidget);
     expect(find.text('В подземелье'), findsOneWidget);
     expect(find.text('Глоссарий'), findsOneWidget);
-    expect(find.text('card dungeon v0.0.13'), findsOneWidget);
+    expect(find.text('card dungeon v0.0.14'), findsOneWidget);
   });
 }

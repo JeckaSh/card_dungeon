@@ -84,14 +84,16 @@ void main() {
     expect(find.byType(ItemUsedDialog), findsNothing);
   });
 
-  testWidgets('Using smoke bomb on boss advances dungeon level', (tester) async {
-    final smokeBomb = allItemCards.firstWhere((item) => item.id == 'smoke_bomb');
+  testWidgets('Using smoke bomb on multi-phase boss skips only phase 1, and phase 3 advances level', (tester) async {
+    final smokeBomb1 = allItemCards.firstWhere((item) => item.id == 'smoke_bomb');
+    final smokeBomb2 = allItemCards.firstWhere((item) => item.id == 'smoke_bomb');
+    final smokeBomb3 = allItemCards.firstWhere((item) => item.id == 'smoke_bomb');
     await tester.pumpWidget(
       MaterialApp(
         home: GameScreen(
           initialDungeonLevel: 1,
           initialCardsPassed: 19, // 20th card is 1st boss
-          initialInventory: [smokeBomb],
+          initialInventory: [smokeBomb1, smokeBomb2, smokeBomb3],
         ),
       ),
     );
@@ -110,32 +112,69 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Use smoke bomb
-    await tester.tap(find.text('Применить'));
+    // Use 1st smoke bomb on phase 1
+    await tester.tap(find.text('Применить').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // ItemUsedDialog is shown with boss escape description
+    // ItemUsedDialog is shown with phase 1 escape description
     expect(find.byType(ItemUsedDialog), findsOneWidget);
-    expect(find.text('Побег от босса 💨'), findsOneWidget);
+    expect(find.text('Побег от фазы 1 💨'), findsOneWidget);
 
     // Close dialog
     await tester.tap(find.text('Отлично'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    // Dungeon level is still 1, but next phase (Фаза II) is now active!
+    expect(find.text('Уровень 1'), findsOneWidget);
+    expect(find.text('🔥 Фаза II — Бешеный рывок'), findsOneWidget);
+
+    // Use 2nd smoke bomb on phase 2
+    await tester.tap(inventoryButtonFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Применить').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Побег от фазы 2 💨'), findsOneWidget);
+    await tester.tap(find.text('Отлично'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Still level 1, now phase 3
+    expect(find.text('Уровень 1'), findsOneWidget);
+    expect(find.text('💀 Фаза III — Последний рык'), findsOneWidget);
+
+    // Use 3rd smoke bomb on phase 3
+    await tester.tap(inventoryButtonFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Применить').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // On phase 3, boss is fully passed!
+    expect(find.text('Побег от босса 💨'), findsOneWidget);
+    await tester.tap(find.text('Отлично'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
     // Dungeon level should now be 2!
-    expect(find.textContaining('Уровень 2'), findsOneWidget);
+    expect(find.text('Уровень 2'), findsOneWidget);
   });
 
-  testWidgets('Using skip turn on boss advances dungeon level', (tester) async {
-    final scrollSkip = allItemCards.firstWhere((item) => item.id == 'scroll_skip');
+  testWidgets('Using skip turn on multi-phase boss skips only current phase', (tester) async {
+    final scrollSkip1 = allItemCards.firstWhere((item) => item.id == 'scroll_skip');
+    final scrollSkip2 = allItemCards.firstWhere((item) => item.id == 'scroll_skip');
+    final scrollSkip3 = allItemCards.firstWhere((item) => item.id == 'scroll_skip');
     await tester.pumpWidget(
       MaterialApp(
         home: GameScreen(
           initialDungeonLevel: 1,
           initialCardsPassed: 19, // 20th card is 1st boss
-          initialInventory: [scrollSkip],
+          initialInventory: [scrollSkip1, scrollSkip2, scrollSkip3],
         ),
       ),
     );
@@ -152,22 +191,57 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // Use scroll skip
-    await tester.tap(find.text('Применить'));
+    // Use 1st scroll skip
+    await tester.tap(find.text('Применить').first);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    // ItemUsedDialog is shown with boss skip description
+    // ItemUsedDialog is shown with phase 1 skip description
     expect(find.byType(ItemUsedDialog), findsOneWidget);
-    expect(find.text('Босс пропущен ⏩'), findsOneWidget);
+    expect(find.text('Фаза 1 пропущена ⏩'), findsOneWidget);
 
     // Close dialog
     await tester.tap(find.text('Отлично'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
+    // Dungeon level is still 1, but Phase II is active
+    expect(find.text('Уровень 1'), findsOneWidget);
+    expect(find.text('🔥 Фаза II — Бешеный рывок'), findsOneWidget);
+
+    // Use 2nd scroll skip on phase 2
+    await tester.tap(inventoryButtonFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Применить').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Фаза 2 пропущена ⏩'), findsOneWidget);
+    await tester.tap(find.text('Отлично'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Still level 1, now Phase III
+    expect(find.text('Уровень 1'), findsOneWidget);
+    expect(find.text('💀 Фаза III — Последний рык'), findsOneWidget);
+
+    // Use 3rd scroll skip on phase 3
+    await tester.tap(inventoryButtonFinder);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Применить').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Boss is fully skipped!
+    expect(find.text('Босс пропущен ⏩'), findsOneWidget);
+    await tester.tap(find.text('Отлично'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
     // Dungeon level should now be 2!
-    expect(find.textContaining('Уровень 2'), findsOneWidget);
+    expect(find.text('Уровень 2'), findsOneWidget);
   });
 }
 

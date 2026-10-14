@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../app_localizations.dart';
 import '../data/events.dart';
 import '../data/items.dart';
+import '../services/daily_quests_service.dart';
+import '../services/daily_reward_service.dart';
 import '../services/discovered_events.dart';
 import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
@@ -48,6 +50,8 @@ class _DebugScreenState extends State<DebugScreen> {
       DiscoveredEventsService.instance.load(),
       PlayerStatsService.instance.load(),
       RunChronicleService.instance.load(),
+      DailyRewardService.instance.load(),
+      DailyQuestsService.instance.load(),
     ]);
     if (mounted) {
       _coinsController.text = PlayerCoinsService.instance.balance.toString();
@@ -102,6 +106,22 @@ class _DebugScreenState extends State<DebugScreen> {
       return;
     }
     PlayerCoinsService.instance.restoreBalance(value);
+    _refresh();
+  }
+
+  void _addSilverKeys(int amount) {
+    PlayerCoinsService.instance.applySilverKeysDelta(amount);
+    _refresh();
+  }
+
+  void _addGoldKeys(int amount) {
+    PlayerCoinsService.instance.applyGoldKeysDelta(amount);
+    _refresh();
+  }
+
+  void _resetKeys() {
+    PlayerCoinsService.instance.setSilverKeys(0);
+    PlayerCoinsService.instance.setGoldKeys(0);
     _refresh();
   }
 
@@ -354,6 +374,44 @@ class _DebugScreenState extends State<DebugScreen> {
                           ),
                           const SizedBox(height: 28),
 
+                          // === КЛЮЧИ (ВАЛЮТЫ) ===
+                          _SectionHeader(
+                            icon: Icons.vpn_key_rounded,
+                            title: l10n.debugKeysTitle,
+                            subtitle:
+                                '${l10n.debugSilverKeysBalance(PlayerCoinsService.instance.silverKeys)} • ${l10n.debugGoldKeysBalance(PlayerCoinsService.instance.goldKeys)}',
+                            color: const Color(0xFFDDE4F0),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _QuickCoinButton(
+                                label: '+1 🗝️',
+                                onPressed: () => _addSilverKeys(1),
+                              ),
+                              _QuickCoinButton(
+                                label: '+5 🗝️',
+                                onPressed: () => _addSilverKeys(5),
+                              ),
+                              _QuickCoinButton(
+                                label: '+1 🔑',
+                                onPressed: () => _addGoldKeys(1),
+                              ),
+                              _QuickCoinButton(
+                                label: '+5 🔑',
+                                onPressed: () => _addGoldKeys(5),
+                              ),
+                              _QuickCoinButton(
+                                label: 'Сбросить ключи',
+                                onPressed: _resetKeys,
+                                isNegative: true,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 28),
+
                           // === ПРОКАЧКА ХАРАКТЕРИСТИК ===
                           _SectionHeader(
                             icon: Icons.upgrade_rounded,
@@ -465,6 +523,110 @@ class _DebugScreenState extends State<DebugScreen> {
                             icon: Icons.delete_sweep_rounded,
                             color: const Color(0xFFE94560),
                             onPressed: _clearChronicle,
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === ЕЖЕДНЕВНЫЕ НАГРАДЫ ===
+                          _SectionHeader(
+                            icon: Icons.hotel_class_rounded,
+                            title: l10n.debugDailyTitle,
+                            subtitle: '${l10n.dailyRewardDayNumber(DailyRewardService.instance.todayStreakDay)} / 7 '
+                                '(${DailyRewardService.instance.isClaimedToday ? l10n.dailyRewardClaimedToday : l10n.dailyRewardClaimButton})',
+                            color: const Color(0xFFFFD700),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugDailyResetToday,
+                                  icon: Icons.replay_rounded,
+                                  color: const Color(0xFFFF9800),
+                                  onPressed: () async {
+                                    await DailyRewardService.instance.debugResetTodayClaim();
+                                    _refresh();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugDailyResetAll,
+                                  icon: Icons.delete_outline_rounded,
+                                  color: const Color(0xFFE94560),
+                                  onPressed: () async {
+                                    await DailyRewardService.instance.debugResetStreak();
+                                    _refresh();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: List.generate(7, (index) {
+                              final day = index + 1;
+                              return ActionChip(
+                                label: Text(l10n.debugDailySetStreak(day)),
+                                avatar: const Icon(Icons.stars, size: 16, color: Color(0xFFFFD700)),
+                                backgroundColor: const Color(0xFF1E1E38),
+                                side: BorderSide(color: const Color(0xFFFFD700).withValues(alpha: 0.4)),
+                                labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                                onPressed: () async {
+                                  await DailyRewardService.instance.debugSetStreak(day, claimedToday: false);
+                                  _refresh();
+                                },
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // === ЕЖЕДНЕВНЫЕ ЗАДАНИЯ ===
+                          _SectionHeader(
+                            icon: Icons.assignment_turned_in_rounded,
+                            title: l10n.debugQuestsTitle,
+                            subtitle: '${DailyQuestsService.instance.quests.where((q) => q.isCompleted).length} / ${DailyQuestsService.instance.quests.length} выполнено',
+                            color: const Color(0xFF6C5CE7),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugQuestsCompleteAll,
+                                  icon: Icons.done_all_rounded,
+                                  color: const Color(0xFF4CAF50),
+                                  onPressed: () async {
+                                    await DailyQuestsService.instance.debugCompleteAll();
+                                    _refresh();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _DebugButton(
+                                  label: l10n.debugQuestsReroll,
+                                  icon: Icons.shuffle_rounded,
+                                  color: const Color(0xFF26A69A),
+                                  onPressed: () async {
+                                    await DailyQuestsService.instance.debugRerollQuests();
+                                    _refresh();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _DebugButton(
+                            label: l10n.debugQuestsReset,
+                            icon: Icons.refresh_rounded,
+                            color: const Color(0xFFE94560),
+                            onPressed: () async {
+                              await DailyQuestsService.instance.debugResetProgress();
+                              _refresh();
+                            },
                           ),
                           const SizedBox(height: 32),
                         ],

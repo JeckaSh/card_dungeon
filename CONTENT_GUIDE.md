@@ -1,18 +1,21 @@
 # 📖 Руководство разработчика по архитектуре и контенту Card Dungeon
 
-Данное руководство содержит полное описание архитектуры проекта, механизма игрового цикла и пошаговые инструкции по добавлению любого нового контента: карт событий, боссов, расходуемых предметов (артефактов), новых подземелий и настроек баланса.
+Данное руководство содержит актуальное описание архитектуры проекта, игрового цикла и пошаговые инструкции по добавлению нового контента: карт событий, многофазных боссов, артефактов, подземелий, валют, ежедневных наград, квестов и правил баланса.
 
 ---
 
 ## 📑 Содержание
 1. [Архитектура проекта](#1-архитектура-проекта)
 2. [Игровой цикл и механики](#2-игровой-цикл-и-механики)
-3. [Как добавить новую карту события](#3-как-добавить-новую-карту-события)
-4. [Как добавить нового босса](#4-как-добавить-нового-босса)
-5. [Как добавить новое подземелье](#5-как-добавить-новое-подземелье)
-6. [Как добавить новый расходуемый предмет (артефакт)](#6-как-добавить-новый-расходуемый-предмет-артефакт)
-7. [Настройка прокачки и баланса](#7-настройка-прокачки-и-баланса)
-8. [Инструменты тестирования и отладки](#8-инструменты-тестирования-и-отладки)
+3. [Правила баланса карт](#3-правила-баланса-карт)
+4. [Как добавить новую карту события](#4-как-добавить-новую-карту-события)
+5. [Как добавить нового многофазного босса](#5-как-добавить-нового-многофазного-босса)
+6. [Как добавить новое подземелье](#6-как-добавить-новое-подземелье)
+7. [Как добавить новый расходуемый предмет (артефакт)](#7-как-добавить-новый-расходуемый-предмет-артефакт)
+8. [Ежедневные награды и система заданий](#8-ежедневные-награды-и-система-заданий)
+9. [Валюты игры](#9-валюты-игры)
+10. [Настройка прокачки и баланса](#10-настройка-прокачки-и-баланса)
+11. [Инструменты тестирования и отладки](#11-инструменты-тестирования-и-отладки)
 
 ---
 
@@ -22,34 +25,42 @@
 
 ```
 lib/
-├── main.dart                  # Точка входа, инициализация темы и ориентации
+├── main.dart                  # Точка входа, инициализация темы, ориентации и локализации
+├── app_localizations.dart     # Локализация всех строк (RU / EN)
 ├── models/                    # Модели данных
 │   ├── dungeon.dart           # Модель подземелья (Dungeon)
-│   ├── event_card.dart        # Модели карты события (EventCard), выбора (CardChoice), статусов
+│   ├── event_card.dart        # Модели карты события (EventCard), выбора (CardChoice), фаз босса (BossPhase), статусов
 │   └── item_card.dart         # Модель расходуемого предмета (ItemCard) и типы эффектов
 ├── data/                      # Реестры контента (чистые const-данные)
-│   ├── dungeons.dart          # Список подземелий (allDungeons)
+│   ├── dungeons.dart          # Список подземелий (allDungeons: cursedForest, catacombs, elderCaves)
 │   ├── events.dart            # Список всех карт событий (allEvents) и боссов (allBossCards)
 │   ├── items.dart             # Каталог предметов (allItemCards) и генераторы случайных карт
 │   └── legacy_events.dart     # Архив прежних карт
 ├── services/                  # Сервисы постоянного хранения (SharedPreferences)
-│   ├── player_coins_service.dart   # Баланс золота игрока
+│   ├── player_coins_service.dart   # Баланс золота, серебряных и золотых ключей
 │   ├── player_stats_service.dart   # Прокачка здоровья, атаки, торговцев, стартовых карт
 │   ├── unlocked_items_service.dart # Реестр открытых карт предметов
 │   ├── discovered_events.dart      # Реестр открытых событий для Глоссария
-│   └── run_chronicle_service.dart  # История последних 10 забегов и дневник
+│   ├── run_chronicle_service.dart  # История последних 10 забегов и дневник
+│   ├── daily_reward_service.dart   # Сервис ежедневных наград за вход (7-дневный стрик, полночь по МСК)
+│   ├── daily_quests_service.dart   # Ежедневные задания (квесты, прогресс, награды)
+│   └── locale_service.dart         # Управление текущим языком интерфейса
 ├── screens/                   # Экраны приложения
-│   ├── menu_screen.dart           # Главное меню
-│   ├── dungeon_select_screen.dart # Выбор подземелья
+│   ├── menu_screen.dart           # Главное меню с навигацией
+│   ├── dungeon_select_screen.dart # Экран выбора подземелья
 │   ├── game_screen.dart           # Основной игровой экран (рогалик)
 │   ├── shop_screen.dart           # Магазин открытия новых карт за монеты
 │   ├── inventory_screen.dart      # Инвентарь и прокачка характеристик
-│   ├── glossary_screen.dart       # Бестиарий / энциклопедия карт
+│   ├── quests_screen.dart         # Экран ежедневных заданий и стрика входов
+│   ├── glossary_screen.dart       # Бестиарий / энциклопедия карт и боссов
 │   ├── chronicle_screen.dart      # Хроника завершённых походов
+│   ├── settings_screen.dart       # Настройки языка и звука
 │   └── debug_screen.dart          # Меню разработчика / читы / тесты
 ├── widgets/                   # Переиспользуемые UI-компоненты
-│   ├── swipe_card.dart        # Интерактивная карта со свайпом
+│   ├── swipe_card.dart        # Интерактивная карта со свайпом в стиле Reigns
 │   ├── stats_bar.dart         # Верхняя панель здоровья, атаки, монет и босса
+│   ├── currencies_bar.dart    # Плашка отображения монет, серебряных и золотых ключей
+│   ├── daily_reward_dialog.dart# Диалоговое окно получения ежедневной награды
 │   ├── inventory_sheet.dart   # Нижний лист инвентаря во время боя
 │   ├── item_card_widget.dart  # Карточка предмета для магазина и инвентаря
 │   ├── item_details_sheet.dart# Детальный просмотр предмета
@@ -63,19 +74,23 @@ lib/
 ## 2. Игровой цикл и механики
 
 ### 2.1. Формирование колоды этажа
-1. В начале забега или при переходе на новый этаж вызывается `_rebuildDeck()` в [game_screen.dart](file:///i:/dev/card_dungeon/lib/screens/game_screen.dart).
+1. В начале забега или при переходе на новый этаж вызывается `_rebuildDeck()` в `lib/screens/game_screen.dart`.
 2. Из `allEvents` отбираются карты, у которых:
-   - `level == currentDungeonLevel`;
-   - `isAvailableInDungeon(currentDungeon.id)` (подходят для текущего подземелья либо имеют `dungeonId: DungeonId.common`).
+   - `level == _dungeonLevel`;
+   - `isAvailableInDungeon(currentDungeon.id)`: подходят для текущего подземелья либо имеют `dungeonId: DungeonId.common`.
 3. Карты перемешиваются (`shuffle`).
-4. Если у игрока прокачан навык «Гарантированные торговцы» (`PlayerStatsService.guaranteedMerchants > 0`), в первые 19 карт гарантированно вставляется указанное количество карт торговцев.
+4. Если у игрока прокачан навык «Гарантированные торговцы» (`PlayerStatsService.guaranteedMerchants > 0`), в первые 19 карт гарантированно подмешиваются торговцы текущего уровня.
 
-### 2.2. Появление босса
+### 2.2. Появление босса и многофазные бои
 - Каждая 20-я карта забега (`(cardsPassed + 1) % 20 == 0`) является **боссом**.
-- Босс выбирается из `allBossCards` для текущего подземелья.
-- Победа над боссом:
+- Босс выбирается из `allBossCards` для текущего подземелья по номеру уровня (`level`).
+- У боссов есть поле `bossPhases` — список из 3 фаз (`BossPhase`).
+- Каждая фаза содержит своё название, эмодзи, нарративное описание и варианты выбора (влево/вправо).
+- При победе в фазе 1 бой переходит к фазе 2, затем к фазе 3.
+- Использование предметов «Пропуск хода» или «Дымовая шашка» во время битвы с боссом **пропускает только текущую фазу**, а не всю схватку целиком.
+- Победа в фазе 3:
   - Если есть следующий этаж (`level + 1 <= dungeon.levelsCount`), уровень увеличивается, пересобирается колода следующего этажа.
-  - Если этажи закончились — наступает **Победа** (`GameResult.victory`), золото зачисляется на общий баланс, забег пишется в Хронику.
+  - Если этажи закончились — наступает **Победа** (`GameResult.victory`), золото зачисляется на общий баланс, забег фиксируется в Хронике, и обновляется прогресс ежедневных заданий.
 
 ### 2.3. Механика свайпа и расчет урона
 - **Свайп влево** активирует `leftChoice`, **вправо** — `rightChoice`.
@@ -90,173 +105,241 @@ lib/
 
 ---
 
-## 3. Как добавить новую карту события
+## 3. Правила баланса карт
 
-Все карты событий хранятся в [lib/data/events.dart](file:///i:/dev/card_dungeon/lib/data/events.dart) в списке `allEvents`.
+Все карточки в `allEvents` и `allBossCards` проверяются автоматическим тестом `test/card_balance_test.dart` и **строго обязаны соблюдать следующие правила**:
 
-### 3.1. Типы событий (`EventType`):
+1. **Разделение характеристик выборов**:
+   - Каждый отдельный выбор (`CardChoice`) влияет строго либо на здоровье (`healthDelta != 0`), либо на атаку (`attackDelta != 0`).
+   - Ни один выбор **не должен влиять одновременно на здоровье и атаку** (`healthDelta != 0 && attackDelta != 0` запрещено).
+2. **Альтернативность выборов на карте**:
+   - Два выбора на одной карте не должны влиять на один и тот же параметр: если левый выбор меняет атаку, то правый выбор обязан менять здоровье (и наоборот). Это исключает софт-локи и тупиковые ситуации.
+3. **Экономика монет**:
+   - Обычные боевые монстры, ловушки и привалы не должны беспричинно генерировать монеты. Основной источник монет — сундуки (`treasure`), фазы боссов (`boss`) и специфические алтари.
+
+---
+
+## 4. Как добавить новую карту события
+
+Все карты событий хранятся в `lib/data/events.dart` в списке `allEvents`.
+
+### 4.1. Типы событий (`EventType`):
 - `EventType.monster` — монстры и противники;
-- `EventType.trap` — ловушки и преграды;
-- `EventType.treasure` — сокровища и клады;
+- `EventType.trap` — ловушки и опасности;
+- `EventType.treasure` — сундуки и сокровищницы;
 - `EventType.merchant` — торговцы;
-- `EventType.rest` — лагерь, святилище, исцеление;
-- `EventType.mystery` — алтари, загадки, магия.
+- `EventType.rest` — привалы и святилища исцеления;
+- `EventType.mystery` — алтари, тайны и магия.
 
-### 3.2. Доступные статусы (`StatusEffectType`):
-- `StatusEffectType.poison` — яд (-1 HP на 3 хода);
-- `StatusEffectType.bleed` — кровотечение (-2 HP на 3 хода);
-- `StatusEffectType.blindness` — скрывает текст эффектов на 3 хода;
-- `StatusEffectType.midasCurse` — всё получаемое золото обращается в 0 на 3 хода.
+### 4.2. Доступные статусы (`StatusEffectType`):
+- `StatusEffectType.poison` — яд (-1 HP каждый ход в течение 3 ходов);
+- `StatusEffectType.bleed` — кровотечение (-2 HP каждый ход в течение 3 ходов);
+- `StatusEffectType.blindness` — слепота: скрывает числовые дельты исходов на 3 хода;
+- `StatusEffectType.midasCurse` — проклятие Мидаса: всё получаемое золото обнуляется на 3 хода.
 
-### 3.3. Пример добавления карты:
+### 4.3. Пример добавления карты:
 ```dart
 EventCard(
-  id: 'forest_ancient_shrine',            // Уникальный ID (будет в глоссарии)
-  type: EventType.mystery,                // Категория
-  title: 'Древнее святилище',             // Название
+  id: 'catacombs_crypt_well',
+  type: EventType.rest,
+  title: 'Затхлый колодец склепа',
   description:
-      'Среди мшистых камней мерцает рунический алтарь. Воздух вокруг дрожит от магии.',
+      'Среди разрушенных надгробий бьёт чистый подземный родник, свободный от могильного тлена.',
   leftChoice: CardChoice(
-    label: 'Возложить монеты',
-    coinsDelta: -10,                      // Спишет 10 монет (заблокировано, если < 10)
-    healthDelta: 4,                       // Даст +4 HP
-    givesRandomItem: true,                // Выдаст случайную открытую карту предмета
+    label: 'Напиться ключевой воды',
+    healthDelta: 3,                       // Влияет только на здоровье
   ),
   rightChoice: CardChoice(
-    label: 'Осквернить алтарь',
-    coinsDelta: 20,                       // Награда 20 монет
-    attackDelta: 1,                       // +1 к атаке
-    statusEffect: StatusEffectType.poison,// 50% шанс получить отравление
-    statusChance: 0.5,
+    label: 'Омыть и заточить клинок',
+    attackDelta: 1,                       // Влияет только на атаку
   ),
-  level: 1,                               // Этаж подземелья (1, 2 или 3)
-  dungeonId: DungeonId.cursedForest,      // Или DungeonId.common для всех подземелий
+  level: 1,                               // Этаж (1, 2 или 3)
+  dungeonId: DungeonId.catacombs,         // Привязка к подземелью
 ),
 ```
 
 ---
 
-## 4. Как добавить нового босса
+## 5. Как добавить нового многофазного босса
 
-Боссы хранятся в [lib/data/events.dart](file:///i:/dev/card_dungeon/lib/data/events.dart) в списке `allBossCards`.
+Боссы хранятся в `lib/data/events.dart` в списке `allBossCards`.
 
 ### Особенности боссов:
 - `type: EventType.boss` — обязательно;
-- `level` — номер этажа, в конце которого появляется данный босс;
-- `dungeonId` — идентификатор подземелья, в котором босс обитает.
+- `level` — этаж, в конце которого босс появляется (1, 2 или 3);
+- `dungeonId` — идентификатор подземелья;
+- `bossPhases` — список из **ровно 3 объектов `BossPhase`**.
 
-### Пример добавления босса:
+### Пример структуры босса:
 ```dart
 EventCard(
-  id: 'forest_boss_ancient_ent',
+  id: 'catacombs_boss_bone_colossus',
   type: EventType.boss,
-  title: 'Древний Древобород',
-  description:
-      'Исполинский оживший дуб преграждает путь к сердцу чащи. Его корни крушат камень, а кора тверда как гранит.',
+  title: 'Костяной Голем Катакомб',
+  description: 'Ужасающее чудовище из тысяч черепов и костей павших воинов.',
   leftChoice: CardChoice(
-    label: 'Срубить корни',
-    healthDelta: -4,
-    attackDelta: 2,
+    label: 'Выдержать таран',
+    healthDelta: -6,
     coinsDelta: 25,
   ),
   rightChoice: CardChoice(
-    label: 'Сжечь ветви',
-    attackDelta: -2,
+    label: 'Разрубить удерживающие чары',
+    attackDelta: -3,
     coinsDelta: 35,
   ),
-  level: 2,                               // Босс 2-го этажа
-  dungeonId: DungeonId.cursedForest,
+  level: 1,
+  dungeonId: DungeonId.catacombs,
+  bossPhases: [
+    BossPhase(
+      phaseEmoji: '🦴',
+      title: 'Фаза I — Стена из костей',
+      description: 'Голем смыкает костяные щиты и обрушивает на героя град осколков.',
+      leftChoice: CardChoice(
+        label: 'Укрыться за надгробием',
+        healthDelta: -3,
+        coinsDelta: 10,
+      ),
+      rightChoice: CardChoice(
+        label: 'Расколоть костяной щит',
+        attackDelta: -2,
+        coinsDelta: 15,
+      ),
+    ),
+    BossPhase(
+      phaseEmoji: '🌪️',
+      title: 'Фаза II — Вихрь осколков',
+      description: 'Голем вращается, рассекая воздух тысячами костяных игл.',
+      leftChoice: CardChoice(
+        label: 'Принять удар на кирасу',
+        healthDelta: -4,
+        coinsDelta: 15,
+        statusEffect: StatusEffectType.bleed,
+        statusChance: 0.4,
+      ),
+      rightChoice: CardChoice(
+        label: 'Рассечь ядро в центре',
+        attackDelta: -2,
+        coinsDelta: 20,
+      ),
+    ),
+    BossPhase(
+      phaseEmoji: '💥',
+      title: 'Фаза III — Сокрушительный обвал',
+      description: 'Ядро голема трещит! В агонии чудовище рушится всей своей массой.',
+      leftChoice: CardChoice(
+        label: 'Сдержать падение громады',
+        healthDelta: -6,
+        coinsDelta: 25,
+      ),
+      rightChoice: CardChoice(
+        label: 'Вонзить меч в сердце-рубин',
+        attackDelta: -3,
+        coinsDelta: 35,
+      ),
+    ),
+  ],
 ),
 ```
 
 ---
 
-## 5. Как добавить новое подземелье
+## 6. Как добавить новое подземелье
 
-Чтобы добавить полностью новую локацию:
-
-### Шаг 1. Добавьте идентификатор в `DungeonId`
-В [lib/models/event_card.dart](file:///i:/dev/card_dungeon/lib/models/event_card.dart):
+### Шаг 1. Добавьте константу в `DungeonId`
+В `lib/models/event_card.dart`:
 ```dart
 class DungeonId {
   static const String common = 'common';
   static const String cursedForest = 'cursed_forest';
-  static const String catacombs = 'catacombs'; // <-- Новый ID
-  
+  static const String catacombs = 'catacombs';
+  static const String elderCaves = 'elderCaves'; // <-- Новый ID
+
   static String getLabel(String id) {
     if (isCommon(id)) return 'Общий';
     if (id == cursedForest) return 'Проклятый лес';
-    if (id == catacombs) return 'Катакомбы';   // <-- Название
+    if (id == catacombs) return 'Заброшенные катакомбы';
+    if (id == elderCaves) return 'Древние пещеры';
     return id;
   }
 }
 ```
 
 ### Шаг 2. Зарегистрируйте объект `Dungeon`
-В [lib/data/dungeons.dart](file:///i:/dev/card_dungeon/lib/data/dungeons.dart):
+В `lib/data/dungeons.dart`:
 ```dart
-const Dungeon catacombsDungeon = Dungeon(
-  id: DungeonId.catacombs,
-  name: 'Заброшенные катакомбы',
-  description: 'Древние склепы, кишащие нежитью и ловушками.',
-  levelsCount: 3,                         // Количество этажей
-  icon: Icons.castle_rounded,             // Иконка
-  accentColor: Color(0xFF9C27B0),         // Цвет темы
-  isAvailable: true,                      // true = открыто для выбора
+const Dungeon elderCavesDungeon = Dungeon(
+  id: 'elderCaves',
+  name: 'Древние пещеры',
+  description: 'Древние пещеры, населённые гоблинами и орками.',
+  levelsCount: 3,
+  icon: Icons.landscape_rounded,
+  accentColor: Color.fromARGB(255, 193, 126, 20),
+  isAvailable: true, // true = подземелье открыто для входа
 );
 
-// Добавьте в список:
 const List<Dungeon> allDungeons = [
   cursedForestDungeon,
   catacombsDungeon,
+  elderCavesDungeon,
 ];
 ```
 
-### Шаг 3. Наполните подземелье событиями и боссами
-В [lib/data/events.dart](file:///i:/dev/card_dungeon/lib/data/events.dart):
-1. Добавьте события с `dungeonId: DungeonId.catacombs` для уровней 1, 2, 3.
-2. Добавьте боссов для каждого уровня (1, 2, 3) в `allBossCards` с `dungeonId: DungeonId.catacombs`.
+### Шаг 3. Добавьте локализацию
+В `lib/app_localizations.dart` укажите перевод названия и описания:
+```dart
+String dungeonName(String id, String fallback) {
+  if (!_isRu) {
+    if (id == 'cursed_forest') return 'Cursed Forest';
+    if (id == 'catacombs') return 'Forgotten Catacombs';
+    if (id == 'elderCaves') return 'Ancient Caves';
+  }
+  return fallback;
+}
+```
+
+### Шаг 4. Наполните подземелье событиями и боссами
+В `lib/data/events.dart`:
+1. Создайте карты с `dungeonId: DungeonId.elderCaves` для уровней 1, 2, 3.
+2. Создайте по одному трёхфазному боссу для каждого уровня в `allBossCards`.
 
 ---
 
-## 6. Как добавить новый расходуемый предмет (артефакт)
-
-Предметы используются из инвентаря во время забега.
+## 7. Как добавить новый расходуемый предмет (артефакт)
 
 ### Шаг 1. Добавьте тип эффекта в `ItemEffectType`
-В [lib/models/item_card.dart](file:///i:/dev/card_dungeon/lib/models/item_card.dart):
+В `lib/models/item_card.dart`:
 ```dart
 enum ItemEffectType {
   heal,
   attack,
   // ...
-  freezeTime, // <-- Новый тип эффекта
+  freezeTime, // <-- Новый тип
 }
 ```
 
-### Шаг 2. Добавьте текстовое название и бейдж в `ItemEffectTypeExtension`
-В том же файле [lib/models/item_card.dart](file:///i:/dev/card_dungeon/lib/models/item_card.dart):
+### Шаг 2. Настройте категорию и бейдж
+В том же файле `lib/models/item_card.dart`:
 ```dart
 extension ItemEffectTypeExtension on ItemEffectType {
   String get categoryLabel => switch (this) {
-    // ...
     ItemEffectType.freezeTime => 'Контроль',
+    // ...
   };
 
   String getBadge(int value) => switch (this) {
-    // ...
     ItemEffectType.freezeTime => '❄️ Заморозка',
+    // ...
   };
 }
 ```
 
-### Шаг 3. Объявите предмет в `allItemCards`
-В [lib/data/items.dart](file:///i:/dev/card_dungeon/lib/data/items.dart):
+### Шаг 3. Добавьте предмет в `allItemCards`
+В `lib/data/items.dart`:
 ```dart
 ItemCard(
   id: 'hourglass_freeze',
   title: 'Песочные часы времени',
-  description: 'Замораживает противника, нейтрализуя любой входящий урон на 2 хода.',
+  description: 'Замораживает время на 2 хода.',
   effectType: ItemEffectType.freezeTime,
   value: 2,
   icon: Icons.hourglass_bottom_rounded,
@@ -264,25 +347,62 @@ ItemCard(
 ),
 ```
 
-### Шаг 4. Реализуйте игровую механику в `GameScreen._useItem`
-В [lib/screens/game_screen.dart](file:///i:/dev/card_dungeon/lib/screens/game_screen.dart) внутри метода `_useItem`:
+### Шаг 4. Реализуйте эффект в `GameScreen._useItem`
+В `lib/screens/game_screen.dart`:
 ```dart
 case ItemEffectType.freezeTime:
-  // Ваша логика: например, добавить заряды или флаг
-  _lastFeedback = 'Время заморожено на ${item.value} хода!';
-  _addJournalEntry('❄️', 'Использовано ${item.title}: заморозка');
+  _lastFeedback = 'Время заморожено!';
+  _addJournalEntry('❄️', 'Использовано ${item.title}');
   resultTitle = 'Заморозка времени ❄️';
-  resultDescription = 'Вы активировали артефакт: следующие ${item.value} встречи пройдут без вреда для героя.';
+  resultDescription = 'Следующие ${item.value} хода проходят без урона.';
   break;
 ```
 
 ---
 
-## 7. Настройка прокачки и баланса
+## 8. Ежедневные награды и система заданий
 
-Все параметры постоянной прокачки персонажа настраиваются в [lib/services/player_stats_service.dart](file:///i:/dev/card_dungeon/lib/services/player_stats_service.dart):
+### 8.1. Ежедневные награды за вход (`DailyRewardService`)
+- Расположение: `lib/services/daily_reward_service.dart`.
+- **Правила**:
+  - 7-дневный цикл наград: день 1 = 100 монет, каждый следующий день +100 монет (день 7 = 700 монет).
+  - После 7-го дня стрик циклически сбрасывается на 1-й день.
+  - Если пропущен хотя бы один календарный день, серия сбрасывается на 1-й день.
+  - Расчёт дня привязан к полночи по **Московскому времени** (UTC+3, MSK):
+    ```dart
+    static DateTime get nowMsk => DateTime.now().toUtc().add(const Duration(hours: 3));
+    ```
+  - При первом входе за день в `MenuScreen` автоматически всплывает модальный диалог `DailyRewardDialog`.
 
-| Параметр | Константа в коде | Значение по умолчанию | Формула стоимости |
+### 8.2. Ежедневные задания (`DailyQuestsService`)
+- Расположение: `lib/services/daily_quests_service.dart`.
+- Экран: `lib/screens/quests_screen.dart` (кнопка в главном меню между «Инвентарь» и «Глоссарий»).
+- Каждые сутки в полночь по МСК генерируются **2 случайных задания** из 4 типов:
+  1. `DailyQuestType.dungeonRuns` — сыграть 1–3 подземелий (до победы или поражения);
+  2. `DailyQuestType.killBosses` — убить 3–5 боссов;
+  3. `DailyQuestType.clearDungeon` — успешно пройти 1 подземелье;
+  4. `DailyQuestType.encounterCards` — встретить 30 карт определённого типа (`monster`, `trap`, `treasure` и т.д.).
+- Награда за выполнение каждого квеста: **150 монет**.
+
+---
+
+## 9. Валюты игры
+
+Управление валютами сосредоточено в `lib/services/player_coins_service.dart`:
+
+- **Золотые монеты** (`coins`): основная валюта забега и магазина для покупки предметов и прокачки.
+- **Серебряные ключи** (`silverKeys`): редкая валюта для открытия сундуков и контента.
+- **Золотые ключи** (`goldKeys`): премиальная валюта.
+
+Виджет отображения валют: `lib/widgets/currencies_bar.dart` (используется в главном меню, магазине, инвентаре и экране заданий).
+
+---
+
+## 10. Настройка прокачки и баланса
+
+Все параметры перманентного развития персонажа задаются в `lib/services/player_stats_service.dart`:
+
+| Параметр | Поле / константа | Начальное значение | Стоимость прокачки |
 | :--- | :--- | :--- | :--- |
 | **Базовое здоровье** | `baseHealth` | `10 HP` | — |
 | **Прирост HP за уровень** | `healthPerLevel` | `+2 HP` | `25 + level * 25` (25, 50, 75...) |
@@ -290,31 +410,37 @@ case ItemEffectType.freezeTime:
 | **Базовая атака** | `baseAttack` | `5 ⚡` | — |
 | **Прирост атаки за ур.** | `attackPerLevel` | `+1 ⚡` | `30 + level * 30` (30, 60, 90...) |
 | **Макс. уровень атаки** | `maxAttackLevel` | `10` (макс. 15 ⚡) | — |
-| **Торговцы** | `maxMerchantLevel` | `2` торговца | `60 + level * 40` (60, 100) |
+| **Гарант. торговцы** | `maxMerchantLevel` | `2` торговца | `60 + level * 40` (60, 100) |
 | **Стартовые карты** | `maxStartingCardsLevel` | `3` карты | `50 + level * 50` (50, 100, 150) |
 
-### Настройка цен в магазине:
-В [lib/screens/shop_screen.dart](file:///i:/dev/card_dungeon/lib/screens/shop_screen.dart):
-- `_baseLootboxPrice = 50`: начальная цена первого лутбокса;
-- `_lootboxPriceStep = 25`: шаг роста цены за каждый уже открытый артефакт.
+### Настройка сундука в магазине (`ShopScreen`):
+- `_baseLootboxPrice = 50`: базовая цена первого сундука;
+- `_lootboxPriceStep = 25`: прирост цены за каждую уже открытую карту.
 
 ---
 
-## 8. Инструменты тестирования и отладки
+## 11. Инструменты тестирования и отладки
 
-Для удобного тестирования механик в игре предусмотрен встроенный **Экран отладки** (`DebugScreen`), доступный по иконке шестерёнки в правом верхнем углу Главного меню:
-- **Баланс монет**: мгновенное начисление или списание любой суммы золота.
-- **Коллекция карт**: кнопки «Открыть все карты» и «Сбросить все карты».
-- **Глоссарий**: открытие всех событий для проверки бестиария.
-- **Характеристики**: ползунки и кнопки быстрой настройки уровней здоровья, атаки и навыков.
-- **Тестовый забег**: кнопка запуска игры сразу с заданного этажа или с полным инвентарём.
+### Экран отладки (`DebugScreen`):
+Доступен по иконке шестерёнки в верхнем правом углу Главного меню:
+- Начисление и списание монет, серебряных и золотых ключей;
+- Мгновенная разблокировка всей коллекции предметов или её сброс;
+- Открытие всех карт в Глоссарии;
+- Ручная настройка стрика ежедневных наград и сброс таймеров;
+- Запуск тестовых забегов с произвольного уровня.
 
-### Запуск автоматических тестов:
+### Команды проверки качества:
+
 ```bash
+# Статический анализ кода на отсутствие ошибок и предупреждений:
+flutter analyze
+
+# Запуск полного набора автотестов:
 flutter test
-```
 
-### Статический анализ:
-```bash
-dart analyze
+# Запуск проверок баланса карт:
+flutter test test/card_balance_test.dart
+
+# Запуск тестов подземелий:
+flutter test test/dungeon_select_test.dart
 ```

@@ -7,6 +7,7 @@ import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/player_stats_service.dart';
 import '../services/unlocked_items_service.dart';
+import '../widgets/currencies_bar.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
@@ -92,61 +93,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Монеты ──────────────────────────────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700).withValues(alpha: 0.15),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.monetization_on,
-                              color: Color(0xFFFFD700),
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-              Text(
-                l10n.inventoryBalance,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.55),
-                                  fontSize: 13,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '$coins',
-                                style: const TextStyle(
-                                  color: Color(0xFFFFD700),
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+            // ── Панель валют (монеты, серебряные и золотые ключи) ───────
+            const PlayerCurrenciesBar(),
 
                     const SizedBox(height: 18),
 

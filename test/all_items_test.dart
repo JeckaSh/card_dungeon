@@ -232,14 +232,14 @@ void main() {
     expect(find.text('Золотой подкуп'), findsOneWidget);
   });
 
-  testWidgets('philosophers_stone caps conversion at 100 coins (max 10 bundles)', (tester) async {
+  testWidgets('philosophers_stone caps conversion at 50 coins (max 5 bundles)', (tester) async {
     tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
     final stone = allItemCards.firstWhere((i) => i.id == 'philosophers_stone');
 
-    // Player starts with 150 coins, initial HP 10, initial ATK 2
+    // Player starts with 150 coins, initial HP 10, initial ATK 5
     await tester.pumpWidget(
       MaterialApp(home: GameScreen(initialInventory: [stone], initialCoins: 150)),
     );
@@ -252,11 +252,11 @@ void main() {
 
     await openInventoryAndUse(tester);
 
-    // After transmutation: capped at 100 coins (10 bundles)
-    // Health: 10 + 20 = 30, Attack: 5 + 10 = 15, Coins: 150 - 100 = 50
-    expect(find.text('30'), findsOneWidget);
-    expect(find.text('15'), findsOneWidget);
-    expect(find.text('50'), findsOneWidget);
+    // After transmutation: capped at 50 coins (5 bundles)
+    // Health: 10 + 10 = 20, Attack: 5 + 5 = 10, Coins: 150 - 50 = 100
+    expect(find.text('20'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(find.text('100'), findsOneWidget);
   });
 
   testWidgets('divine_runic_shield activates divine shield charge', (tester) async {

@@ -91,6 +91,9 @@ class DungeonId {
   /// Проклятый лес
   static const String cursedForest = 'cursed_forest';
 
+  /// Заброшенные катакомбы
+  static const String catacombs = 'catacombs';
+
   /// Проверка, является ли карточка общей для всех подземелий
   static bool isCommon(String id) =>
       id == common || id == 'общий' || id == 'all';
@@ -99,6 +102,7 @@ class DungeonId {
   static String getLabel(String id) {
     if (isCommon(id)) return 'Общий';
     if (id == cursedForest) return 'Проклятый лес';
+    if (id == catacombs) return 'Заброшенные катакомбы';
     return id;
   }
 }
