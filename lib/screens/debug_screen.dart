@@ -145,6 +145,11 @@ class _DebugScreenState extends State<DebugScreen> {
     _refresh();
   }
 
+  void _setMerchantCardUpgradeLevel(int level) {
+    PlayerStatsService.instance.setMerchantCardUpgradeLevel(level);
+    _refresh();
+  }
+
   void _resetStats() {
     PlayerStatsService.instance.resetStats();
     _refresh();
@@ -155,6 +160,7 @@ class _DebugScreenState extends State<DebugScreen> {
     PlayerStatsService.instance.setAttackLevel(PlayerStatsService.maxAttackLevel);
     PlayerStatsService.instance.setMerchantLevel(PlayerStatsService.maxMerchantLevel);
     PlayerStatsService.instance.setStartingCardsLevel(PlayerStatsService.maxStartingCardsLevel);
+    PlayerStatsService.instance.setMerchantCardUpgradeLevel(PlayerStatsService.maxMerchantCardUpgradeLevel);
     _refresh();
   }
 
@@ -484,6 +490,21 @@ class _DebugScreenState extends State<DebugScreen> {
                             onChanged: _setStartingCardsLevel,
                           ),
                           const SizedBox(height: 12),
+                          _StatLevelControllerCard(
+                            title: l10n.inventoryMerchantLuck,
+                            icon: Icons.auto_awesome,
+                            color: const Color(0xFF42A5F5),
+                            level: stats.merchantCardUpgradeLevel,
+                            maxLevel:
+                                PlayerStatsService.maxMerchantCardUpgradeLevel,
+                            startingValue:
+                                '${stats.merchantCardUpgradeChance}%',
+                            bonusText:
+                                '+${stats.merchantCardUpgradeLevel * PlayerStatsService.merchantCardUpgradePerLevel}% ⭐',
+                            l10n: l10n,
+                            onChanged: _setMerchantCardUpgradeLevel,
+                          ),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -583,11 +604,11 @@ class _DebugScreenState extends State<DebugScreen> {
                           ),
                           const SizedBox(height: 28),
 
-                          // === ЕЖЕДНЕВНЫЕ ЗАДАНИЯ ===
+                          // === ЕЖЕДНЕВНЫЕ И ЕЖЕНЕДЕЛЬНЫЕ ЗАДАНИЯ ===
                           _SectionHeader(
                             icon: Icons.assignment_turned_in_rounded,
                             title: l10n.debugQuestsTitle,
-                            subtitle: '${DailyQuestsService.instance.quests.where((q) => q.isCompleted).length} / ${DailyQuestsService.instance.quests.length} выполнено',
+                            subtitle: 'День: ${DailyQuestsService.instance.quests.where((q) => q.isCompleted).length}/${DailyQuestsService.instance.quests.length} | Неделя: ${DailyQuestsService.instance.weeklyQuests.where((q) => q.isCompleted).length}/${DailyQuestsService.instance.weeklyQuests.length}',
                             color: const Color(0xFF6C5CE7),
                           ),
                           const SizedBox(height: 12),
@@ -612,6 +633,7 @@ class _DebugScreenState extends State<DebugScreen> {
                                   color: const Color(0xFF26A69A),
                                   onPressed: () async {
                                     await DailyQuestsService.instance.debugRerollQuests();
+                                    await DailyQuestsService.instance.debugRerollWeeklyQuests();
                                     _refresh();
                                   },
                                 ),

@@ -14,7 +14,7 @@ void main() {
   });
 
   testWidgets('DebugScreen shows hero upgrade controls and allows changing levels', (tester) async {
-    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.physicalSize = const Size(800, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
@@ -37,9 +37,11 @@ void main() {
     expect(PlayerStatsService.instance.attackLevel, 0);
     expect(PlayerStatsService.instance.merchantLevel, 0);
     expect(PlayerStatsService.instance.startingCardsLevel, 0);
+    expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 0);
     expect(find.text('Ур. 0 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 0 / 2'), findsOneWidget);
     expect(find.text('Ур. 0 / 3'), findsOneWidget);
+    expect(find.text('Ур. 0 / 5'), findsOneWidget);
 
     // Tap Max button in health card
     final maxButtons = find.text('Макс (10)');
@@ -50,28 +52,35 @@ void main() {
     expect(PlayerStatsService.instance.healthLevel, 10);
     expect(find.text('Ур. 10 / 10'), findsOneWidget);
 
-    // Tap + button on attack card (2nd + button out of 4)
+    // Tap + button on attack card (2nd + button out of 5)
     final addButtons = find.byIcon(Icons.add_circle_outline);
-    expect(addButtons, findsNWidgets(4));
+    expect(addButtons, findsNWidgets(5));
     await tester.tap(addButtons.at(1));
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.attackLevel, 1);
     expect(find.text('Ур. 1 / 10'), findsOneWidget);
 
-    // Tap + button on merchant card (3rd + button out of 4)
+    // Tap + button on merchant card (3rd + button out of 5)
     await tester.tap(addButtons.at(2));
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.merchantLevel, 1);
     expect(find.text('Ур. 1 / 2'), findsOneWidget);
 
-    // Tap + button on starting cards card (4th + button out of 4)
+    // Tap + button on starting cards card (4th + button out of 5)
     await tester.tap(addButtons.at(3));
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.startingCardsLevel, 1);
     expect(find.text('Ур. 1 / 3'), findsOneWidget);
+
+    // Tap + button on merchant luck card (5th + button out of 5)
+    await tester.tap(addButtons.at(4));
+    await tester.pumpAndSettle();
+
+    expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 1);
+    expect(find.text('Ур. 1 / 5'), findsOneWidget);
 
     // Tap 'Сбросить в 0'
     await tester.tap(find.text('Сбросить в 0'));
@@ -81,9 +90,11 @@ void main() {
     expect(PlayerStatsService.instance.attackLevel, 0);
     expect(PlayerStatsService.instance.merchantLevel, 0);
     expect(PlayerStatsService.instance.startingCardsLevel, 0);
+    expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 0);
     expect(find.text('Ур. 0 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 0 / 2'), findsOneWidget);
     expect(find.text('Ур. 0 / 3'), findsOneWidget);
+    expect(find.text('Ур. 0 / 5'), findsOneWidget);
 
     // Tap 'Максимум (10/10/2/3)'
     await tester.tap(find.text('Максимум (10/10/2/3)'));
@@ -93,9 +104,11 @@ void main() {
     expect(PlayerStatsService.instance.attackLevel, 10);
     expect(PlayerStatsService.instance.merchantLevel, 2);
     expect(PlayerStatsService.instance.startingCardsLevel, 3);
+    expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 5);
     expect(find.text('Ур. 10 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 2 / 2'), findsOneWidget);
     expect(find.text('Ур. 3 / 3'), findsOneWidget);
+    expect(find.text('Ур. 5 / 5'), findsOneWidget);
   });
 
   testWidgets('DebugScreen shows chronicle section and allows clearing chronicle', (tester) async {

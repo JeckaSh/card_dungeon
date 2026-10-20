@@ -116,6 +116,27 @@ class AppLocalizations {
   String get shopProgress => _isRu ? 'Прогресс коллекции' : 'Collection Progress';
   String get shopLootboxTitle => _isRu ? 'Лутбокс' : 'Lootbox';
   String get shopMagicChest => _isRu ? 'Магический сундук' : 'Magic Chest';
+  String get shopNoviceChest => _isRu ? 'Сундук новичка' : 'Novice Chest';
+  String get shopNoviceChestDesc =>
+      _isRu
+          ? 'Содержит базовые карты предметов 1 уровня для начинающих искателей приключений.'
+          : 'Contains basic level 1 item cards for beginning adventurers.';
+  String get shopNoviceChestDescAllCollected =>
+      _isRu
+          ? 'Все предметы новичка собраны! Сундук больше недоступен.'
+          : 'All novice items collected! Chest is no longer available.';
+
+  String get shopAdventurerChest =>
+      _isRu ? 'Сундук приключенца' : 'Adventurer Chest';
+  String get shopAdventurerChestDesc =>
+      _isRu
+          ? 'Содержит редкие карты предметов 2 уровня с мощными тактическими эффектами.'
+          : 'Contains rare level 2 item cards with powerful tactical effects.';
+  String get shopAdventurerChestDescAllCollected =>
+      _isRu
+          ? 'Все предметы приключенца собраны! Сундук больше недоступен.'
+          : 'All adventurer items collected! Chest is no longer available.';
+
   String get shopLootboxSubtitle =>
       _isRu ? 'Случайный новый артефакт' : 'Random new artifact';
   String get shopChestDesc =>
@@ -155,8 +176,8 @@ class AppLocalizations {
   String get shopHeroChest => _isRu ? 'Сундук героя' : 'Hero Chest';
   String get shopHeroChestDesc =>
       _isRu
-          ? 'Содержит мощные расходники и защитное снаряжение для опытного бойца.'
-          : 'Contains powerful consumables and defensive gear for seasoned warriors.';
+          ? 'Содержит легендарные карты предметов 3 уровня величайшей силы.'
+          : 'Contains legendary level 3 item cards of immense power.';
   String get shopHeroChestDescAllCollected =>
       _isRu
           ? 'Все предметы героя собраны! Сундук больше недоступен.'
@@ -186,6 +207,8 @@ class AppLocalizations {
   String get inventoryHealth => _isRu ? 'Здоровье' : 'Health';
   String get inventoryAttack => _isRu ? 'Атака' : 'Attack';
   String get inventoryMerchant => _isRu ? 'Торговцы' : 'Merchants';
+  String get inventoryMerchantLuck =>
+      _isRu ? 'Удача торговца' : "Merchant's Luck";
   String invPerLevel(int count) =>
       _isRu ? '$count за ур.' : '$count per lvl';
   String get inventoryStartCards => _isRu ? 'Стартовые карты' : 'Starting Cards';
@@ -702,6 +725,18 @@ class AppLocalizations {
       _isRu
           ? 'После 7-го дня счётчик начнётся заново с 1-го дня.'
           : 'After day 7, the streak restarts from day 1.';
+  String get dailyRewardRollbackDetected =>
+      _isRu
+          ? 'Обнаружен перевод времени назад. Пожалуйста, восстановите правильное время на устройстве.'
+          : 'Time rollback detected. Please restore the correct time on your device.';
+  String get dailyRewardNeedInternet =>
+      _isRu
+          ? 'Требуется подключение к интернету для проверки мирового времени.'
+          : 'Internet connection is required to verify world time.';
+  String get dailyRewardSyncTimeButton =>
+      _isRu ? 'Проверить время' : 'Sync Time';
+  String get dailyRewardSyncing =>
+      _isRu ? 'Синхронизация времени...' : 'Synchronizing time...';
   String get questsUpcomingTitle =>
       _isRu ? 'Задания подземелья' : 'Dungeon Quests';
   String get questsUpcomingDesc =>
@@ -721,8 +756,11 @@ class AppLocalizations {
 
   String questPlayDungeonsTitle(int count) {
     if (_isRu) {
-      if (count == 1) return 'Сыграть 1 подземелье';
-      return 'Сыграть $count подземелья';
+      if (count % 10 == 1 && count % 100 != 11) return 'Сыграть $count подземелье';
+      if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+        return 'Сыграть $count подземелья';
+      }
+      return 'Сыграть $count подземелий';
     }
     return 'Play $count ${count == 1 ? "dungeon" : "dungeons"}';
   }
@@ -732,12 +770,31 @@ class AppLocalizations {
           ? 'Завершите забег победой или поражением'
           : 'Finish a run by victory or defeat';
 
+  String questPlaySpecificDungeonTitle(int count, String dungeonName) {
+    if (_isRu) {
+      if (count % 10 == 1 && count % 100 != 11) return 'Сыграть в «$dungeonName» $count раз';
+      if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+        return 'Сыграть в «$dungeonName» $count раза';
+      }
+      return 'Сыграть в «$dungeonName» $count раз';
+    }
+    return 'Play "$dungeonName" $count ${count == 1 ? "time" : "times"}';
+  }
+
+  String get questPlaySpecificDungeonDesc =>
+      _isRu
+          ? 'Завершите забег в указанном подземелье победой или поражением'
+          : 'Finish a run in the specified dungeon by victory or defeat';
+
   String questKillBossesTitle(int count) {
     if (_isRu) {
-      if (count == 5) return 'Убить 5 боссов';
-      return 'Убить $count босса';
+      if (count % 10 == 1 && count % 100 != 11) return 'Убить $count босса';
+      if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+        return 'Убить $count босса';
+      }
+      return 'Убить $count боссов';
     }
-    return 'Defeat $count bosses';
+    return 'Defeat $count ${count == 1 ? "boss" : "bosses"}';
   }
 
   String get questKillBossesDesc =>
@@ -745,13 +802,48 @@ class AppLocalizations {
           ? 'Одолейте боссов на этажах подземелий'
           : 'Defeat bosses on dungeon floors';
 
-  String get questClearDungeonTitle =>
-      _isRu ? 'Пройти 1 подземелье' : 'Complete 1 dungeon';
+  String questClearDungeonTitle([int count = 1]) {
+    if (_isRu) {
+      if (count == 1) return 'Пройти 1 подземелье';
+      if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) {
+        return 'Пройти $count подземелья';
+      }
+      return 'Пройти $count подземелий';
+    }
+    return 'Complete $count ${count == 1 ? "dungeon" : "dungeons"}';
+  }
 
   String get questClearDungeonDesc =>
       _isRu
           ? 'Одержите полную победу в любом подземелье'
           : 'Achieve complete victory in any dungeon';
+
+  // ── Еженедельные задания ─────────────────────────────────────────────────
+  String get weeklyQuestsSection =>
+      _isRu ? 'Еженедельные задания' : 'Weekly Quests';
+  String get weeklyQuestsSubtitle =>
+      _isRu
+          ? 'Сложные испытания недели — по 500 монет за каждое'
+          : 'Challenging weekly quests — 500 coins each';
+  String get weeklyResetNote =>
+      _isRu
+          ? 'Сброс каждый понедельник в 00:00 (МСК)'
+          : 'Resets every Monday at 00:00 (MSK)';
+
+  String weeklyTimeRemaining(Duration d) {
+    if (d.inDays > 0) {
+      final days = d.inDays;
+      final hours = d.inHours % 24;
+      if (_isRu) {
+        return '$days д. $hours ч.';
+      }
+      return '${days}d ${hours}h';
+    }
+    final hours = d.inHours.toString().padLeft(2, '0');
+    final minutes = (d.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
 
   String questEncounterCardsTitle(int count, EventType? type) {
     final typeName = questEventTypeName(type);
@@ -796,6 +888,29 @@ class AppLocalizations {
       _isRu ? 'В процессе' : 'In Progress';
   String questCompletedNotification(int amount) =>
       _isRu ? 'Задание выполнено! Получено +$amount монет!' : 'Quest completed! Received +$amount coins!';
+
+  // ── Бонусы за выполнение всех заданий (ключи) ─────────────────────────────
+  String get questsAllDailyBonusTitle =>
+      _isRu ? 'Награда за все задания дня' : 'All Daily Quests Reward';
+  String get questsAllDailyBonusDesc =>
+      _isRu
+          ? 'Выполните все задания дня и заберите серебряные ключи'
+          : 'Complete all daily quests to get silver keys';
+  String questsAllDailyBonusClaim(int count) =>
+      _isRu ? 'Забрать бонус (+$count 🗝️)' : 'Claim Bonus (+$count 🗝️)';
+  String get questsAllDailyBonusClaimed =>
+      _isRu ? 'Бонус получен (+2 🗝️)' : 'Bonus Claimed (+2 🗝️)';
+
+  String get questsAllWeeklyBonusTitle =>
+      _isRu ? 'Награда за все задания недели' : 'All Weekly Quests Reward';
+  String get questsAllWeeklyBonusDesc =>
+      _isRu
+          ? 'Выполните все задания недели и заберите золотые ключи'
+          : 'Complete all weekly quests to get gold keys';
+  String questsAllWeeklyBonusClaim(int count) =>
+      _isRu ? 'Забрать супер-бонус (+$count 🔑)' : 'Claim Grand Bonus (+$count 🔑)';
+  String get questsAllWeeklyBonusClaimed =>
+      _isRu ? 'Супер-бонус получен (+2 🔑)' : 'Grand Bonus Claimed (+2 🔑)';
 
   // ── Дебаг ежедневных наград и заданий ─────────────────────────────────────
   String get debugDailyTitle =>

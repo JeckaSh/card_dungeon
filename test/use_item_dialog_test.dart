@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kki_cardgame/data/items.dart';
 import 'package:kki_cardgame/screens/game_screen.dart';
+import 'package:kki_cardgame/widgets/swipe_card.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';
 import 'package:kki_cardgame/services/unlocked_items_service.dart';
@@ -102,7 +103,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Boss is present
-    expect(find.text('Альфа-вожак Ночной Стаи'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is Text &&
+          [
+            'Альфа-вожак Ночной Стаи',
+            'Ткачиха Скверны Арахна',
+            'Проклятый Древобород',
+          ].contains(w.data)),
+      findsOneWidget,
+    );
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Open inventory
@@ -128,7 +138,13 @@ void main() {
 
     // Dungeon level is still 1, but next phase (Фаза II) is now active!
     expect(find.text('Уровень 1'), findsOneWidget);
-    expect(find.text('🔥 Фаза II — Бешеный рывок'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SwipeCard),
+        matching: find.textContaining('Фаза II'),
+      ),
+      findsOneWidget,
+    );
 
     // Use 2nd smoke bomb on phase 2
     await tester.tap(inventoryButtonFinder);
@@ -145,7 +161,13 @@ void main() {
 
     // Still level 1, now phase 3
     expect(find.text('Уровень 1'), findsOneWidget);
-    expect(find.text('💀 Фаза III — Последний рык'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SwipeCard),
+        matching: find.textContaining('Фаза III'),
+      ),
+      findsOneWidget,
+    );
 
     // Use 3rd smoke bomb on phase 3
     await tester.tap(inventoryButtonFinder);
@@ -182,7 +204,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Boss is present
-    expect(find.text('Альфа-вожак Ночной Стаи'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate((w) =>
+          w is Text &&
+          [
+            'Альфа-вожак Ночной Стаи',
+            'Ткачиха Скверны Арахна',
+            'Проклятый Древобород',
+          ].contains(w.data)),
+      findsOneWidget,
+    );
 
     // Open inventory
     final inventoryButtonFinder =
@@ -207,7 +238,13 @@ void main() {
 
     // Dungeon level is still 1, but Phase II is active
     expect(find.text('Уровень 1'), findsOneWidget);
-    expect(find.text('🔥 Фаза II — Бешеный рывок'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SwipeCard),
+        matching: find.textContaining('Фаза II'),
+      ),
+      findsOneWidget,
+    );
 
     // Use 2nd scroll skip on phase 2
     await tester.tap(inventoryButtonFinder);
@@ -224,7 +261,13 @@ void main() {
 
     // Still level 1, now Phase III
     expect(find.text('Уровень 1'), findsOneWidget);
-    expect(find.text('💀 Фаза III — Последний рык'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(SwipeCard),
+        matching: find.textContaining('Фаза III'),
+      ),
+      findsOneWidget,
+    );
 
     // Use 3rd scroll skip on phase 3
     await tester.tap(inventoryButtonFinder);

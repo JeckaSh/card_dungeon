@@ -24,6 +24,74 @@ void main() {
       expect(DailyRewardService.getRewardForDay(7), 700);
     });
 
+    test('keys rewards: day 3 has 1 silver key, day 5 has 3 silver keys, day 7 has 1 gold key', () {
+      for (int day = 1; day <= 7; day++) {
+        final silverKeys = DailyRewardService.getSilverKeysForDay(day);
+        final goldKeys = DailyRewardService.getGoldKeysForDay(day);
+
+        if (day == 3) {
+          expect(silverKeys, 1);
+          expect(goldKeys, 0);
+        } else if (day == 5) {
+          expect(silverKeys, 3);
+          expect(goldKeys, 0);
+        } else if (day == 7) {
+          expect(silverKeys, 0);
+          expect(goldKeys, 1);
+        } else {
+          expect(silverKeys, 0);
+          expect(goldKeys, 0);
+        }
+      }
+    });
+
+    test('claiming day 3 grants 300 coins and 1 silver key', () async {
+      final service = DailyRewardService.instance;
+      await service.debugSetStreak(2, claimedToday: false);
+      expect(service.todayStreakDay, 3);
+      expect(service.todayRewardAmount, 300);
+      expect(service.todaySilverKeysAmount, 1);
+      expect(service.todayGoldKeysAmount, 0);
+
+      PlayerCoinsService.instance.setSilverKeys(0);
+      PlayerCoinsService.instance.setGoldKeys(0);
+
+      final reward = await service.claimToday();
+      expect(reward, 300);
+      expect(PlayerCoinsService.instance.silverKeys, 1);
+      expect(PlayerCoinsService.instance.goldKeys, 0);
+    });
+
+    test('claiming day 5 grants 500 coins and 3 silver keys', () async {
+      final service = DailyRewardService.instance;
+      await service.debugSetStreak(4, claimedToday: false);
+      expect(service.todayStreakDay, 5);
+      expect(service.todayRewardAmount, 500);
+      expect(service.todaySilverKeysAmount, 3);
+      expect(service.todayGoldKeysAmount, 0);
+
+      PlayerCoinsService.instance.setSilverKeys(0);
+
+      final reward = await service.claimToday();
+      expect(reward, 500);
+      expect(PlayerCoinsService.instance.silverKeys, 3);
+    });
+
+    test('claiming day 7 grants 700 coins and 1 gold key', () async {
+      final service = DailyRewardService.instance;
+      await service.debugSetStreak(6, claimedToday: false);
+      expect(service.todayStreakDay, 7);
+      expect(service.todayRewardAmount, 700);
+      expect(service.todaySilverKeysAmount, 0);
+      expect(service.todayGoldKeysAmount, 1);
+
+      PlayerCoinsService.instance.setGoldKeys(0);
+
+      final reward = await service.claimToday();
+      expect(reward, 700);
+      expect(PlayerCoinsService.instance.goldKeys, 1);
+    });
+
     test('first time user starts at day 1 with 100 coins reward available', () {
       final service = DailyRewardService.instance;
       expect(service.canClaimToday, isTrue);

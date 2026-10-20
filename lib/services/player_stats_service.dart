@@ -24,6 +24,8 @@ class PlayerStatsService {
   static const _attackLevelKey = 'player_attack_upgrade_level';
   static const _merchantLevelKey = 'player_merchant_upgrade_level';
   static const _startingCardsLevelKey = 'player_starting_cards_upgrade_level';
+  static const _merchantCardUpgradeLevelKey =
+      'player_merchant_card_upgrade_level';
 
   /// Базовое значение здоровья без улучшений
   static const int baseHealth = 10;
@@ -58,10 +60,23 @@ class PlayerStatsService {
   /// Минимальное количество открытых карт в коллекции для разблокировки прокачки навыка
   static const int requiredUnlockedCardsForStartingCards = 3;
 
+  /// Базовый шанс получить карту более высокого уровня у торговца (в %)
+  static const int baseMerchantCardUpgradeChance = 5;
+
+  /// Прирост шанса за каждый уровень улучшения (в %)
+  static const int merchantCardUpgradePerLevel = 5;
+
+  /// Максимальный уровень улучшения шанса (0..5 -> 5%..30%)
+  static const int maxMerchantCardUpgradeLevel = 5;
+
+  /// Базовая стоимость первого уровня шанса
+  static const int merchantCardUpgradeCostBase = 50;
+
   int _healthLevel = 0;
   int _attackLevel = 0;
   int _merchantLevel = 0;
   int _startingCardsLevel = 0;
+  int _merchantCardUpgradeLevel = 0;
   bool _loaded = false;
 
   /// Текущий уровень улучшения здоровья (0..10)
@@ -75,6 +90,9 @@ class PlayerStatsService {
 
   /// Текущий уровень улучшения стартовых карт (0..3)
   int get startingCardsLevel => _startingCardsLevel;
+
+  /// Текущий уровень улучшения шанса карты высшего уровня у торговца (0..5)
+  int get merchantCardUpgradeLevel => _merchantCardUpgradeLevel;
 
   /// Стартовое здоровье персонажа в начале игры с учётом прокачки
   int get startingHealth => baseHealth + _healthLevel * healthPerLevel;
@@ -97,6 +115,10 @@ class PlayerStatsService {
   /// Достигнут ли максимум прокачки стартовых карт
   bool get isStartingCardsMax => _startingCardsLevel >= maxStartingCardsLevel;
 
+  /// Достигнут ли максимум прокачки шанса улучшенной карты
+  bool get isMerchantCardUpgradeMax =>
+      _merchantCardUpgradeLevel >= maxMerchantCardUpgradeLevel;
+
   /// Доступен ли навык стартовых карт для прокачки (требуется минимум 3 открытые карты)
   bool get isStartingCardsUnlocked =>
       UnlockedItemsService.instance.count >=
@@ -104,6 +126,12 @@ class PlayerStatsService {
 
   /// Количество гарантированных торговцев за уровень (0 = не гарантировано)
   int get guaranteedMerchants => _merchantLevel;
+
+  /// Итоговый шанс получить карту более высокого уровня у торговца (5..30%)
+  int get merchantCardUpgradeChance =>
+      (baseMerchantCardUpgradeChance +
+              _merchantCardUpgradeLevel * merchantCardUpgradePerLevel)
+          .clamp(5, 30);
 
   /// Стоимость следующего уровня здоровья (25, 50, 75, 100...)
   int get healthUpgradeCost => 25 + _healthLevel * 25;
@@ -117,6 +145,10 @@ class PlayerStatsService {
   /// Стоимость следующего уровня стартовых карт (50, 100, 150)
   int get startingCardsUpgradeCost =>
       startingCardsUpgradeCostBase + _startingCardsLevel * 50;
+
+  /// Стоимость следующего уровня шанса карт у торговца (50, 80, 110, 140, 170)
+  int get merchantCardUpgradeCost =>
+      merchantCardUpgradeCostBase + _merchantCardUpgradeLevel * 30;
 
   Future<void> load() async {
     if (_loaded) return;
@@ -136,6 +168,11 @@ class PlayerStatsService {
     _startingCardsLevel = (prefs.getInt(_startingCardsLevelKey) ?? 0).clamp(
       0,
       maxStartingCardsLevel,
+    );
+    _merchantCardUpgradeLevel =
+        (prefs.getInt(_merchantCardUpgradeLevelKey) ?? 0).clamp(
+      0,
+      maxMerchantCardUpgradeLevel,
     );
     _loaded = true;
   }
@@ -192,12 +229,26 @@ class PlayerStatsService {
     return true;
   }
 
+  /// Прокачка шанса получить карту высшего уровня за монеты
+  bool upgradeMerchantCardChance() {
+    if (isMerchantCardUpgradeMax) return false;
+    final cost = merchantCardUpgradeCost;
+    final coins = PlayerCoinsService.instance.balance;
+    if (coins < cost) return false;
+
+    PlayerCoinsService.instance.applyDelta(-cost);
+    _merchantCardUpgradeLevel++;
+    _persistAsync();
+    return true;
+  }
+
   void _persistAsync() {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt(_healthLevelKey, _healthLevel);
       prefs.setInt(_attackLevelKey, _attackLevel);
       prefs.setInt(_merchantLevelKey, _merchantLevel);
       prefs.setInt(_startingCardsLevelKey, _startingCardsLevel);
+      prefs.setInt(_merchantCardUpgradeLevelKey, _merchantCardUpgradeLevel);
     });
   }
 
@@ -225,12 +276,19 @@ class PlayerStatsService {
     _persistAsync();
   }
 
+  /// Прямая установка уровня шанса карты высшего уровня (для настроек/отладки)
+  void setMerchantCardUpgradeLevel(int level) {
+    _merchantCardUpgradeLevel = level.clamp(0, maxMerchantCardUpgradeLevel);
+    _persistAsync();
+  }
+
   /// Сброс уровней прокачки
   void resetStats() {
     _healthLevel = 0;
     _attackLevel = 0;
     _merchantLevel = 0;
     _startingCardsLevel = 0;
+    _merchantCardUpgradeLevel = 0;
     _persistAsync();
   }
 
@@ -240,6 +298,7 @@ class PlayerStatsService {
     _attackLevel = 0;
     _merchantLevel = 0;
     _startingCardsLevel = 0;
+    _merchantCardUpgradeLevel = 0;
     _loaded = true;
   }
 
@@ -249,12 +308,17 @@ class PlayerStatsService {
     int? attack,
     int? merchant,
     int? startingCards,
+    int? merchantCardUpgrade,
   }) {
     if (health != null) _healthLevel = health.clamp(0, maxHealthLevel);
     if (attack != null) _attackLevel = attack.clamp(0, maxAttackLevel);
     if (merchant != null) _merchantLevel = merchant.clamp(0, maxMerchantLevel);
     if (startingCards != null) {
       _startingCardsLevel = startingCards.clamp(0, maxStartingCardsLevel);
+    }
+    if (merchantCardUpgrade != null) {
+      _merchantCardUpgradeLevel =
+          merchantCardUpgrade.clamp(0, maxMerchantCardUpgradeLevel);
     }
     _loaded = true;
   }

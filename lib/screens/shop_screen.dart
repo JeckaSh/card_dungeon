@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../app_localizations.dart';
 import '../data/items.dart';
+import '../data/shop_chests.dart';
 import '../models/item_card.dart';
+import '../models/shop_chest.dart';
 import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
 import '../services/unlocked_items_service.dart';
@@ -12,25 +14,21 @@ import '../widgets/currencies_bar.dart';
 import '../widgets/item_card_widget.dart';
 import '../widgets/item_details_sheet.dart';
 
-/// Базовая стоимость первого лутбокса с новой картой
-const int _baseLootboxPrice = 50;
-
-/// Увеличение стоимости за каждую уже открытую карту в коллекции
-const int _lootboxPriceStep = 25;
-
-/// Тип сундука в магазине.
-enum _ChestType { magic, hero }
-
 /// Экран Магазина артефактов.
 ///
 /// Позволяет игроку открывать новые карты предметов за накопленные монеты:
-/// * Магический сундук — магические артефакты и свитки;
-/// * Сундук героя — элексиры, рунический щит, дымовая шашка;
-/// * Стоимость растёт с каждой открытой картой: `50 + (N_unlocked * 25)`;
+/// * Сундук новичка — карты предметов 1 уровня;
+/// * Сундук приключенца — карты предметов 2 уровня;
+/// * Сундук героя — карты предметов 3 уровня;
+/// * Поддерживает кастомные и тематические сундуки [ShopChest];
+/// * Стоимость растёт с каждой открытой картой пула: `basePrice + (unlockedCount * priceStep)`;
 /// * Гарантирует выпадение карты, которой ещё нет в коллекции;
 /// * Отображает прогресс коллекции и каталог всех предметов.
 class ShopScreen extends StatefulWidget {
-  const ShopScreen({super.key});
+  /// Список сундуков, отображаемых в магазине. Если не передан, используется [defaultShopChests].
+  final List<ShopChest>? chests;
+
+  const ShopScreen({super.key, this.chests});
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
@@ -39,21 +37,10 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   final _random = Random();
   bool _loading = true;
-  bool _isOpeningMagic = false;
-  bool _isOpeningHero = false;
+  String? _openingChestId;
   bool _isCollectionExpanded = true;
 
-  int _lootboxPriceFor(List<ItemCard> pool) {
-    final unlockedCount = UnlockedItemsService.instance.unlockedIds
-        .where((id) => pool.any((item) => item.id == id))
-        .length;
-    return _baseLootboxPrice + (unlockedCount * _lootboxPriceStep);
-  }
-
-  bool _allUnlockedFor(List<ItemCard> pool) {
-    final unlockedIds = UnlockedItemsService.instance.unlockedIds;
-    return pool.every((item) => unlockedIds.contains(item.id));
-  }
+  List<ShopChest> get _chests => widget.chests ?? defaultShopChests;
 
   @override
   void initState() {
@@ -69,31 +56,22 @@ class _ShopScreenState extends State<ShopScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
-  Future<void> _openChest(_ChestType type) async {
-    final pool = type == _ChestType.magic ? magicChestItems : heroChestItems;
-    final isOpening =
-        type == _ChestType.magic ? _isOpeningMagic : _isOpeningHero;
-    if (isOpening) return;
+  Future<void> _openChest(ShopChest chest) async {
+    if (_openingChestId != null) return;
 
     final unlockedService = UnlockedItemsService.instance;
-    final price = _lootboxPriceFor(pool);
     final balance = PlayerCoinsService.instance.balance;
+    final price = chest.getPrice(unlockedService.unlockedIds);
 
-    if (_allUnlockedFor(pool) || balance < price) return;
+    if (chest.isAllUnlocked(unlockedService.unlockedIds) || balance < price) {
+      return;
+    }
 
-    final item = getRandomLockedItemFromPool(
-      _random,
-      pool,
-      unlockedService.unlockedIds,
-    );
+    final item = chest.getRandomLockedItem(_random, unlockedService.unlockedIds);
     if (item == null) return;
 
     setState(() {
-      if (type == _ChestType.magic) {
-        _isOpeningMagic = true;
-      } else {
-        _isOpeningHero = true;
-      }
+      _openingChestId = chest.id;
     });
 
     // Списываем золото
@@ -104,11 +82,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
     if (!mounted) return;
     setState(() {
-      if (type == _ChestType.magic) {
-        _isOpeningMagic = false;
-      } else {
-        _isOpeningHero = false;
-      }
+      _openingChestId = null;
     });
 
     // Показываем диалог с выпавшей картой
@@ -195,25 +169,90 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  Widget _buildChestWidget(
+    ShopChest chest,
+    AppLocalizations l10n,
+    int balance,
+    UnlockedItemsService unlockedService,
+  ) {
+    final allUnlocked = chest.isAllUnlocked(unlockedService.unlockedIds);
+    final price = chest.getPrice(unlockedService.unlockedIds);
+    final canBuy = !allUnlocked && balance >= price;
+
+    final String buttonLabel;
+    if (allUnlocked) {
+      buttonLabel = l10n.shopAllCardsObtained;
+    } else if (canBuy) {
+      buttonLabel = l10n.shopOpenChestPrice(price);
+    } else {
+      buttonLabel = l10n.shopNotEnoughCoinsPrice(price);
+    }
+
+    final String description;
+    if (allUnlocked) {
+      description = chest.allCollectedDescBuilder?.call(l10n) ??
+          l10n.shopChestDescAllCollected;
+    } else {
+      description = chest.descriptionBuilder(l10n);
+    }
+
+    return _ChestBlock(
+      title: chest.titleBuilder(l10n),
+      description: description,
+      icon: allUnlocked ? Icons.check_circle_outline : chest.icon,
+      iconColor: allUnlocked ? const Color(0xFFFFD700) : chest.iconColor,
+      accentColor: chest.accentColor,
+      gradientColors: chest.gradientColors,
+      buttonLabel: buttonLabel,
+      canBuy: canBuy,
+      isOpening: _openingChestId == chest.id,
+      onOpen: () => _openChest(chest),
+    );
+  }
+
+  Widget _buildChestGrid(
+    ShopChest chest,
+    UnlockedItemsService unlockedService,
+  ) {
+    final pool = chest.getPool();
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 170,
+        childAspectRatio: 0.72,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+      ),
+      itemCount: pool.length,
+      itemBuilder: (context, index) {
+        final item = pool[index];
+        final isUnlocked = unlockedService.isUnlocked(item.id);
+        if (isUnlocked) {
+          return ItemCardWidget(
+            item: item,
+            onTap: () => showItemDetailsSheet(
+              context,
+              item,
+              isUnlocked: true,
+            ),
+          );
+        }
+        return _LockedItemCard(item: item);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final balance = PlayerCoinsService.instance.balance;
     final unlockedService = UnlockedItemsService.instance;
+    final chests = _chests;
 
     return ValueListenableBuilder<Locale>(
       valueListenable: LocaleService.instance.localeNotifier,
       builder: (context, locale, _) {
         final l10n = AppLocalizations(locale);
-
-        // Magic chest
-        final magicAllUnlocked = _allUnlockedFor(magicChestItems);
-        final magicPrice = _lootboxPriceFor(magicChestItems);
-        final canBuyMagic = !magicAllUnlocked && balance >= magicPrice;
-
-        // Hero chest
-        final heroAllUnlocked = _allUnlockedFor(heroChestItems);
-        final heroPrice = _lootboxPriceFor(heroChestItems);
-        final canBuyHero = !heroAllUnlocked && balance >= heroPrice;
 
         return Scaffold(
           backgroundColor: const Color(0xFF0F0F1A),
@@ -240,61 +279,17 @@ class _ShopScreenState extends State<ShopScreen> {
                         const PlayerCurrenciesBar(),
                         const SizedBox(height: 24),
 
-                        // ── Магический сундук ────────────────────────────────
-                        _ChestBlock(
-                          title: l10n.shopMagicChest,
-                          description: magicAllUnlocked
-                              ? l10n.shopChestDescAllCollected
-                              : l10n.shopChestDesc,
-                          icon: magicAllUnlocked
-                              ? Icons.check_circle_outline
-                              : Icons.card_giftcard,
-                          iconColor: magicAllUnlocked
-                              ? const Color(0xFFFFD700)
-                              : const Color(0xFFE040FB),
-                          accentColor: const Color(0xFF9C27B0),
-                          gradientColors: const [
-                            Color(0xFF2C1B4D),
-                            Color(0xFF1A1A2E),
-                          ],
-                          buttonLabel: magicAllUnlocked
-                              ? l10n.shopAllCardsObtained
-                              : (canBuyMagic
-                                    ? l10n.shopOpenChestPrice(magicPrice)
-                                    : l10n.shopNotEnoughCoinsPrice(magicPrice)),
-                          canBuy: canBuyMagic,
-                          isOpening: _isOpeningMagic,
-                          onOpen: () => _openChest(_ChestType.magic),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // ── Сундук героя ─────────────────────────────────────
-                        _ChestBlock(
-                          title: l10n.shopHeroChest,
-                          description: heroAllUnlocked
-                              ? l10n.shopHeroChestDescAllCollected
-                              : l10n.shopHeroChestDesc,
-                          icon: heroAllUnlocked
-                              ? Icons.check_circle_outline
-                              : Icons.shield,
-                          iconColor: heroAllUnlocked
-                              ? const Color(0xFFFFD700)
-                              : const Color(0xFF29B6F6),
-                          accentColor: const Color(0xFF1565C0),
-                          gradientColors: const [
-                            Color(0xFF0D2744),
-                            Color(0xFF1A1A2E),
-                          ],
-                          buttonLabel: heroAllUnlocked
-                              ? l10n.shopAllCardsObtained
-                              : (canBuyHero
-                                    ? l10n.shopOpenChestPrice(heroPrice)
-                                    : l10n.shopNotEnoughCoinsPrice(heroPrice)),
-                          canBuy: canBuyHero,
-                          isOpening: _isOpeningHero,
-                          onOpen: () => _openChest(_ChestType.hero),
-                        ),
-                        const SizedBox(height: 28),
+                        // ── Список сундуков ─────────────────────────────────
+                        for (final chest in chests) ...[
+                          _buildChestWidget(
+                            chest,
+                            l10n,
+                            balance,
+                            unlockedService,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        const SizedBox(height: 12),
 
                         // Прогресс коллекции
                         InkWell(
@@ -360,81 +355,16 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                         if (_isCollectionExpanded) ...[
                           const SizedBox(height: 14),
-
-                          // Magic chest section label
-                          _CollectionSectionLabel(
-                            icon: Icons.auto_fix_high,
-                            label: l10n.shopMagicChest,
-                            color: const Color(0xFFE040FB),
-                          ),
-                          const SizedBox(height: 10),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent: 170,
-                                  childAspectRatio: 0.72,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
-                                ),
-                            itemCount: magicChestItems.length,
-                            itemBuilder: (context, index) {
-                              final item = magicChestItems[index];
-                              final isUnlocked = unlockedService.isUnlocked(
-                                item.id,
-                              );
-                              if (isUnlocked) {
-                                return ItemCardWidget(
-                                  item: item,
-                                  onTap: () => showItemDetailsSheet(
-                                    context,
-                                    item,
-                                    isUnlocked: true,
-                                  ),
-                                );
-                              }
-                              return _LockedItemCard(item: item);
-                            },
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Hero chest section label
-                          _CollectionSectionLabel(
-                            icon: Icons.shield,
-                            label: l10n.shopHeroChest,
-                            color: const Color(0xFF29B6F6),
-                          ),
-                          const SizedBox(height: 10),
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                                  maxCrossAxisExtent: 170,
-                                  childAspectRatio: 0.72,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 12,
-                                ),
-                            itemCount: heroChestItems.length,
-                            itemBuilder: (context, index) {
-                              final item = heroChestItems[index];
-                              final isUnlocked = unlockedService.isUnlocked(
-                                item.id,
-                              );
-                              if (isUnlocked) {
-                                return ItemCardWidget(
-                                  item: item,
-                                  onTap: () => showItemDetailsSheet(
-                                    context,
-                                    item,
-                                    isUnlocked: true,
-                                  ),
-                                );
-                              }
-                              return _LockedItemCard(item: item);
-                            },
-                          ),
+                          for (final chest in chests) ...[
+                            _CollectionSectionLabel(
+                              icon: chest.icon,
+                              label: chest.titleBuilder(l10n),
+                              color: chest.iconColor,
+                            ),
+                            const SizedBox(height: 10),
+                            _buildChestGrid(chest, unlockedService),
+                            const SizedBox(height: 20),
+                          ],
                         ],
                         const SizedBox(height: 20),
                       ],
@@ -624,43 +554,61 @@ class _LockedItemCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.05),
+                ),
+                child: Icon(
+                  Icons.lock_outline,
+                  color: Colors.white.withValues(alpha: 0.4),
+                  size: 28,
+                ),
               ),
-              child: Icon(
-                Icons.lock_outline,
-                color: Colors.white.withValues(alpha: 0.4),
-                size: 28,
+                  const SizedBox(height: 12),
+                  Text(
+                    context.l10n.itemTitle(item.id, item.title),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    context.l10n.shopInChest,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      context.l10n.invLvl(item.level),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              context.l10n.itemTitle(item.id, item.title),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              context.l10n.shopInChest,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.3),
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+          ),
+        );
+      }
+    }

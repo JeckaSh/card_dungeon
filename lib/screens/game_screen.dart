@@ -78,6 +78,7 @@ class GameScreen extends StatefulWidget {
     this.initialCardsPassed,
     this.initialCoins,
     this.dungeon = cursedForestDungeon,
+    this.random,
   });
 
   /// Начальный инвентарь (если null — выдаются стартовые карты по уровню прокачки)
@@ -95,12 +96,15 @@ class GameScreen extends StatefulWidget {
   /// Выбранное подземелье с уникальным набором этажей и боссов
   final Dungeon dungeon;
 
+  /// Генератор случайных чисел (для тестов/детерминированности)
+  final Random? random;
+
   @override
   State<GameScreen> createState() => GameScreenState();
 }
 
 class GameScreenState extends State<GameScreen> {
-  final _random = Random();
+  late final Random _random = widget.random ?? Random();
 
   late List<EventCard> _deck;
 
@@ -409,14 +413,45 @@ class GameScreenState extends State<GameScreen> {
   @visibleForTesting
   void setBlindnessForTesting(int turns) => setState(() => _blindnessTurns = turns);
 
-  /// Выбирает боссовую карточку для текущего подземелья по номеру встреченного босса.
+  @visibleForTesting
+  EventCard get currentCardForTesting => _currentCard;
+
+  @visibleForTesting
+  int get bossPhaseForTesting => _bossPhase;
+
+  @visibleForTesting
+  void handleSwipeForTesting(bool isRight) => _onSwipe(isRight);
+
+  /// Выбирает случайную боссовую карточку для текущего подземелья и текущего уровня этажа.
+  ///
+  /// При спуске на следующий уровень (например, в конце 1 уровня) выбирается
+  /// случайный босс из пула боссов 1 уровня данного подземелья.
   EventCard _selectBoss() {
-    final bossNumber = (_cardsPassed + 1) ~/ _bossEvery;
+    if (_activeBossCard != null) return _activeBossCard!;
+
+    final currentLevel =
+        _dungeonLevel > 0 ? _dungeonLevel : ((_cardsPassed + 1) ~/ _bossEvery);
+
+    // 1. Ищем боссов для текущего подземелья и текущего уровня этажа
+    final dungeonLevelBosses = getBossesForDungeonAndLevel(
+      widget.dungeon.id,
+      currentLevel,
+    );
+
+    if (dungeonLevelBosses.isNotEmpty) {
+      return dungeonLevelBosses[_random.nextInt(dungeonLevelBosses.length)];
+    }
+
+    // Запасной вариант 1: любые боссы этого подземелья
     final dungeonBosses = allBossCards
         .where((e) => e.isAvailableInDungeon(widget.dungeon.id))
         .toList();
-    final pool = dungeonBosses.isNotEmpty ? dungeonBosses : allBossCards;
-    return pool[(bossNumber - 1) % pool.length];
+    if (dungeonBosses.isNotEmpty) {
+      return dungeonBosses[_random.nextInt(dungeonBosses.length)];
+    }
+
+    // Запасной вариант 2: любые боссы игры
+    return allBossCards[_random.nextInt(allBossCards.length)];
   }
 
   void _discoverCurrentCard() {
@@ -469,7 +504,10 @@ class GameScreenState extends State<GameScreen> {
         _addJournalEntry('🏆', 'Подземелье успешно пройдено!');
         if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
         _saveChronicle(isVictory: true);
-        DailyQuestsService.instance.onDungeonFinished(isVictory: true);
+        DailyQuestsService.instance.onDungeonFinished(
+          isVictory: true,
+          dungeonId: widget.dungeon.id,
+        );
         return;
       }
       _dungeonLevel = nextLevel;
@@ -481,16 +519,11 @@ class GameScreenState extends State<GameScreen> {
         _deck.shuffle(_random);
       }
     }
-    // Если следующая карточка — многофазный босс, сразу активируем фазу 1
+    // Если следующая карточка — босс, сразу выбираем и активируем его
     if ((_cardsPassed + 1) % _bossEvery == 0) {
       final boss = _selectBoss();
-      if (boss.isMultiPhase) {
-        _activeBossCard = boss;
-        _bossPhase = 1;
-      } else {
-        _activeBossCard = null;
-        _bossPhase = 0;
-      }
+      _activeBossCard = boss;
+      _bossPhase = boss.isMultiPhase ? 1 : 0;
     } else {
       _activeBossCard = null;
       _bossPhase = 0;
@@ -519,25 +552,36 @@ class GameScreenState extends State<GameScreen> {
     // Проверяем доступность выбора
     if (choice.coinsDelta < 0 && _coins < choice.coinsDelta.abs()) return;
     if (choice.attackDelta < 0 && _attack < choice.attackDelta.abs()) return;
-    if (choice.givesRandomItem && UnlockedItemsService.instance.count == 0) {
+    if (choice.givesRandomItem &&
+        !UnlockedItemsService.instance.hasUnlockedForLevel(effectiveCard.level)) {
       return;
     }
 
     final cardTitle = _currentCard.title;
+    final triggeredBuffs = <String>[];
 
     ItemCard? receivedItem;
     if (choice.givesRandomItem) {
-      receivedItem = getRandomUnlockedItemCard(
-        _random,
-        UnlockedItemsService.instance.unlockedIds,
+      receivedItem = getRandomMerchantItemCard(
+        random: _random,
+        unlockedIds: UnlockedItemsService.instance.unlockedIds,
+        baseLevel: effectiveCard.level,
+        upgradeChancePercent:
+            PlayerStatsService.instance.merchantCardUpgradeChance,
       );
-      if (receivedItem != null) _inventoryItems.add(receivedItem);
+      if (receivedItem != null) {
+        _inventoryItems.add(receivedItem);
+        if (receivedItem.level > effectiveCard.level) {
+          triggeredBuffs.add(
+            '⭐ Удача торговца: получена карта ${receivedItem.level} уровня!',
+          );
+        }
+      }
     }
 
     var effectiveHealthDelta = choice.healthDelta;
     var effectiveAttackDelta = choice.attackDelta;
     var effectiveCoinsDelta = choice.coinsDelta;
-    final triggeredBuffs = <String>[];
 
     // 0. Проклятие Мидаса (если активно, монеты за выбор не начисляются)
     if (_midasCurseTurns > 0 && effectiveCoinsDelta > 0) {
@@ -754,7 +798,10 @@ class GameScreenState extends State<GameScreen> {
           _addJournalEntry('☠️', deathCause);
           if (_coins > 0) PlayerCoinsService.instance.applyDelta(_coins);
           _saveChronicle(isVictory: false);
-          DailyQuestsService.instance.onDungeonFinished(isVictory: false);
+          DailyQuestsService.instance.onDungeonFinished(
+            isVictory: false,
+            dungeonId: widget.dungeon.id,
+          );
         } else if (!wasBoss) {
           _advanceCard(wasBoss: false);
         } else {
@@ -1188,9 +1235,12 @@ class GameScreenState extends State<GameScreen> {
             );
             ItemCard? bribeItem;
             if (bestChoice.givesRandomItem) {
-              bribeItem = getRandomUnlockedItemCard(
-                _random,
-                UnlockedItemsService.instance.unlockedIds,
+              bribeItem = getRandomMerchantItemCard(
+                random: _random,
+                unlockedIds: UnlockedItemsService.instance.unlockedIds,
+                baseLevel: _effectiveCard.level,
+                upgradeChancePercent:
+                    PlayerStatsService.instance.merchantCardUpgradeChance,
               );
               if (bribeItem != null) _inventoryItems.add(bribeItem);
             }
@@ -1476,7 +1526,7 @@ class GameScreenState extends State<GameScreen> {
                               currentCoins: _coins,
                               currentAttack: _attack,
                               hasUnlockedItems:
-                                  UnlockedItemsService.instance.count > 0,
+                                  UnlockedItemsService.instance.hasUnlockedForLevel(_effectiveCard.level),
                               isRevealingChoices: _isRevealingChoices,
                               isBlind: _blindnessTurns > 0,
                               isBoss: isBoss,

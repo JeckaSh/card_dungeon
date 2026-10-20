@@ -1582,6 +1582,154 @@ const List<EventCard> allBossCards = [
     ],
   ),
 
+  // ── Босс 1 (вариант 2): Ткачиха Скверны Арахна ──────────────────────────
+  EventCard(
+    id: 'forest_boss_broodmother',
+    type: EventType.boss,
+    title: 'Ткачиха Скверны Арахна',
+    description:
+        'Исполинская паучиха, свившая гнездо в ветвях вековых дубов. Её брюхо пульсирует ядом, а вокруг копошатся тысячи голодных паучат.',
+    leftChoice: CardChoice(
+      label: 'Принять ядовитый удар жвал',
+      healthDelta: -6,
+      coinsDelta: 25,
+    ),
+    rightChoice: CardChoice(
+      label: 'Срубить паучьи лапы',
+      attackDelta: -3,
+      coinsDelta: 30,
+    ),
+    level: 1,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🕸️',
+        title: 'Фаза I — Липкая паутина',
+        description:
+            'Арахна выстреливает плотной сетью паутины, сковывая твои движения и ослепляя глаза!',
+        leftChoice: CardChoice(
+          label: 'Вырваться сквозь липкие нити',
+          healthDelta: -4,
+          coinsDelta: 10,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрезать сеть мечом',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🧪',
+        title: 'Фаза II — Выброс едкой кислоты',
+        description:
+            'Чудовище раздувает брюхо и заливает поляну ядовитой слизью, шипящей на доспехах!',
+        leftChoice: CardChoice(
+          label: 'Принять брызги яда на щит',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.55,
+        ),
+        rightChoice: CardChoice(
+          label: 'Прыгнуть сквозь струю и нанести выпад',
+          attackDelta: -3,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🕷️',
+        title: 'Фаза III — Ярость паучьего гнезда',
+        description:
+            'Раненная Арахна визжит и бросается в последнюю яростную атаку всеми жвалами и лапами!',
+        leftChoice: CardChoice(
+          label: 'Выдержать финальный наскок чудовища',
+          healthDelta: -6,
+          coinsDelta: 25,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить клинок прямо в пасть',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 1 (вариант 3): Проклятый Древобород ─────────────────────────────
+  EventCard(
+    id: 'forest_boss_corrupted_treant',
+    type: EventType.boss,
+    title: 'Проклятый Древобород',
+    description:
+        'Древний хранитель чащи, обращённый скверной в свирепое чудовище. Из его коры сочатся смола и яд, а ветви-хлысты сокрушают камни.',
+    leftChoice: CardChoice(
+      label: 'Сдержать удар ствола-кулака',
+      healthDelta: -6,
+      coinsDelta: 25,
+    ),
+    rightChoice: CardChoice(
+      label: 'Расколоть окаменевшую кору',
+      attackDelta: -3,
+      coinsDelta: 30,
+    ),
+    level: 1,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🪵',
+        title: 'Фаза I — Шипастые сучья',
+        description:
+            'Древобород хлещет тяжёлыми ветвями, усыпанными острыми словно бритва шипами!',
+        leftChoice: CardChoice(
+          label: 'Принять удары сучьев на латы',
+          healthDelta: -4,
+          coinsDelta: 10,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Отсечь хлещущие ветви в замахе',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🌿',
+        title: 'Фаза II — Опутывающие побеги',
+        description:
+            'Из-под земли вырываются корни скверны, хватая за ноги и сжимая в мёртвой хватке!',
+        leftChoice: CardChoice(
+          label: 'Разорвать путы силой мышц',
+          healthDelta: -5,
+          coinsDelta: 15,
+        ),
+        rightChoice: CardChoice(
+          label: 'Перерубить корневище у основания',
+          attackDelta: -3,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🔥',
+        title: 'Фаза III — Сердцевина скверны',
+        description:
+            'Древобород трещит по швам! Его гнилая сердцевина обнажена, он готовится сокрушить всё вокруг своим падением!',
+        leftChoice: CardChoice(
+          label: 'Вынести сокрушительное падение древа',
+          healthDelta: -6,
+          coinsDelta: 25,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассечь тёмное ядро в сердцевине',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+    ],
+  ),
+
   // ── Босс 2: Болотная Ведьма Моррига ─────────────────────────────────────
   EventCard(
     id: 'forest_boss_swamp_hag',
@@ -1655,6 +1803,156 @@ const List<EventCard> allBossCards = [
         ),
         rightChoice: CardChoice(
           label: 'Добить ведьму ударом в посох',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 2 (вариант 2): Болотный Левиафан Грязерог ─────────────────────
+  EventCard(
+    id: 'forest_boss_mire_leviathan',
+    type: EventType.boss,
+    title: 'Болотный Левиафан Грязерог',
+    description:
+        'Исполинский змей древних топей, покрытый вековой тиной и панцирем из окаменевшей грязи. Его утробный рёв колеблет трясину.',
+    leftChoice: CardChoice(
+      label: 'Выдержать удар шипастого хвоста',
+      healthDelta: -7,
+      coinsDelta: 30,
+    ),
+    rightChoice: CardChoice(
+      label: 'Расколоть грязевой панцирь',
+      attackDelta: -4,
+      coinsDelta: 40,
+    ),
+    level: 2,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🌊',
+        title: 'Фаза I — Топкий водоворот',
+        description:
+            'Левиафан взбивает ил мощным хвостом, затягивая тебя в воронку вязкой жижи!',
+        leftChoice: CardChoice(
+          label: 'Бороться с трясиной и удержать равновесие',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Оттолкнуться клинком от коряги',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🧪',
+        title: 'Фаза II — Извержение едкой тины',
+        description:
+            'Пасть змея распахивается, извергая потоки ядовитой кислотной жижи!',
+        leftChoice: CardChoice(
+          label: 'Принять брызги кислоты на броню',
+          healthDelta: -6,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.55,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассечь струю кислоты встречным выпадом',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🐊',
+        title: 'Фаза III — Смертельный захват',
+        description:
+            'Раненый зверь в ярости обвивает кольцами всё вокруг и пытается раздавить героя!',
+        leftChoice: CardChoice(
+          label: 'Сдержать сокрушительные кольца латами',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить клинок прямо под чешую в пасть',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 2 (вариант 3): Теневой Ворон Смерти Корвус ────────────────────
+  EventCard(
+    id: 'forest_boss_shadow_crow',
+    type: EventType.boss,
+    title: 'Теневой Ворон Смерти Корвус',
+    description:
+        'Зловещая птица тьмы с гигантскими угольно-чёрными крыльями. Своим карканьем она высасывает радость и гасит свет надежды.',
+    leftChoice: CardChoice(
+      label: 'Стерпеть налёт когтей из сумрака',
+      healthDelta: -7,
+      coinsDelta: 30,
+    ),
+    rightChoice: CardChoice(
+      label: 'Подрезать крылья стрелой света',
+      attackDelta: -4,
+      coinsDelta: 40,
+    ),
+    level: 2,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🪶',
+        title: 'Фаза I — Буря острых перьев',
+        description:
+            'Корвус взмывает в кроны деревьев и обрушивает дождь острых как бритва чёрных перьев!',
+        leftChoice: CardChoice(
+          label: 'Укрыться щитом от шквала перьев',
+          healthDelta: -4,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.45,
+        ),
+        rightChoice: CardChoice(
+          label: 'Сбить перья взмахами клинка',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🌑',
+        title: 'Фаза II — Покров слепого мрака',
+        description:
+            'Взмах широких крыльев тушит все источники света — лес погружается в непроглядную мглу!',
+        leftChoice: CardChoice(
+          label: 'Ориентироваться на слух в темноте',
+          healthDelta: -6,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.6,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрубить тень на опережение',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🦅',
+        title: 'Фаза III — Смертоносное пике',
+        description:
+            'Издав душераздирающий крик, ворон камнем падает с высоты прямо на тебя!',
+        leftChoice: CardChoice(
+          label: 'Принять удар пикирующей птицы',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Встретить грудь ворона остриём меча',
           attackDelta: -4,
           coinsDelta: 40,
         ),
@@ -1742,6 +2040,156 @@ const List<EventCard> allBossCards = [
     ],
   ),
 
+  // ── Босс 3 (вариант 2): Дракон Порчи Веноморакс ─────────────────────────
+  EventCard(
+    id: 'forest_boss_blight_dragon',
+    type: EventType.boss,
+    title: 'Дракон Порчи Веноморакс',
+    description:
+        'Осквернённый порчей лесной дракон, чьё дыхание плавит доспехи, а чешуя источает серный смрад. Окончательное порождение лесного безумия.',
+    leftChoice: CardChoice(
+      label: 'Выдержать серное пламя дракона',
+      healthDelta: -8,
+      coinsDelta: 40,
+    ),
+    rightChoice: CardChoice(
+      label: 'Пронзить драконье сердце сталью',
+      attackDelta: -5,
+      coinsDelta: 60,
+    ),
+    level: 3,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🔥',
+        title: 'Фаза I — Дыхание скверны',
+        description:
+            'Веноморакс заливает поляну едким зелёным огнём, пожирающим плоть и металл!',
+        leftChoice: CardChoice(
+          label: 'Прикрыть лицо и броситься сквозь пламя',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Отрезать огненную пасть выпадом',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🌪️',
+        title: 'Фаза II — Ураган гнилых крыльев',
+        description:
+            'Взмахи гигантских кожистых крыльев ломают дубы и осыпают ядовитыми шипами!',
+        leftChoice: CardChoice(
+          label: 'Устоять против ураганного ветра',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассечь крыло в полете',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🐲',
+        title: 'Фаза III — Агония чудовища',
+        description:
+            'Сбитый на землю дракон с рёвом бросается в последнюю яростную атаку когтями и клыками!',
+        leftChoice: CardChoice(
+          label: 'Вынести финальный наскок дракона',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить клинок в основание шеи',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 3 (вариант 3): Пожиратель Миров Игг-Скверна ────────────────────
+  EventCard(
+    id: 'forest_boss_abyssal_treant',
+    type: EventType.boss,
+    title: 'Пожиратель Миров Игг-Скверна',
+    description:
+        'Исполинское первородное древо, чьи корни проникли в саму Бездну. Его ствол пульсирует черной кровью земли, а ветви заслоняют небосвод.',
+    leftChoice: CardChoice(
+      label: 'Сдержать удар первородной ветви-молота',
+      healthDelta: -8,
+      coinsDelta: 40,
+    ),
+    rightChoice: CardChoice(
+      label: 'Срубить проклятый корень Бездны',
+      attackDelta: -5,
+      coinsDelta: 60,
+    ),
+    level: 3,
+    dungeonId: DungeonId.cursedForest,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🌱',
+        title: 'Фаза I — Лес из черных шипов',
+        description:
+            'Земля вздымается тысячами шипастых ростков скверны, прокалывающих броню!',
+        leftChoice: CardChoice(
+          label: 'Прорваться сквозь частокол шипов',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Выкосить ростки широким взмахом',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🖤',
+        title: 'Фаза II — Истончение сущности',
+        description:
+            'Игг-Скверна пульсирует чёрным сиянием, иссушая саму жизненную силу и богатства вокруг!',
+        leftChoice: CardChoice(
+          label: 'Сжать зубы и выдержать тёмный импульс',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.midasCurse,
+          statusChance: 0.55,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрубить светящийся разлом в коре',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💥',
+        title: 'Фаза III — Рушащийся титан',
+        description:
+            'Ствол титана раскалывается пополам! Падая, он готов похоронить весь лес под собой!',
+        leftChoice: CardChoice(
+          label: 'Принять удар рушащегося древа',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Расколоть пульсирующее ядро Бездны',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
+  ),
+
   // ═══════════════════════════════════════════════════════════════
   //  БОССЫ ЗАБРОШЕННЫХ КАТАКОМБ (появляются на каждом 20-м ходу)
   // ═══════════════════════════════════════════════════════════════
@@ -1812,6 +2260,154 @@ const List<EventCard> allBossCards = [
         ),
         rightChoice: CardChoice(
           label: 'Вонзить меч в пылающее сердце-рубин',
+          attackDelta: -3,
+          coinsDelta: 35,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 1 (вариант 2): Чумной Крысиный Король ────────────────────────────
+  EventCard(
+    id: 'catacombs_boss_rat_king',
+    type: EventType.boss,
+    title: 'Чумной Крысиный Король',
+    description:
+        'Отвратительный клубок из десятков сросшихся хвостами крыс-людоедов, наделённый единым тёмным разумом и дыханием могильного мора.',
+    leftChoice: CardChoice(
+      label: 'Отбить натиск зубов и когтей',
+      healthDelta: -6,
+      coinsDelta: 25,
+    ),
+    rightChoice: CardChoice(
+      label: 'Рассечь средоточие стаи',
+      attackDelta: -3,
+      coinsDelta: 35,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🐀',
+        title: 'Фаза I — Живая волна',
+        description:
+            'Сотни мелких крыс живым ковром бросаются под ноги, пытаясь опрокинуть героя!',
+        leftChoice: CardChoice(
+          label: 'Топать и давить тварей сапогами',
+          healthDelta: -3,
+          coinsDelta: 10,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разогнать стаю огненным взмахом',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🤢',
+        title: 'Фаза II — Чумное дыхание',
+        description:
+            'Крысиный Король раскрывает десятки пастей и выдыхает зловонное облако могильной лихорадки!',
+        leftChoice: CardChoice(
+          label: 'Зажать нос и вытерпеть вонь',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Прорваться сквозь зловоние ударом',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '👑',
+        title: 'Фаза III — Безумие гнезда',
+        description:
+            'Обезумевший Король мечется по склепу, пытаясь разорвать героя на части в предсмертной ярости!',
+        leftChoice: CardChoice(
+          label: 'Принять бешеный натиск на щит',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.4,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрубить узел хвостов пополам',
+          attackDelta: -3,
+          coinsDelta: 35,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 1 (вариант 3): Могильная Банши Элеонора ───────────────────────────
+  EventCard(
+    id: 'catacombs_boss_crypt_banshee',
+    type: EventType.boss,
+    title: 'Могильная Банши Элеонора',
+    description:
+        'Парящий над древними саркофагами дух погребённой графини. Её леденящий крик разрывает барабанные перепонки и лишает рассудка.',
+    leftChoice: CardChoice(
+      label: 'Стерпеть леденящее прикосновение',
+      healthDelta: -6,
+      coinsDelta: 25,
+    ),
+    rightChoice: CardChoice(
+      label: 'Рассечь саван святым клинком',
+      attackDelta: -3,
+      coinsDelta: 35,
+    ),
+    level: 1,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '👻',
+        title: 'Фаза I — Загробный вой',
+        description:
+            'Банши издаёт пронзительный потусторонний вопль — факелы гаснут, а глаза застилает тьма!',
+        leftChoice: CardChoice(
+          label: 'Зажать уши и терпеть вой',
+          healthDelta: -4,
+          coinsDelta: 10,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Заглушить вопль звоном клинка',
+          attackDelta: -2,
+          coinsDelta: 15,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '❄️',
+        title: 'Фаза II — Хлад могилы',
+        description:
+            'Температура падает ниже нуля, иней покрывает сталь! Призрачные когти Элеоноры тянутся к твоему сердцу.',
+        leftChoice: CardChoice(
+          label: 'Принять ледяной удар когтей',
+          healthDelta: -5,
+          coinsDelta: 15,
+        ),
+        rightChoice: CardChoice(
+          label: 'Развеять морозную дымку высекая искры',
+          attackDelta: -3,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '⚰️',
+        title: 'Фаза III — Последнее проклятие',
+        description:
+            'Облик банши искажается гримасой ужаса. В финальном порыве она бросает всю силу проклятия на героя!',
+        leftChoice: CardChoice(
+          label: 'Выдержать ярость проклятой души',
+          healthDelta: -6,
+          coinsDelta: 25,
+        ),
+        rightChoice: CardChoice(
+          label: 'Упокоить дух ударом в саркофаг',
           attackDelta: -3,
           coinsDelta: 35,
         ),
@@ -1894,6 +2490,156 @@ const List<EventCard> allBossCards = [
     ],
   ),
 
+  // ── Босс 2 (вариант 2): Некромант Мал’корим — Ткач Плоти ──────────────────
+  EventCard(
+    id: 'catacombs_boss_flesh_necromancer',
+    type: EventType.boss,
+    title: 'Некромант Мал’корим — Ткач Плоти',
+    description:
+        'Одержимый темный маг, сшивающий останки павших героев в гротескные живые кошмары. В его руках посох из позвонков древних титанов.',
+    leftChoice: CardChoice(
+      label: 'Сдержать разряд трупной магии',
+      healthDelta: -7,
+      coinsDelta: 30,
+    ),
+    rightChoice: CardChoice(
+      label: 'Перерубить посох некроманта',
+      attackDelta: -4,
+      coinsDelta: 40,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🧟',
+        title: 'Фаза I — Живой щит из плоти',
+        description:
+            'Мал’корим прикрывается огромным сшитым мясным монстром, сочащимся ядом!',
+        leftChoice: CardChoice(
+          label: 'Принять удар гнилостного кулака',
+          healthDelta: -5,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассечь швы сшитого чудовища',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🩸',
+        title: 'Фаза II — Кровавое заклятие',
+        description:
+            'Некромант режет себе ладонь и читает темную литанию — твоя кровь вскипает в жилах!',
+        leftChoice: CardChoice(
+          label: 'Перетерпеть жгучую муку в венах',
+          healthDelta: -6,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Сбить чтение заклятия ударом эфеса',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💣',
+        title: 'Фаза III — Трупный взрыв',
+        description:
+            'Осознав неминуемое поражение, некромант пытается подорвать окружающие саркофаги!',
+        leftChoice: CardChoice(
+          label: 'Укрыться щитом от осколков костей и камня',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Сразить Мал’корима прежде, чем грянет взрыв',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 2 (вариант 3): Кровавая Графиня Кармилла ─────────────────────────
+  EventCard(
+    id: 'catacombs_boss_blood_countess',
+    type: EventType.boss,
+    title: 'Кровавая Графиня Кармилла',
+    description:
+        'Бессмертная аристократка ночи, восседающая на троне из черепов. Её алые одеяния пропитаны кровью, а взгляд парализует смертных.',
+    leftChoice: CardChoice(
+      label: 'Выдержать хлесткий удар кровавой плети',
+      healthDelta: -7,
+      coinsDelta: 30,
+    ),
+    rightChoice: CardChoice(
+      label: 'Разрубить рубиновое ожерелье силы',
+      attackDelta: -4,
+      coinsDelta: 40,
+    ),
+    level: 2,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🩸',
+        title: 'Фаза I — Танец алых плетей',
+        description:
+            'Кармилла хлещет кровавыми жгутами с нечеловеческой скоростью, разрывая кольчугу!',
+        leftChoice: CardChoice(
+          label: 'Принять рассекающие удары плетей',
+          healthDelta: -4,
+          coinsDelta: 15,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Перехватить плеть клинком',
+          attackDelta: -2,
+          coinsDelta: 20,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '👁️',
+        title: 'Фаза II — Вампирический гипноз',
+        description:
+            'Алые глаза графини вспыхивают гипнотическим светом, затуманивая твой рассудок!',
+        leftChoice: CardChoice(
+          label: 'Слепо отмахнуться от наваждения',
+          healthDelta: -6,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.55,
+        ),
+        rightChoice: CardChoice(
+          label: 'Рассечь иллюзию резким ударом',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '🧛‍♀️',
+        title: 'Фаза III — Жажда вечной ночи',
+        description:
+            'Графиня обнажает клыки и в яростном прыжке пытается добраться до твоей яремной вены!',
+        leftChoice: CardChoice(
+          label: 'Сдержать вампирский укус наручем',
+          healthDelta: -7,
+          coinsDelta: 30,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить клинок прямо в холодное сердце',
+          attackDelta: -4,
+          coinsDelta: 40,
+        ),
+      ),
+    ],
+  ),
+
   // ── Босс 3: Архилич Волкар — Владыка Катакомб ──────────────────────────────
   EventCard(
     id: 'catacombs_boss_archlich',
@@ -1968,4 +2714,161 @@ const List<EventCard> allBossCards = [
       ),
     ],
   ),
+
+  // ── Босс 3 (вариант 2): Рыцарь Смерти Мордред ─────────────────────────────
+  EventCard(
+    id: 'catacombs_boss_death_knight',
+    type: EventType.boss,
+    title: 'Рыцарь Смерти Мордред',
+    description:
+        'Падший предводитель священного ордена, облачённый в чёрные рунические латы. Его проклятый палаш пожирает души побеждённых.',
+    leftChoice: CardChoice(
+      label: 'Сдержать сокрушительный удар палаша',
+      healthDelta: -8,
+      coinsDelta: 40,
+    ),
+    rightChoice: CardChoice(
+      label: 'Расколоть чёрный рунический доспех',
+      attackDelta: -5,
+      coinsDelta: 60,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '⚔️',
+        title: 'Фаза I — Рунический разрез',
+        description:
+            'Палаш Мордреда оставляет глубокие раны, из которых сочится чёрное пламя Бездны!',
+        leftChoice: CardChoice(
+          label: 'Принять тяжёлый удар на латный щит',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.bleed,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Парировать рунический клинок и контратаковать',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '❄️',
+        title: 'Фаза II — Леденящая аура погибели',
+        description:
+            'Рыцарь испускает волну могильного мороза, сковывающего мышцы и замораживающего дыхание!',
+        leftChoice: CardChoice(
+          label: 'Преодолеть лютый мороз усилием воли',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.poison,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разбить ледяную корку сильным ударом',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💀',
+        title: 'Фаза III — Нечестивое бессмертие',
+        description:
+            'Смертельно раненный, Мордред собирает остатки проклятых сил для последнего смертельного поединка!',
+        leftChoice: CardChoice(
+          label: 'Выдержать отчаянный таран рыцаря',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Срубить падшего рыцаря решающим выпадом',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
+  ),
+
+  // ── Босс 3 (вариант 3): Костяной Дракон Нараксис ──────────────────────────
+  EventCard(
+    id: 'catacombs_boss_bone_dragon',
+    type: EventType.boss,
+    title: 'Костяной Дракон Нараксис',
+    description:
+        'Древний дракон, чей колоссальный скелет покоился на самом дне катакомб. Поднятый тёмной некромантией, он стережёт врата Бездны.',
+    leftChoice: CardChoice(
+      label: 'Выдержать удар исполинского хвоста',
+      healthDelta: -8,
+      coinsDelta: 40,
+    ),
+    rightChoice: CardChoice(
+      label: 'Разбить череп дракона святым ударом',
+      attackDelta: -5,
+      coinsDelta: 60,
+    ),
+    level: 3,
+    dungeonId: DungeonId.catacombs,
+    bossPhases: [
+      BossPhase(
+        phaseEmoji: '🌪️',
+        title: 'Фаза I — Вихрь погребальных костей',
+        description:
+            'Нараксис взмахивает оголёнными крыльями, поднимая бурю острых костяных осколков!',
+        leftChoice: CardChoice(
+          label: 'Укрыться за колонной от града костей',
+          healthDelta: -5,
+          coinsDelta: 20,
+          statusEffect: StatusEffectType.blindness,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Разрубить костяное крыло на лету',
+          attackDelta: -3,
+          coinsDelta: 25,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '⚡',
+        title: 'Фаза II — Дыхание Бездны',
+        description:
+            'Из пустой пасти дракона вырывается поток чёрного могильного пламени, испепеляющего всё сущее!',
+        leftChoice: CardChoice(
+          label: 'Пережить смертоносный поток пламени',
+          healthDelta: -6,
+          coinsDelta: 25,
+          statusEffect: StatusEffectType.midasCurse,
+          statusChance: 0.5,
+        ),
+        rightChoice: CardChoice(
+          label: 'Прыгнуть сквозь огонь и поразить глотку',
+          attackDelta: -4,
+          coinsDelta: 30,
+        ),
+      ),
+      BossPhase(
+        phaseEmoji: '💥',
+        title: 'Фаза III — Крушение некрополя',
+        description:
+            'Огромный дракон обрушивает своды склепа своим падением! Кости и камни рушатся лавиной.',
+        leftChoice: CardChoice(
+          label: 'Выстоять под лавиной падающих глыб',
+          healthDelta: -8,
+          coinsDelta: 40,
+        ),
+        rightChoice: CardChoice(
+          label: 'Вонзить меч в некротическое ядро зверя',
+          attackDelta: -5,
+          coinsDelta: 60,
+        ),
+      ),
+    ],
+  ),
 ];
+
+/// Возвращает список доступных боссов для подземелья [dungeonId] и уровня [level].
+List<EventCard> getBossesForDungeonAndLevel(String dungeonId, int level) {
+  return allBossCards
+      .where((b) => b.isAvailableInDungeon(dungeonId) && b.level == level)
+      .toList();
+}

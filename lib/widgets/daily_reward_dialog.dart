@@ -33,11 +33,24 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
     if (_isClaiming) return;
     setState(() => _isClaiming = true);
 
-    await DailyRewardService.instance.claimToday();
+    final reward = await DailyRewardService.instance.claimToday();
 
     if (!mounted) return;
+    setState(() => _isClaiming = false);
 
-    Navigator.of(context).pop();
+    if (reward > 0) {
+      Navigator.of(context).pop();
+    } else {
+      final error = DailyRewardService.instance.lastErrorMessage;
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red.shade900,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -47,6 +60,8 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
     final currentStreakDay = dailyService.todayStreakDay;
     final canClaim = dailyService.canClaimToday;
     final rewardAmount = dailyService.todayRewardAmount;
+    final silverKeysAmount = dailyService.todaySilverKeysAmount;
+    final goldKeysAmount = dailyService.todayGoldKeysAmount;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -157,7 +172,7 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
                       // Блок сегодняшней награды
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -182,34 +197,102 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
                                 fontSize: 13,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            const SizedBox(height: 6),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 12,
+                              runSpacing: 6,
                               children: [
-                                const Icon(
-                                  Icons.monetization_on_rounded,
-                                  color: Color(0xFFFFD700),
-                                  size: 28,
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.monetization_on_rounded,
+                                      color: Color(0xFFFFD700),
+                                      size: 28,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '+$rewardAmount',
+                                      style: const TextStyle(
+                                        color: Color(0xFFFFD700),
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      l10n.isRussian ? 'монет' : 'coins',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.8),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '+$rewardAmount',
-                                  style: const TextStyle(
-                                    color: Color(0xFFFFD700),
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 1,
+                                if (silverKeysAmount > 0)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.vpn_key_rounded,
+                                        color: Color(0xFFCFD8DC),
+                                        size: 22,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '+$silverKeysAmount',
+                                        style: const TextStyle(
+                                          color: Color(0xFFCFD8DC),
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        l10n.isRussian
+                                            ? (silverKeysAmount == 1 ? 'сер. ключ' : 'сер. ключа')
+                                            : (silverKeysAmount == 1 ? 'silver key' : 'silver keys'),
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.8),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  l10n.isRussian ? 'монет' : 'coins',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                                if (goldKeysAmount > 0)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.key_rounded,
+                                        color: Color(0xFFFFB300),
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '+$goldKeysAmount',
+                                        style: const TextStyle(
+                                          color: Color(0xFFFFB300),
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        l10n.isRussian ? 'зол. ключ' : 'gold key',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.8),
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
                               ],
                             ),
                           ],
@@ -247,7 +330,31 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 14),
+
+                      if (dailyService.isRollbackDetected) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.redAccent),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  l10n.dailyRewardRollbackDetected,
+                                  style: const TextStyle(color: Colors.redAccent, fontSize: 11.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
 
                       // Кнопка получения награды
                       SizedBox(
@@ -353,6 +460,8 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
           children: List.generate(7, (index) {
             final day = index + 1;
             final reward = DailyRewardService.getRewardForDay(day);
+            final silverKeys = DailyRewardService.getSilverKeysForDay(day);
+            final goldKeys = DailyRewardService.getGoldKeysForDay(day);
 
             final bool isPastClaimed;
             final bool isToday;
@@ -375,6 +484,8 @@ class _DailyRewardDialogState extends State<DailyRewardDialog> {
               child: _DayCardMini(
                 day: day,
                 reward: reward,
+                silverKeys: silverKeys,
+                goldKeys: goldKeys,
                 isPastClaimed: isPastClaimed,
                 isToday: isToday,
                 isFuture: isFuture,
@@ -393,6 +504,8 @@ class _DayCardMini extends StatelessWidget {
   const _DayCardMini({
     required this.day,
     required this.reward,
+    this.silverKeys = 0,
+    this.goldKeys = 0,
     required this.isPastClaimed,
     required this.isToday,
     required this.isFuture,
@@ -402,6 +515,8 @@ class _DayCardMini extends StatelessWidget {
 
   final int day;
   final int reward;
+  final int silverKeys;
+  final int goldKeys;
   final bool isPastClaimed;
   final bool isToday;
   final bool isFuture;
@@ -501,6 +616,40 @@ class _DayCardMini extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (silverKeys > 0) ...[
+            const SizedBox(height: 1),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.vpn_key_rounded, size: 8, color: Color(0xFFCFD8DC)),
+                Text(
+                  '+$silverKeys',
+                  style: const TextStyle(
+                    color: Color(0xFFCFD8DC),
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (goldKeys > 0) ...[
+            const SizedBox(height: 1),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.key_rounded, size: 8.5, color: Color(0xFFFFB300)),
+                Text(
+                  '+$goldKeys',
+                  style: const TextStyle(
+                    color: Color(0xFFFFB300),
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

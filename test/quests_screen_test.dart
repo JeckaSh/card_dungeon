@@ -167,4 +167,127 @@ void main() {
     expect(PlayerCoinsService.instance.balance, 150);
     expect(find.text('Получено'), findsWidgets);
   });
+
+  testWidgets('QuestsScreen displays weekly quests and allows claiming for 500 coins', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    DailyQuestsService.instance.setQuestsForTesting(
+      [
+        DailyQuest(
+          id: 'daily_dungeon',
+          type: DailyQuestType.specificDungeonRuns,
+          target: 2,
+          targetDungeonId: 'cursed_forest',
+          progress: 0,
+        ),
+      ],
+      weeklyQuests: [
+        DailyQuest(
+          id: 'weekly_claimable',
+          type: DailyQuestType.specificDungeonRuns,
+          target: 5,
+          targetDungeonId: 'catacombs',
+          progress: 5,
+          isWeekly: true,
+          rewardCoins: 500,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: QuestsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Еженедельные задания'), findsOneWidget);
+    expect(find.text('Сброс каждый понедельник в 00:00 (МСК)'), findsOneWidget);
+    expect(find.textContaining('Сыграть в «Заброшенные катакомбы» 5 раз'), findsOneWidget);
+    expect(find.text('5 / 5'), findsOneWidget);
+    expect(find.text('Забрать (+500 🪙)'), findsOneWidget);
+
+    // Tap claim
+    await tester.tap(find.text('Забрать (+500 🪙)'));
+    await tester.pumpAndSettle();
+
+    expect(PlayerCoinsService.instance.balance, 500);
+    expect(find.text('Получено'), findsWidgets);
+  });
+
+  testWidgets('QuestsScreen displays daily completion bonus card and allows claiming 2 silver keys', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    DailyQuestsService.instance.setQuestsForTesting([
+      DailyQuest(id: 'dq_1', type: DailyQuestType.clearDungeon, target: 1, progress: 1),
+      DailyQuest(id: 'dq_2', type: DailyQuestType.killBosses, target: 4, progress: 4),
+    ]);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: QuestsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Награда за все задания дня'), findsOneWidget);
+    expect(find.text('Выполните все задания дня и заберите серебряные ключи'), findsOneWidget);
+    expect(find.text('Забрать бонус (+2 🗝️)'), findsOneWidget);
+    expect(PlayerCoinsService.instance.silverKeys, 0);
+
+    // Claim bonus
+    await tester.tap(find.text('Забрать бонус (+2 🗝️)'));
+    await tester.pumpAndSettle();
+
+    expect(PlayerCoinsService.instance.silverKeys, 2);
+    expect(find.text('Бонус получен (+2 🗝️)'), findsOneWidget);
+  });
+
+  testWidgets('QuestsScreen displays weekly completion bonus card and allows claiming 2 gold keys', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    DailyQuestsService.instance.setQuestsForTesting(
+      [
+        DailyQuest(id: 'dq_1', type: DailyQuestType.clearDungeon, target: 1, progress: 0),
+      ],
+      weeklyQuests: [
+        DailyQuest(id: 'wq_1', type: DailyQuestType.clearDungeon, target: 3, progress: 3, isWeekly: true),
+        DailyQuest(id: 'wq_2', type: DailyQuestType.killBosses, target: 15, progress: 15, isWeekly: true),
+      ],
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: QuestsScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Награда за все задания недели'), findsOneWidget);
+    expect(find.text('Выполните все задания недели и заберите золотые ключи'), findsOneWidget);
+    expect(find.text('Забрать супер-бонус (+2 🔑)'), findsOneWidget);
+    expect(PlayerCoinsService.instance.goldKeys, 0);
+
+    // Claim bonus
+    await tester.tap(find.text('Забрать супер-бонус (+2 🔑)'));
+    await tester.pumpAndSettle();
+
+    expect(PlayerCoinsService.instance.goldKeys, 2);
+    expect(find.text('Супер-бонус получен (+2 🔑)'), findsOneWidget);
+  });
 }

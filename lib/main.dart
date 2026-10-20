@@ -7,11 +7,12 @@ import 'services/daily_quests_service.dart';
 import 'services/daily_reward_service.dart';
 import 'services/locale_service.dart';
 import 'services/player_coins_service.dart';
+import 'services/world_time_service.dart';
 
 /// Точка входа в мобильное приложение Card Dungeon.
 ///
-/// Фиксирует портретную ориентацию экрана, загружает настройки языка
-/// и запускает [DungeonCardsApp].
+/// Фиксирует портретную ориентацию экрана, загружает настройки языка,
+/// синхронизирует мировое время и запускает [DungeonCardsApp].
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
@@ -20,6 +21,9 @@ void main() async {
   await Future.wait([
     LocaleService.instance.load(),
     PlayerCoinsService.instance.load(),
+    WorldTimeService.instance.init(),
+  ]);
+  await Future.wait([
     DailyRewardService.instance.load(),
     DailyQuestsService.instance.load(),
   ]);

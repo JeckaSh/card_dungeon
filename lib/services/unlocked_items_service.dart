@@ -1,5 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/items.dart';
+import '../models/item_card.dart';
+
 /// Сервис учёта открытых игроком предметов (артефактов).
 ///
 /// Предметы открываются через лутбоксы в Магазине ([ShopScreen]).
@@ -24,6 +27,24 @@ class UnlockedItemsService {
 
   /// Общее количество открытых предметов
   int get count => _unlockedIds.length;
+
+  /// Проверяет, открыт ли хотя бы один предмет указанного уровня [level].
+  /// Если [level] не указан, проверяет наличие любых открытых предметов.
+  bool hasUnlockedForLevel([int? level]) {
+    if (level == null) return _unlockedIds.isNotEmpty;
+    return allItemCards.any(
+      (item) => item.level == level && _unlockedIds.contains(item.id),
+    );
+  }
+
+  /// Возвращает список всех открытых предметов указанного [level] (или всех, если null).
+  List<ItemCard> getUnlockedItems([int? level]) {
+    return allItemCards
+        .where((item) =>
+            _unlockedIds.contains(item.id) &&
+            (level == null || item.level == level))
+        .toList();
+  }
 
   /// Загружает список открытых предметов из локального хранилища
   Future<void> load() async {

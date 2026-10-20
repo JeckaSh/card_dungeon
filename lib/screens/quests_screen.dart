@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_localizations.dart';
+import '../data/dungeons.dart';
 import '../services/daily_quests_service.dart';
 import '../services/daily_reward_service.dart';
 import '../services/locale_service.dart';
 import '../services/player_coins_service.dart';
+import '../services/world_time_service.dart';
 import '../widgets/currencies_bar.dart';
 
 /// Экран заданий и ежедневных наград.
@@ -26,7 +28,10 @@ class QuestsScreen extends StatefulWidget {
 class _QuestsScreenState extends State<QuestsScreen> {
   Timer? _countdownTimer;
   Duration _timeLeft = Duration.zero;
+  Duration _weeklyTimeLeft = Duration.zero;
   bool _isClaimingDailyStreak = false;
+  bool _isClaimingDailyBonus = false;
+  bool _isClaimingWeeklyBonus = false;
   final Set<String> _claimingQuestIds = {};
 
   @override
@@ -56,12 +61,14 @@ class _QuestsScreenState extends State<QuestsScreen> {
 
   void _updateTimeLeft() {
     final remaining = DailyRewardService.timeUntilNextMskMidnight;
+    final weeklyRemaining = WorldTimeService.instance.timeUntilNextMskWeek;
     if (mounted) {
-      if (remaining == Duration.zero) {
+      if (remaining == Duration.zero || weeklyRemaining == Duration.zero) {
         DailyQuestsService.instance.checkDayTransition();
       }
       setState(() {
         _timeLeft = remaining;
+        _weeklyTimeLeft = weeklyRemaining;
       });
     }
   }
@@ -77,10 +84,22 @@ class _QuestsScreenState extends State<QuestsScreen> {
     if (_isClaimingDailyStreak) return;
     setState(() => _isClaimingDailyStreak = true);
 
-    await DailyRewardService.instance.claimToday();
+    final reward = await DailyRewardService.instance.claimToday();
 
     if (!mounted) return;
     setState(() => _isClaimingDailyStreak = false);
+
+    if (reward == 0) {
+      final error = DailyRewardService.instance.lastErrorMessage;
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red.shade900,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _claimQuest(DailyQuest quest) async {
@@ -91,6 +110,26 @@ class _QuestsScreenState extends State<QuestsScreen> {
 
     if (!mounted) return;
     setState(() => _claimingQuestIds.remove(quest.id));
+  }
+
+  Future<void> _claimDailyBonus() async {
+    if (_isClaimingDailyBonus) return;
+    setState(() => _isClaimingDailyBonus = true);
+
+    await DailyQuestsService.instance.claimDailyAllCompletedBonus();
+
+    if (!mounted) return;
+    setState(() => _isClaimingDailyBonus = false);
+  }
+
+  Future<void> _claimWeeklyBonus() async {
+    if (_isClaimingWeeklyBonus) return;
+    setState(() => _isClaimingWeeklyBonus = true);
+
+    await DailyQuestsService.instance.claimWeeklyAllCompletedBonus();
+
+    if (!mounted) return;
+    setState(() => _isClaimingWeeklyBonus = false);
   }
 
   @override
@@ -104,6 +143,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
           listenable: Listenable.merge([
             DailyRewardService.instance,
             DailyQuestsService.instance,
+            WorldTimeService.instance,
           ]),
           builder: (context, _) {
             final dailyService = DailyRewardService.instance;
@@ -111,6 +151,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
             final canClaimStreak = dailyService.canClaimToday;
             final streakRewardAmount = dailyService.todayRewardAmount;
             final dailyQuests = DailyQuestsService.instance.quests;
+            final weeklyQuests = DailyQuestsService.instance.weeklyQuests;
 
             return Scaffold(
               backgroundColor: const Color(0xFF0F0F1A),
@@ -128,7 +169,31 @@ class _QuestsScreenState extends State<QuestsScreen> {
                     children: [
                       // ── Панель валют (монеты, серебряные и золотые ключи) ───────
                       const PlayerCurrenciesBar(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+
+                      if (dailyService.isRollbackDetected) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.red.withValues(alpha: 0.45)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning_amber_rounded, size: 20, color: Colors.redAccent),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  l10n.dailyRewardRollbackDetected,
+                                  style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
 
                       // ── Блок ежедневного входа (стрик) ───────────────────
                       Container(
@@ -339,7 +404,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                                             const Icon(Icons.check_circle_rounded, size: 24),
                                             const SizedBox(width: 10),
                                             Text(
-                                              '${l10n.dailyRewardClaimButton} (+$streakRewardAmount 🪙)',
+                                              '${l10n.dailyRewardClaimButton} (+$streakRewardAmount 🪙${dailyService.todaySilverKeysAmount > 0 ? ' +${dailyService.todaySilverKeysAmount} 🗝️' : ''}${dailyService.todayGoldKeysAmount > 0 ? ' +${dailyService.todayGoldKeysAmount} 🔑' : ''})',
                                               style: const TextStyle(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.bold,
@@ -388,6 +453,10 @@ class _QuestsScreenState extends State<QuestsScreen> {
 
                       // ── Блок ежедневных заданий ───────────────────────────
                       _buildDailyQuestsSection(context, l10n, dailyQuests),
+                      const SizedBox(height: 24),
+
+                      // ── Блок еженедельных заданий ─────────────────────────
+                      _buildWeeklyQuestsSection(context, l10n, weeklyQuests),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -495,7 +564,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                 ),
               ),
             )
-          else
+          else ...[
             Column(
               children: quests.map((quest) {
                 return Padding(
@@ -504,12 +573,666 @@ class _QuestsScreenState extends State<QuestsScreen> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 6),
+            _buildDailyAllCompletedBonusCard(context, l10n, quests),
+          ],
         ],
       ),
     );
   }
 
-  /// Карточка одного ежедневного задания
+  /// Секция еженедельных заданий (2 задания в неделю по 500 монет)
+  Widget _buildWeeklyQuestsSection(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<DailyQuest> quests,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF221A38),
+            Color(0xFF161426),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFFFB300).withValues(alpha: 0.35),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFFB300).withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const RadialGradient(
+                    colors: [
+                      Color(0xFFFFD700),
+                      Color(0xFFFFA000),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.35),
+                      blurRadius: 10,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.military_tech_rounded,
+                  color: Color(0xFF141424),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.weeklyQuestsSection,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.weeklyQuestsSubtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Плашка с таймером сброса недели
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.calendar_month_rounded,
+                  size: 16,
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.9),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l10n.weeklyResetNote,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F0F1A),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.weeklyTimeRemaining(_weeklyTimeLeft),
+                    style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          if (quests.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: CircularProgressIndicator(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.8),
+                ),
+              ),
+            )
+          else ...[
+            Column(
+              children: quests.map((quest) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildQuestCard(context, l10n, quest),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 6),
+            _buildWeeklyAllCompletedBonusCard(context, l10n, quests),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Карточка бонуса за выполнение всех ежедневных заданий (2 серебряных ключа)
+  Widget _buildDailyAllCompletedBonusCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<DailyQuest> quests,
+  ) {
+    final dailyService = DailyQuestsService.instance;
+    final totalQuests = quests.length;
+    final completedCount = quests.where((q) => q.isCompleted).length;
+    final progressFraction = totalQuests > 0 ? (completedCount / totalQuests).clamp(0.0, 1.0) : 0.0;
+    final canClaim = dailyService.canClaimDailyBonus;
+    final isClaimed = dailyService.isDailyBonusClaimed;
+
+    Color borderColor;
+    Color bgColor;
+
+    if (isClaimed) {
+      borderColor = const Color(0xFF4CAF50).withValues(alpha: 0.4);
+      bgColor = const Color(0xFF4CAF50).withValues(alpha: 0.08);
+    } else if (canClaim) {
+      borderColor = const Color(0xFF74B9FF);
+      bgColor = const Color(0xFF0984E3).withValues(alpha: 0.15);
+    } else {
+      borderColor = const Color(0xFF74B9FF).withValues(alpha: 0.25);
+      bgColor = Colors.white.withValues(alpha: 0.03);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: canClaim ? 1.8 : 1.0),
+        boxShadow: canClaim
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF74B9FF).withValues(alpha: 0.2),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF81ECEC), Color(0xFF74B9FF)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF74B9FF).withValues(alpha: 0.35),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.vpn_key_rounded,
+                  color: Color(0xFF141424),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.questsAllDailyBonusTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      l10n.questsAllDailyBonusDesc,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF74B9FF).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFF74B9FF).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '+2',
+                      style: TextStyle(
+                        color: Color(0xFF74B9FF),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text('🗝️', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Полоса прогресса
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progressFraction,
+              minHeight: 8,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isClaimed
+                    ? const Color(0xFF4CAF50)
+                    : (canClaim
+                        ? const Color(0xFF74B9FF)
+                        : const Color(0xFF0984E3)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$completedCount / $totalQuests',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (canClaim)
+                const Text(
+                  '100%',
+                  style: TextStyle(
+                    color: Color(0xFF74B9FF),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Кнопка забрать или плашка "Получено"
+          if (canClaim)
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                onPressed: _isClaimingDailyBonus ? null : _claimDailyBonus,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0984E3),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 4,
+                  shadowColor: const Color(0xFF74B9FF).withValues(alpha: 0.5),
+                ),
+                child: _isClaimingDailyBonus
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.stars_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.questsAllDailyBonusClaim(DailyQuestsService.allDailyQuestsSilverKeysReward),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            )
+          else if (isClaimed)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF4CAF50),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.questsAllDailyBonusClaimed,
+                    style: const TextStyle(
+                      color: Color(0xFF4CAF50),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Карточка бонуса за выполнение всех еженедельных заданий (2 золотых ключа)
+  Widget _buildWeeklyAllCompletedBonusCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<DailyQuest> quests,
+  ) {
+    final dailyService = DailyQuestsService.instance;
+    final totalQuests = quests.length;
+    final completedCount = quests.where((q) => q.isCompleted).length;
+    final progressFraction = totalQuests > 0 ? (completedCount / totalQuests).clamp(0.0, 1.0) : 0.0;
+    final canClaim = dailyService.canClaimWeeklyBonus;
+    final isClaimed = dailyService.isWeeklyBonusClaimed;
+
+    Color borderColor;
+    Color bgColor;
+
+    if (isClaimed) {
+      borderColor = const Color(0xFF4CAF50).withValues(alpha: 0.4);
+      bgColor = const Color(0xFF4CAF50).withValues(alpha: 0.08);
+    } else if (canClaim) {
+      borderColor = const Color(0xFFFFD700);
+      bgColor = const Color(0xFFFFD700).withValues(alpha: 0.15);
+    } else {
+      borderColor = const Color(0xFFFFD700).withValues(alpha: 0.25);
+      bgColor = Colors.white.withValues(alpha: 0.03);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: canClaim ? 1.8 : 1.0),
+        boxShadow: canClaim
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.25),
+                  blurRadius: 14,
+                  spreadRadius: 1,
+                ),
+              ]
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFE082), Color(0xFFFFB300)],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFB300).withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.vpn_key_rounded,
+                  color: Color(0xFF141424),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.questsAllWeeklyBonusTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      l10n.questsAllWeeklyBonusDesc,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '+2',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text('🔑', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Полоса прогресса
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progressFraction,
+              minHeight: 8,
+              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isClaimed
+                    ? const Color(0xFF4CAF50)
+                    : (canClaim
+                        ? const Color(0xFFFFD700)
+                        : const Color(0xFFFFA000)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$completedCount / $totalQuests',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (canClaim)
+                const Text(
+                  '100%',
+                  style: TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Кнопка забрать или плашка "Получено"
+          if (canClaim)
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                onPressed: _isClaimingWeeklyBonus ? null : _claimWeeklyBonus,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFB300),
+                  foregroundColor: const Color(0xFF141424),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 4,
+                  shadowColor: const Color(0xFFFFB300).withValues(alpha: 0.5),
+                ),
+                child: _isClaimingWeeklyBonus
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Color(0xFF141424),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.stars_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.questsAllWeeklyBonusClaim(DailyQuestsService.allWeeklyQuestsGoldKeysReward),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            )
+          else if (isClaimed)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.35),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF4CAF50),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.questsAllWeeklyBonusClaimed,
+                    style: const TextStyle(
+                      color: Color(0xFF4CAF50),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Карточка одного задания
   Widget _buildQuestCard(
     BuildContext context,
     AppLocalizations l10n,
@@ -534,7 +1257,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
         iconColor = const Color(0xFFFF5252);
         break;
       case DailyQuestType.clearDungeon:
-        title = l10n.questClearDungeonTitle;
+        title = l10n.questClearDungeonTitle(quest.target);
         desc = l10n.questClearDungeonDesc;
         iconData = Icons.emoji_events_rounded;
         iconColor = const Color(0xFFFFD700);
@@ -544,6 +1267,16 @@ class _QuestsScreenState extends State<QuestsScreen> {
         desc = l10n.questEncounterCardsDesc;
         iconData = Icons.style_rounded;
         iconColor = const Color(0xFFAB47BC);
+        break;
+      case DailyQuestType.specificDungeonRuns:
+        final dungeon = quest.targetDungeonId != null
+            ? getDungeonById(quest.targetDungeonId!)
+            : null;
+        final dungeonName = dungeon?.name ?? (l10n.isRussian ? 'Подземелье' : 'Dungeon');
+        title = l10n.questPlaySpecificDungeonTitle(quest.target, dungeonName);
+        desc = l10n.questPlaySpecificDungeonDesc;
+        iconData = dungeon?.icon ?? Icons.fort_rounded;
+        iconColor = dungeon?.accentColor ?? const Color(0xFF00CEC9);
         break;
     }
 
@@ -632,7 +1365,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                   ),
                 ),
                 child: Text(
-                  l10n.questRewardBadgeText(DailyQuest.rewardCoins),
+                  l10n.questRewardBadgeText(quest.rewardCoins),
                   style: const TextStyle(
                     color: Color(0xFFFFD700),
                     fontSize: 12,
@@ -704,7 +1437,7 @@ class _QuestsScreenState extends State<QuestsScreen> {
                           const Icon(Icons.check_circle_rounded, size: 20),
                           const SizedBox(width: 8),
                           Text(
-                            l10n.questClaimButtonText(DailyQuest.rewardCoins),
+                            l10n.questClaimButtonText(quest.rewardCoins),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -835,6 +1568,8 @@ class _QuestsScreenState extends State<QuestsScreen> {
     bool isJackpot = false,
   }) {
     final reward = DailyRewardService.getRewardForDay(day);
+    final silverKeys = DailyRewardService.getSilverKeysForDay(day);
+    final goldKeys = DailyRewardService.getGoldKeysForDay(day);
 
     final bool isPastClaimed;
     final bool isToday;
@@ -942,6 +1677,64 @@ class _QuestsScreenState extends State<QuestsScreen> {
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (silverKeys > 0) ...[
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCFD8DC).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: const Color(0xFFCFD8DC).withValues(alpha: 0.35),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.vpn_key_rounded, size: 9, color: Color(0xFFCFD8DC)),
+                  const SizedBox(width: 2),
+                  Text(
+                    '+$silverKeys',
+                    style: const TextStyle(
+                      color: Color(0xFFCFD8DC),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (goldKeys > 0) ...[
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFB300).withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.4),
+                  width: 0.8,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.key_rounded, size: 9, color: Color(0xFFFFB300)),
+                  const SizedBox(width: 2),
+                  Text(
+                    '+$goldKeys',
+                    style: const TextStyle(
+                      color: Color(0xFFFFB300),
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

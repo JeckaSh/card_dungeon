@@ -256,7 +256,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         left: 16,
                         // TODO: версия игры
                         child: Text(
-                          'card dungeon v0.0.14',
+                          'card dungeon v0.0.15',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,

@@ -22,6 +22,7 @@ const List<ItemCard> magicChestItems = [
     value: 4,
     icon: Icons.healing,
     color: Color(0xFFE94560),
+    level: 1,
   ),
   ItemCard(
     id: 'potion_attack',
@@ -31,6 +32,7 @@ const List<ItemCard> magicChestItems = [
     value: 4,
     icon: Icons.flash_on,
     color: Color(0xFFF5A623),
+    level: 1,
   ),
   ItemCard(
     id: 'scroll_skip',
@@ -40,6 +42,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.fast_forward_rounded,
     color: Color(0xFF9C27B0),
+    level: 1,
   ),
   ItemCard(
     id: 'mirror_distortion',
@@ -49,6 +52,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.auto_fix_high,
     color: Color(0xFFAB47BC),
+    level: 2,
   ),
   ItemCard(
     id: 'thornmail',
@@ -58,6 +62,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.pest_control,
     color: Color(0xFF8D6E63),
+    level: 2,
   ),
   ItemCard(
     id: 'philosophers_stone',
@@ -68,6 +73,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.science,
     color: Color(0xFFFF7043),
+    level: 3,
   ),
   ItemCard(
     id: 'shadow_pact',
@@ -78,6 +84,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.dark_mode,
     color: Color(0xFF37474F),
+    level: 3,
   ),
   ItemCard(
     id: 'greed_magnet',
@@ -87,6 +94,7 @@ const List<ItemCard> magicChestItems = [
     value: 3,
     icon: Icons.attach_money,
     color: Color(0xFFFFD54F),
+    level: 2,
   ),
   ItemCard(
     id: 'dice_of_fate',
@@ -97,6 +105,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.casino,
     color: Color(0xFFEF5350),
+    level: 2,
   ),
   ItemCard(
     id: 'gold_bribe',
@@ -106,6 +115,7 @@ const List<ItemCard> magicChestItems = [
     value: 15,
     icon: Icons.monetization_on,
     color: Color(0xFFF9A825),
+    level: 2,
   ),
   ItemCard(
     id: 'scroll_teleport',
@@ -116,6 +126,7 @@ const List<ItemCard> magicChestItems = [
     value: 0,
     icon: Icons.explore_rounded,
     color: Color(0xFF5C6BC0),
+    level: 3,
   ),
 ];
 
@@ -130,6 +141,7 @@ const List<ItemCard> heroChestItems = [
     value: 8,
     icon: Icons.flash_on,
     color: Color(0xFFF5A623),
+    level: 3,
   ),
   ItemCard(
     id: 'elixir_life',
@@ -139,6 +151,7 @@ const List<ItemCard> heroChestItems = [
     value: 8,
     icon: Icons.healing,
     color: Color(0xFF4CAF50),
+    level: 3,
   ),
   ItemCard(
     id: 'potion_regeneration',
@@ -149,6 +162,7 @@ const List<ItemCard> heroChestItems = [
     value: 3,
     icon: Icons.spa_rounded,
     color: Color(0xFF66BB6A),
+    level: 2,
   ),
   ItemCard(
     id: 'runic_shield',
@@ -159,6 +173,7 @@ const List<ItemCard> heroChestItems = [
     value: 1,
     icon: Icons.shield_outlined,
     color: Color(0xFF29B6F6),
+    level: 1,
   ),
   ItemCard(
     id: 'divine_runic_shield',
@@ -169,6 +184,7 @@ const List<ItemCard> heroChestItems = [
     value: 1,
     icon: Icons.shield,
     color: Color(0xFFFFD700),
+    level: 3,
   ),
   ItemCard(
     id: 'potion_stoneskin',
@@ -179,6 +195,7 @@ const List<ItemCard> heroChestItems = [
     value: 3,
     icon: Icons.health_and_safety,
     color: Color(0xFF78909C),
+    level: 2,
   ),
   ItemCard(
     id: 'potion_antidote',
@@ -189,6 +206,7 @@ const List<ItemCard> heroChestItems = [
     value: 0,
     icon: Icons.sanitizer,
     color: Color(0xFF26A69A),
+    level: 1,
   ),
   ItemCard(
     id: 'smoke_bomb',
@@ -199,11 +217,24 @@ const List<ItemCard> heroChestItems = [
     value: 0,
     icon: Icons.cloud,
     color: Color(0xFF607D8B),
+    level: 1,
   ),
 ];
 
 /// Все предметы игры (магический + герой сундуки объединены).
 final List<ItemCard> allItemCards = [...magicChestItems, ...heroChestItems];
+
+/// Карты предметов 1 уровня (Сундук новичка).
+List<ItemCard> get noviceChestItems =>
+    allItemCards.where((item) => item.level == 1).toList();
+
+/// Карты предметов 2 уровня (Сундук приключенца).
+List<ItemCard> get adventurerChestItems =>
+    allItemCards.where((item) => item.level == 2).toList();
+
+/// Карты предметов 3 уровня (Сундук героя).
+List<ItemCard> get heroChestItemsLevel3 =>
+    allItemCards.where((item) => item.level == 3).toList();
 
 /// Возвращает случайный предмет из полного списка [allItemCards].
 ItemCard getRandomItemCard(Random random) {
@@ -212,13 +243,56 @@ ItemCard getRandomItemCard(Random random) {
 
 /// Возвращает случайный предмет только из тех, которые уже разблокированы игроком ([unlockedIds]).
 ///
-/// Если у игрока ещё нет открытых карт, возвращает `null`.
-ItemCard? getRandomUnlockedItemCard(Random random, Set<String> unlockedIds) {
+/// Если указан [level], возвращает только разблокированные предметы указанного уровня (1..3).
+/// Если у игрока ещё нет открытых карт (соответствующего уровня), возвращает `null`.
+ItemCard? getRandomUnlockedItemCard(
+  Random random,
+  Set<String> unlockedIds, {
+  int? level,
+}) {
   final unlockedCards = allItemCards
-      .where((item) => unlockedIds.contains(item.id))
+      .where((item) =>
+          unlockedIds.contains(item.id) &&
+          (level == null || item.level == level))
       .toList();
   if (unlockedCards.isEmpty) return null;
   return unlockedCards[random.nextInt(unlockedCards.length)];
+}
+
+/// Проверяет, есть ли среди открытых карт предметы указанного [level] (или любые, если null).
+bool hasUnlockedItemCardsForLevel(Set<String> unlockedIds, [int? level]) {
+  return allItemCards.any((item) =>
+      unlockedIds.contains(item.id) && (level == null || item.level == level));
+}
+
+/// Выбирает случайную открытую карту предмета для торговца с учётом шанса выпадения карты более высокого уровня.
+///
+/// Если срабатывает шанс [upgradeChancePercent] (базово 5%, до 30%) и у игрока открыты карты более высокого уровня,
+/// выдаётся карта уровня `baseLevel + 1` (до максимума 3). Иначе выдаётся карта базового уровня [baseLevel].
+ItemCard? getRandomMerchantItemCard({
+  required Random random,
+  required Set<String> unlockedIds,
+  required int baseLevel,
+  int upgradeChancePercent = 5,
+}) {
+  final rolledHigher = random.nextInt(100) < upgradeChancePercent;
+  if (rolledHigher && baseLevel < 3) {
+    final higherLevel = min(3, baseLevel + 1);
+    if (hasUnlockedItemCardsForLevel(unlockedIds, higherLevel)) {
+      final higherItem = getRandomUnlockedItemCard(
+        random,
+        unlockedIds,
+        level: higherLevel,
+      );
+      if (higherItem != null) return higherItem;
+    }
+  }
+
+  return getRandomUnlockedItemCard(
+    random,
+    unlockedIds,
+    level: baseLevel,
+  );
 }
 
 /// Возвращает случайный предмет среди ещё закрытых карт из [pool] для конкретного сундука.

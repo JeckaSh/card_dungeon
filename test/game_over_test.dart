@@ -163,7 +163,18 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // 3rd boss is on screen
-    expect(find.text('Древний Хозяин Леса'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is Text &&
+            [
+              'Древний Хозяин Леса',
+              'Дракон Порчи Веноморакс',
+              'Пожиратель Миров Игг-Скверна',
+            ].contains(w.data),
+      ),
+      findsOneWidget,
+    );
     expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Phase 1

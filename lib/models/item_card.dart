@@ -131,7 +131,12 @@ class ItemCard {
     required this.value,
     required this.icon,
     required this.color,
-  });
+    this.level = 1,
+  }) : assert(level >= 1 && level <= 3, 'Item level must be between 1 and 3');
+
+  /// Уровень карты предмета (от 1 до 3).
+  /// Определяет, торговцы какого этажа могут продавать эту карту.
+  final int level;
 
   /// Уникальный строковый идентификатор предмета (например, 'potion_heal')
   final String id;

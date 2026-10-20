@@ -226,6 +226,35 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
+                        // ── Прокачка шанса улучшенной карты у торговца ──
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatUpgradeCard(
+                                title: l10n.inventoryMerchantLuck,
+                                icon: Icons.auto_awesome,
+                                color: const Color(0xFF42A5F5),
+                                currentValue:
+                                    '${stats.merchantCardUpgradeChance}%',
+                                level: stats.merchantCardUpgradeLevel,
+                                maxLevel: PlayerStatsService
+                                    .maxMerchantCardUpgradeLevel,
+                                bonusText:
+                                    '+${PlayerStatsService.merchantCardUpgradePerLevel}% ⭐',
+                                cost: stats.merchantCardUpgradeCost,
+                                isMax: stats.isMerchantCardUpgradeMax,
+                                canAfford:
+                                    coins >= stats.merchantCardUpgradeCost,
+                                onUpgrade: () {
+                                  if (stats.upgradeMerchantCardChance()) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
 

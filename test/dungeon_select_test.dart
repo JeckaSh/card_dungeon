@@ -228,21 +228,38 @@ void main() {
     expect(lvl3Ids.contains('catacombs_empowered_nosferatu_elder'), isTrue);
     expect(lvl3Ids.contains('catacombs_empowered_vampire_archon'), isTrue);
 
-    // Bosses for Catacombs: 3 bosses with 3 phases each
+    // Bosses for Catacombs: 9 bosses (3 per level), each with 3 phases
     final catacombsBosses = allBossCards
         .where((e) => e.dungeonId == DungeonId.catacombs)
         .toList();
-    expect(catacombsBosses.length, 3);
+    expect(catacombsBosses.length, 9);
     for (final boss in catacombsBosses) {
       expect(boss.isMultiPhase, isTrue);
       expect(boss.bossPhases?.length, 3);
     }
-    expect(catacombsBosses[0].id, 'catacombs_boss_bone_colossus');
-    expect(catacombsBosses[0].level, 1);
-    expect(catacombsBosses[1].id, 'catacombs_boss_vampire_lord');
-    expect(catacombsBosses[1].level, 2);
-    expect(catacombsBosses[2].id, 'catacombs_boss_archlich');
-    expect(catacombsBosses[2].level, 3);
+    final lvl1Bosses = catacombsBosses.where((b) => b.level == 1).toList();
+    expect(lvl1Bosses.length, 3);
+    expect(lvl1Bosses.map((b) => b.id).toSet(), containsAll({
+      'catacombs_boss_bone_colossus',
+      'catacombs_boss_rat_king',
+      'catacombs_boss_crypt_banshee',
+    }));
+
+    final lvl2Bosses = catacombsBosses.where((b) => b.level == 2).toList();
+    expect(lvl2Bosses.length, 3);
+    expect(lvl2Bosses.map((b) => b.id).toSet(), containsAll({
+      'catacombs_boss_vampire_lord',
+      'catacombs_boss_flesh_necromancer',
+      'catacombs_boss_blood_countess',
+    }));
+
+    final lvl3Bosses = catacombsBosses.where((b) => b.level == 3).toList();
+    expect(lvl3Bosses.length, 3);
+    expect(lvl3Bosses.map((b) => b.id).toSet(), containsAll({
+      'catacombs_boss_archlich',
+      'catacombs_boss_death_knight',
+      'catacombs_boss_bone_dragon',
+    }));
   });
 
   testWidgets('Can select and enter Заброшенные катакомбы', (tester) async {

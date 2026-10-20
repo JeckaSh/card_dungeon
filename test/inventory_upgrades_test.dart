@@ -256,4 +256,30 @@ void main() {
 
     expect(find.text('Применить'), findsNWidgets(3));
   });
+
+  testWidgets('InventoryScreen displays Merchant Luck upgrade card and allows upgrading', (tester) async {
+    PlayerCoinsService.instance.restoreBalance(200);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: InventoryScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Удача торговца'), findsOneWidget);
+    expect(find.text('5%'), findsOneWidget);
+    final upgradeBtn = find.text('+5% ⭐ · 50 🪙');
+    expect(upgradeBtn, findsOneWidget);
+
+    await tester.ensureVisible(upgradeBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(upgradeBtn);
+    await tester.pumpAndSettle();
+
+    expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 1);
+    expect(PlayerStatsService.instance.merchantCardUpgradeChance, 10);
+    expect(find.text('10%'), findsOneWidget);
+    expect(PlayerCoinsService.instance.balance, 150);
+  });
 }
