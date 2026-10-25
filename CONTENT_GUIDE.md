@@ -439,17 +439,25 @@ case ItemEffectType.freezeTime:
 | **Макс. уровень атаки** | `maxAttackLevel` | `10` (макс. 15 ⚡) | — |
 | **Гарант. торговцы** | `maxMerchantLevel` | `2` торговца | `60 + level * 40` (60, 100) |
 | **Стартовые карты** | `maxStartingCardsLevel` | `3` карты | `50 + level * 50` (50, 100, 150) |
+| **Удача торговца** | `maxMerchantCardUpgradeLevel` | `5%` (макс. 30%) | `50 + level * 30` (50, 80, 110, 140, 170) |
+| **Трофеи с монстров** | `maxMonsterGoldLevel` | `0%` (макс. 25%, +5% за ур., награда: 5–20 🪙) | `40 + level * 30` (40, 70, 100, 130, 160) |
+| **Уклонение** | `maxDodgeLevel` | `0%` (макс. 10%, +2% за ур.) | `50 + level * 30` (50, 80, 110, 140, 170) |
+| **Сопротивление** | `maxResistanceLevel` | `0%` (макс. 20%, +5% за ур.) | `50 + level * 30` (50, 80, 110, 140) |
 
 ### Настройка сундуков в магазине (`ShopScreen` и `ShopChest`):
 Сундуки конфигурируются через модель [ShopChest](lib/models/shop_chest.dart) и объявляются в [defaultShopChests](lib/data/shop_chests.dart):
-1. **Сундук новичка** (`novice_chest`): содержит только карты 1 уровня (`levels: [1]`, базовая цена: 50 🪙, шаг: +25 🪙);
-2. **Сундук приключенца** (`adventurer_chest`): содержит только карты 2 уровня (`levels: [2]`, базовая цена: 75 🪙, шаг: +35 🪙);
-3. **Сундук героя** (`hero_chest`): содержит только карты 3 уровня (`levels: [3]`, базовая цена: 100 🪙, шаг: +50 🪙).
+1. **Сундук новичка** (`novice_chest`): содержит 6 базовых карт 1 уровня (`levels: [1]`, базовая цена: 50 🪙, шаг: +25 🪙): `medicinal_herbs` (+2 HP), `whetstone` (+2 ⚡), `runic_shield` (50% защиты), `potion_antidote` (снятие дебаффов), `scroll_skip` (пропуск), `handful_of_gold` (горсть золота, +50 🪙);
+2. **Сундук приключенца** (`adventurer_chest`): содержит 11 продвинутых карт 2 уровня (`levels: [2]`, базовая цена: 75 🪙, шаг: +35 🪙): апгрейды характеристик (`potion_heal` +4 HP, `potion_attack` +4 ⚡, `potion_regeneration` +6 HP), защиты (`divine_runic_shield` 100% блок, `potion_stoneskin` иммунитет 3 хода, `thornmail`), улучшенного побега (`smoke_bomb`, `gold_bribe`), фарма (`greed_magnet`, `dice_of_fate`) и `small_gold_pouch` (маленький мешочек золота, +100 🪙);
+3. **Сундук героя** (`hero_chest`): содержит 6 легендарных артефактов 3 уровня (`levels: [3]`, базовая цена: 100 🪙, шаг: +50 🪙): `enhanced_runic_shield` (50% на 3 хода), `mirror_distortion` (инверсия потерь в прибыль), `scroll_teleport` (пропуск 1–3 карт), `philosophers_stone` (золото в статы), `shadow_pact` (риск/награда), `bag_of_gold` (мешок золота, +250 🪙);
+4. **Серебряный сундук** (`silver_chest`): открывается за серебряные ключи и содержит эликсиры, пространственную червоточину и богатство (`itemIds: ['elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole']`, `currency: ChestCurrency.silverKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7 🗝️; `wormhole` перемещает вперёд на 2–4 карты]);
+5. **Золотой сундук** (`gold_chest`): открывается за золотые ключи и содержит божественные реликвии, чёрную дыру и казну (`itemIds: ['divine_healing', 'divine_power', 'enhanced_divine_runic_shield', 'chest_of_gold', 'black_hole']`, `currency: ChestCurrency.goldKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7, 9 🗝️; `black_hole` перемещает вперёд на 5 карт]).
 
-#### Создание тематических сундуков:
-Класс `ShopChest` поддерживает любые комбинации карт:
+#### Валюты и гибкая настройка сундуков:
+Класс `ShopChest` поддерживает любые комбинации карт и валют:
+- **Валюта открытия**: `currency: ChestCurrency.coins` (монеты, по умолчанию), `ChestCurrency.silverKeys` (серебряные ключи) или `ChestCurrency.goldKeys` (золотые ключи);
 - **По уровням**: `levels: [1, 2, 3]` — сундук со всеми уровнями;
 - **По конкретным ID**: `itemIds: ['potion_heal', 'thornmail', 'philosophers_stone']`;
+- **Исключение карт**: `excludeItemIds: [...]` — исключение определенных ID из пула;
 - **Комбинированный**: `levels: [1], itemIds: ['philosophers_stone']` — карты 1 уровня плюс конкретная редкая реликвия;
 - **По предикату**: `filter: (item) => item.effectType == ItemEffectType.attack` — например, сундук воина;
 - **Явные карты**: `explicitItems: [customCard1, customCard2]`.

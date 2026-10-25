@@ -131,6 +131,7 @@ class GameScreenState extends State<GameScreen> {
 
   // Активные статусы
   int _shieldCharges = 0;
+  int _shieldTurns = 0;
   int _divineShieldCharges = 0;
   int _stoneskinTurns = 0;
   int _regenerationTurns = 0;
@@ -243,6 +244,7 @@ class GameScreenState extends State<GameScreen> {
     _bossPhase = 0;
     _activeBossCard = null;
     _shieldCharges = 0;
+    _shieldTurns = 0;
     _divineShieldCharges = 0;
     _stoneskinTurns = 0;
     _regenerationTurns = 0;
@@ -380,7 +382,17 @@ class GameScreenState extends State<GameScreen> {
   List<EventCard> get deck => List.unmodifiable(_deck);
 
   @visibleForTesting
+  int get deckPosition => _deckPosition;
+
+  @visibleForTesting
   int get shieldCharges => _shieldCharges;
+
+  @visibleForTesting
+  int get shieldTurns => _shieldTurns;
+
+  @visibleForTesting
+  void setShieldTurnsForTesting(int turns) =>
+      setState(() => _shieldTurns = turns);
 
   @visibleForTesting
   int get divineShieldCharges => _divineShieldCharges;
@@ -415,6 +427,24 @@ class GameScreenState extends State<GameScreen> {
 
   @visibleForTesting
   EventCard get currentCardForTesting => _currentCard;
+
+  @visibleForTesting
+  void setCurrentCardForTesting(EventCard card) {
+    setState(() {
+      if (_deck.isNotEmpty) {
+        _deck[_deckPosition % _deck.length] = card;
+      }
+    });
+  }
+
+  @visibleForTesting
+  int get healthForTesting => _health;
+
+  @visibleForTesting
+  int get attackForTesting => _attack;
+
+  @visibleForTesting
+  int get coinsForTesting => _coins;
 
   @visibleForTesting
   int get bossPhaseForTesting => _bossPhase;
@@ -602,12 +632,34 @@ class GameScreenState extends State<GameScreen> {
       triggeredBuffs.add('🫞 Зеркало сработало');
     }
 
-    // 2. Щиты (сначала Божественный щит - 100%, затем Рунический щит - 50%)
+    // 1.1. Уклонение (шанс избежать потери здоровья или атаки)
+    final dodgeChance = PlayerStatsService.instance.dodgeChance;
+    if (dodgeChance > 0 &&
+        (effectiveHealthDelta < 0 || effectiveAttackDelta < 0) &&
+        _random.nextInt(100) < dodgeChance) {
+      final dodgedLosses = <String>[];
+      if (effectiveHealthDelta < 0) {
+        dodgedLosses.add('${effectiveHealthDelta.abs()} ❤');
+        effectiveHealthDelta = 0;
+      }
+      if (effectiveAttackDelta < 0) {
+        dodgedLosses.add('${effectiveAttackDelta.abs()} ⚡');
+        effectiveAttackDelta = 0;
+      }
+      triggeredBuffs
+          .add('💨 Уклонение: потери предотвращены (-${dodgedLosses.join(', -')})');
+    }
+
+    // 2. Щиты (сначала Божественный щит - 100%, затем Усиленный рунический щит - 50% на ходы, затем Рунический щит - 50% на заряды)
     if (effectiveHealthDelta < 0 && _divineShieldCharges > 0) {
       _divineShieldCharges--;
       final absorbed = effectiveHealthDelta.abs();
       effectiveHealthDelta = 0;
       triggeredBuffs.add('✨🛡️ Божественный щит поглотил весь урон (-$absorbed ❤)');
+    } else if (effectiveHealthDelta < 0 && _shieldTurns > 0) {
+      final absorbed = (effectiveHealthDelta.abs() / 2).ceil();
+      effectiveHealthDelta += absorbed;
+      triggeredBuffs.add('🛡️ Усиленный щит поглотил 50% урона (+$absorbed ❤)');
     } else if (effectiveHealthDelta < 0 && _shieldCharges > 0) {
       _shieldCharges--;
       final absorbed = (effectiveHealthDelta.abs() / 2).ceil();
@@ -623,6 +675,33 @@ class GameScreenState extends State<GameScreen> {
       triggeredBuffs.add('🌵 Шипы дали +$bonusGold 🪙');
     }
 
+    // 3.1. Трофеи с монстров (шанс получить золото после победы над монстром)
+    if (effectiveCard.type == EventType.monster) {
+      final willSurvive = (_health +
+              effectiveHealthDelta -
+              (_poisonTurns > 0 ? 1 : 0) -
+              (_bleedTurns > 0 ? 2 : 0) +
+              (_regenerationTurns > 0 ? 2 : 0)) >
+          0;
+      if (willSurvive) {
+        final monsterGoldChance =
+            PlayerStatsService.instance.monsterGoldChance;
+        if (monsterGoldChance > 0 &&
+            _random.nextInt(100) < monsterGoldChance) {
+          if (_midasCurseTurns > 0) {
+            triggeredBuffs.add('👑 Проклятие Мидаса: трофеи обратились в прах');
+          } else {
+            const minReward = PlayerStatsService.minMonsterGoldReward;
+            const maxReward = PlayerStatsService.maxMonsterGoldReward;
+            final dropGold =
+                minReward + _random.nextInt(maxReward - minReward + 1);
+            effectiveCoinsDelta += dropGold;
+            triggeredBuffs.add('💰 Трофеи: +$dropGold 🪙');
+          }
+        }
+      }
+    }
+
     // 4. Магнит жадности и Каменная кожа
     if (effectiveCoinsDelta > 0 && _greedMagnetTurns > 0) {
       effectiveCoinsDelta *= 2;
@@ -631,36 +710,54 @@ class GameScreenState extends State<GameScreen> {
     if (_greedMagnetTurns > 0) _greedMagnetTurns--;
 
     // 5. Наложение статусов от выбора
-    if (choice.statusEffect != null && _random.nextDouble() < choice.statusChance) {
-      switch (choice.statusEffect!) {
-        case StatusEffectType.poison:
-          if (_stoneskinTurns > 0) {
-            triggeredBuffs.add('🪨 Каменная кожа отразила яд!');
-          } else {
-            _poisonTurns = 3;
-            triggeredBuffs.add('🧪 Отравлен на 3 хода!');
-          }
-          break;
-        case StatusEffectType.bleed:
-          if (_stoneskinTurns > 0) {
-            triggeredBuffs.add('🪨 Каменная кожа защитила от кровотечения!');
-          } else {
-            _bleedTurns = 3;
-            triggeredBuffs.add('🩸 Кровотечение на 3 хода!');
-          }
-          break;
-        case StatusEffectType.blindness:
-          if (_stoneskinTurns > 0) {
-            triggeredBuffs.add('🪨 Каменная кожа защитила от слепоты!');
-          } else {
-            _blindnessTurns = 3;
-            triggeredBuffs.add('👁️‍🗨️ Слепота на 3 хода!');
-          }
-          break;
-        case StatusEffectType.midasCurse:
-          _midasCurseTurns = 3;
-          triggeredBuffs.add('👑 Проклятие Мидаса на 3 хода!');
-          break;
+    if (choice.statusEffect != null &&
+        _random.nextDouble() < choice.statusChance) {
+      final effect = choice.statusEffect!;
+      final isResistable = effect == StatusEffectType.poison ||
+          effect == StatusEffectType.bleed ||
+          effect == StatusEffectType.blindness;
+      final resistanceChance = PlayerStatsService.instance.resistanceChance;
+
+      if (isResistable &&
+          resistanceChance > 0 &&
+          _random.nextInt(100) < resistanceChance) {
+        final effectName = effect == StatusEffectType.poison
+            ? 'яд'
+            : effect == StatusEffectType.bleed
+                ? 'кровотечение'
+                : 'слепота';
+        triggeredBuffs.add('🛡️ Сопротивление: $effectName отражён!');
+      } else {
+        switch (effect) {
+          case StatusEffectType.poison:
+            if (_stoneskinTurns > 0) {
+              triggeredBuffs.add('🪨 Каменная кожа отразила яд!');
+            } else {
+              _poisonTurns = 3;
+              triggeredBuffs.add('🧪 Отравлен на 3 хода!');
+            }
+            break;
+          case StatusEffectType.bleed:
+            if (_stoneskinTurns > 0) {
+              triggeredBuffs.add('🪨 Каменная кожа защитила от кровотечения!');
+            } else {
+              _bleedTurns = 3;
+              triggeredBuffs.add('🩸 Кровотечение на 3 хода!');
+            }
+            break;
+          case StatusEffectType.blindness:
+            if (_stoneskinTurns > 0) {
+              triggeredBuffs.add('🪨 Каменная кожа защитила от слепоты!');
+            } else {
+              _blindnessTurns = 3;
+              triggeredBuffs.add('👁️‍🗨️ Слепота на 3 хода!');
+            }
+            break;
+          case StatusEffectType.midasCurse:
+            _midasCurseTurns = 3;
+            triggeredBuffs.add('👑 Проклятие Мидаса на 3 хода!');
+            break;
+        }
       }
     }
 
@@ -684,6 +781,9 @@ class GameScreenState extends State<GameScreen> {
     }
     if (_stoneskinTurns > 0) {
       _stoneskinTurns--;
+    }
+    if (_shieldTurns > 0) {
+      _shieldTurns--;
     }
     int regenHeal = 0;
     if (_regenerationTurns > 0) {
@@ -895,6 +995,14 @@ class GameScreenState extends State<GameScreen> {
           resultDescription =
               'Сила удара увеличена на +${item.value} ⚡.\nТекущая атака: $_attack ⚡.';
           break;
+        case ItemEffectType.coins:
+          _coins = (_coins + item.value).clamp(0, 999999);
+          _lastFeedback = '${item.title}: +${item.value} 🪙';
+          _addJournalEntry('🪙', 'Использовано ${item.title}: +${item.value} 🪙');
+          resultTitle = '+${item.value} 🪙';
+          resultDescription =
+              'Получено +${item.value} 🪙 золотых монет!\nТекущее золото за забег: $_coins 🪙.';
+          break;
         case ItemEffectType.skip:
           final wasBoss = _isCurrentBoss;
           final skippedCard = _currentCard.title;
@@ -949,15 +1057,29 @@ class GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.divineShield:
           _divineShieldCharges += item.value;
-          _lastFeedback =
-              'Божественный щит: +${item.value} заряд (100% защита) ✨🛡️';
+          _lastFeedback = item.value > 1
+              ? 'Божественный щит: +${item.value} заряда (100% защита) ✨🛡️'
+              : 'Божественный щит: +${item.value} заряд (100% защита) ✨🛡️';
           _addJournalEntry(
             '✨🛡️',
             'Использован ${item.title}: +${item.value} ✨🛡️ (всего $_divineShieldCharges)',
           );
           resultTitle = 'Божественный щит (+${item.value} ✨🛡️)';
+          resultDescription = item.value > 1
+              ? '${item.title} активирован!\nСледующие ${item.value} удара по здоровью будут полностью поглощены (100% защита).\nВсего зарядов божественного щита: $_divineShieldCharges.'
+              : 'Божественный рунический щит активирован!\nСледующий урон по здоровью будет полностью поглощён (100% защита).\nВсего зарядов божественного щита: $_divineShieldCharges.';
+          break;
+        case ItemEffectType.shieldTurns:
+          _shieldTurns += item.value;
+          _lastFeedback =
+              'Усиленный щит: защита 50% на +${item.value} х.! 🛡️';
+          _addJournalEntry(
+            '🛡️',
+            'Использован ${item.title}: защита 50% на $_shieldTurns х.',
+          );
+          resultTitle = 'Усиленный рунический щит (${item.value} х.)';
           resultDescription =
-              'Божественный рунический щит активирован!\nСледующий урон по здоровью будет полностью поглощён (100% защита).\nВсего зарядов божественного щита: $_divineShieldCharges.';
+              'Усиленный рунический щит активирован!\nВ течение следующих $_shieldTurns ходов любой входящий урон по здоровью уменьшается на 50%.';
           break;
         case ItemEffectType.stoneskin:
           _stoneskinTurns += item.value;
@@ -1010,12 +1132,26 @@ class GameScreenState extends State<GameScreen> {
           if (_isCurrentBoss) {
             _inventoryItems.insert(index, item);
             _lastFeedback =
-                'Свиток телепортации нельзя использовать в бою с боссом! ⛔';
+                '${item.title} нельзя использовать в бою с боссом! ⛔';
             resultTitle = 'Телепортация невозможна ⛔';
             resultDescription =
-                'Древняя магия босса блокирует пространственное перемещение! Свиток нельзя использовать во время битвы с боссом. Предмет сохранён в инвентаре.';
+                'Древняя магия босса блокирует пространственное перемещение! ${item.title} нельзя использовать во время битвы с боссом. Предмет сохранён в инвентаре.';
           } else {
-            final skipCount = 1 + _random.nextInt(3);
+            final int minSkip;
+            final int maxSkip;
+            if (item.id == 'black_hole') {
+              minSkip = 5;
+              maxSkip = 5;
+            } else if (item.id == 'wormhole') {
+              minSkip = 2;
+              maxSkip = 4;
+            } else {
+              minSkip = 1;
+              maxSkip = 3;
+            }
+            final skipRange = maxSkip - minSkip + 1;
+            final skipCount =
+                minSkip + (skipRange > 1 ? _random.nextInt(skipRange) : 0);
             int actualSkipped = 0;
             for (int i = 0; i < skipCount; i++) {
               if (_isCurrentBoss) break;
@@ -1025,14 +1161,14 @@ class GameScreenState extends State<GameScreen> {
             }
             final hitBoss = _isCurrentBoss;
             _lastFeedback =
-                'Телепортация: перемещение на $actualSkipped карт вперёд! 🌀';
+                '${item.title}: перемещение на $actualSkipped карт вперёд! 🌀';
             _addJournalEntry(
               '🌀',
               'Использован ${item.title}: перемещение на $actualSkipped карт вперёд${hitBoss ? ' (остановка перед боссом)' : ''}',
             );
-            resultTitle = 'Телепортация (+ $actualSkipped) 🌀';
+            resultTitle = '${item.title} (+ $actualSkipped) 🌀';
             resultDescription =
-                'Пространство исказилось! Свиток перенёс вас вперёд на $actualSkipped карт.\nТекущая карта: "${_currentCard.title}".${hitBoss ? '\n\n⚠️ Телепортация остановилась перед боссом!' : ''}';
+                'Пространство исказилось! ${item.title} переносит вас вперёд на $actualSkipped карт.\nТекущая карта: "${_currentCard.title}".${hitBoss ? '\n\n⚠️ Перемещение остановилось перед боссом!' : ''}';
           }
           break;
         case ItemEffectType.invertNext:
@@ -1468,6 +1604,7 @@ class GameScreenState extends State<GameScreen> {
                   if (_result == GameResult.playing)
                     _ActiveBuffsBar(
                       shieldCharges: _shieldCharges,
+                      shieldTurns: _shieldTurns,
                       divineShieldCharges: _divineShieldCharges,
                       stoneskinTurns: _stoneskinTurns,
                       regenerationTurns: _regenerationTurns,
@@ -1777,6 +1914,7 @@ class _BossPhaseIndicator extends StatelessWidget {
 class _ActiveBuffsBar extends StatelessWidget {
   const _ActiveBuffsBar({
     required this.shieldCharges,
+    this.shieldTurns = 0,
     this.divineShieldCharges = 0,
     this.stoneskinTurns = 0,
     this.regenerationTurns = 0,
@@ -1791,6 +1929,7 @@ class _ActiveBuffsBar extends StatelessWidget {
   });
 
   final int shieldCharges;
+  final int shieldTurns;
   final int divineShieldCharges;
   final int stoneskinTurns;
   final int regenerationTurns;
@@ -1805,6 +1944,7 @@ class _ActiveBuffsBar extends StatelessWidget {
 
   bool get _hasAnyBuff =>
       shieldCharges > 0 ||
+      shieldTurns > 0 ||
       divineShieldCharges > 0 ||
       stoneskinTurns > 0 ||
       regenerationTurns > 0 ||
@@ -1841,6 +1981,12 @@ class _ActiveBuffsBar extends StatelessWidget {
                 emoji: '✨🛡️',
                 label: context.l10n.gameBuffDivineShield(divineShieldCharges),
                 color: const Color(0xFFFFD700),
+              ),
+            if (shieldTurns > 0)
+              _BuffChip(
+                emoji: '🛡️',
+                label: context.l10n.gameBuffEnhancedShield(shieldTurns),
+                color: const Color(0xFF0288D1),
               ),
             if (shieldCharges > 0)
               _BuffChip(

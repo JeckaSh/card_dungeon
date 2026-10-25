@@ -6,12 +6,20 @@ import '../app_localizations.dart';
 import '../data/items.dart';
 import '../models/item_card.dart';
 
+/// Валюта для открытия сундука.
+enum ChestCurrency {
+  coins,
+  silverKeys,
+  goldKeys,
+}
+
 /// Модель сундука в магазине артефактов.
 ///
 /// Позволяет гибко настраивать содержимое сундука:
 /// - [levels]: фильтрация по уровням карт (например, `[1]` для карт 1 уровня, `[1, 2, 3]` для смешанного сундука);
 /// - [itemIds]: конкретные ID карт предметов (например, `['potion_heal', 'runic_shield']`);
 /// - [explicitItems]: прямой список объектов [ItemCard];
+/// - [excludeItemIds]: список ID карт, исключаемых из пула сундука;
 /// - [filter]: пользовательский предикат фильтрации `bool Function(ItemCard item)`.
 ///
 /// Если указано несколько параметров фильтрации (например, [levels] и [itemIds]),
@@ -27,12 +35,16 @@ class ShopChest {
   final List<Color> gradientColors;
   final int basePrice;
   final int priceStep;
+  final ChestCurrency currency;
 
   /// Уровни карт, входящих в этот сундук (например, `[1]`, `[2]`, `[3]` или `[1, 2, 3]`).
   final List<int>? levels;
 
   /// Список конкретных идентификаторов карт предметов, входящих в сундук.
   final List<String>? itemIds;
+
+  /// Список идентификаторов карт, исключаемых из пула сундука.
+  final List<String>? excludeItemIds;
 
   /// Явно переданный список карт предметов.
   final List<ItemCard>? explicitItems;
@@ -51,8 +63,10 @@ class ShopChest {
     this.gradientColors = const [Color(0xFF2C1B4D), Color(0xFF1A1A2E)],
     this.basePrice = 50,
     this.priceStep = 25,
+    this.currency = ChestCurrency.coins,
     this.levels,
     this.itemIds,
+    this.excludeItemIds,
     this.explicitItems,
     this.filter,
   });
@@ -66,6 +80,9 @@ class ShopChest {
     // 1. Явно переданные карты
     if (explicitItems != null) {
       for (final item in explicitItems!) {
+        if (excludeItemIds != null && excludeItemIds!.contains(item.id)) {
+          continue;
+        }
         if (seenIds.add(item.id)) {
           result.add(item);
         }
@@ -76,6 +93,7 @@ class ShopChest {
 
     for (final item in source) {
       if (seenIds.contains(item.id)) continue;
+      if (excludeItemIds != null && excludeItemIds!.contains(item.id)) continue;
 
       if (hasCriteria) {
         final matchesLevel = levels != null && levels!.contains(item.level);

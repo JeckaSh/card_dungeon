@@ -81,7 +81,7 @@ void main() {
   });
 
   testWidgets('ShopScreen allows collapsing and expanding available cards', (tester) async {
-    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.physicalSize = const Size(800, 2800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 

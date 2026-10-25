@@ -84,11 +84,11 @@ void main() {
   });
 
   testWidgets('ShopScreen card detail sheet has a working close button', (tester) async {
-    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.physicalSize = const Size(800, 3200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
-    await UnlockedItemsService.instance.unlock('potion_heal');
+    await UnlockedItemsService.instance.unlock('medicinal_herbs');
 
     await tester.pumpWidget(
       const MaterialApp(home: ShopScreen()),
@@ -96,8 +96,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // Tap on unlocked card in shop
-    final unlockedCardFinder = find.text('Зелье лечения');
+    final unlockedCardFinder = find.text('Лечебные травы');
     expect(unlockedCardFinder, findsOneWidget);
+    await tester.ensureVisible(unlockedCardFinder);
+    await tester.pumpAndSettle();
     await tester.tap(unlockedCardFinder);
     await tester.pumpAndSettle();
 

@@ -26,6 +26,9 @@ class PlayerStatsService {
   static const _startingCardsLevelKey = 'player_starting_cards_upgrade_level';
   static const _merchantCardUpgradeLevelKey =
       'player_merchant_card_upgrade_level';
+  static const _monsterGoldLevelKey = 'player_monster_gold_upgrade_level';
+  static const _dodgeLevelKey = 'player_dodge_upgrade_level';
+  static const _resistanceLevelKey = 'player_resistance_upgrade_level';
 
   /// Базовое значение здоровья без улучшений
   static const int baseHealth = 10;
@@ -72,11 +75,65 @@ class PlayerStatsService {
   /// Базовая стоимость первого уровня шанса
   static const int merchantCardUpgradeCostBase = 50;
 
+  /// Базовый шанс получить золото при победе над монстром (в %)
+  static const int baseMonsterGoldChance = 0;
+
+  /// Прирост шанса золота с монстров за каждый уровень улучшения (в %)
+  static const int monsterGoldPerLevel = 5;
+
+  /// Максимальный уровень навыка золота с монстров (0..5 -> 0%..25%)
+  static const int maxMonsterGoldLevel = 5;
+
+  /// Базовая стоимость первого уровня шанса золота с монстров
+  static const int monsterGoldUpgradeCostBase = 40;
+
+  /// Прирост стоимости улучшения золота с монстров за уровень
+  static const int monsterGoldUpgradeCostPerLevel = 30;
+
+  /// Минимальное количество бонусного золота с монстра при срабатывании навыка
+  static const int minMonsterGoldReward = 5;
+
+  /// Максимальное количество бонусного золота с монстра при срабатывании навыка
+  static const int maxMonsterGoldReward = 20;
+
+  /// Базовый шанс уклонения (в %)
+  static const int baseDodgeChance = 0;
+
+  /// Прирост шанса уклонения за каждый уровень улучшения (в %)
+  static const int dodgePerLevel = 2;
+
+  /// Максимальный уровень навыка уклонения (0..5 -> 0%..10%)
+  static const int maxDodgeLevel = 5;
+
+  /// Базовая стоимость первого уровня уклонения
+  static const int dodgeUpgradeCostBase = 50;
+
+  /// Прирост стоимости улучшения уклонения за уровень
+  static const int dodgeUpgradeCostPerLevel = 30;
+
+  /// Базовый шанс сопротивления статусам (в %)
+  static const int baseResistanceChance = 0;
+
+  /// Прирост шанса сопротивления за каждый уровень улучшения (в %)
+  static const int resistancePerLevel = 5;
+
+  /// Максимальный уровень навыка сопротивления (0..4 -> 0%..20%)
+  static const int maxResistanceLevel = 4;
+
+  /// Базовая стоимость первого уровня сопротивления
+  static const int resistanceUpgradeCostBase = 50;
+
+  /// Прирост стоимости улучшения сопротивления за уровень
+  static const int resistanceUpgradeCostPerLevel = 30;
+
   int _healthLevel = 0;
   int _attackLevel = 0;
   int _merchantLevel = 0;
   int _startingCardsLevel = 0;
   int _merchantCardUpgradeLevel = 0;
+  int _monsterGoldLevel = 0;
+  int _dodgeLevel = 0;
+  int _resistanceLevel = 0;
   bool _loaded = false;
 
   /// Текущий уровень улучшения здоровья (0..10)
@@ -93,6 +150,15 @@ class PlayerStatsService {
 
   /// Текущий уровень улучшения шанса карты высшего уровня у торговца (0..5)
   int get merchantCardUpgradeLevel => _merchantCardUpgradeLevel;
+
+  /// Текущий уровень улучшения шанса золота с монстров (0..5)
+  int get monsterGoldLevel => _monsterGoldLevel;
+
+  /// Текущий уровень улучшения уклонения (0..5)
+  int get dodgeLevel => _dodgeLevel;
+
+  /// Текущий уровень улучшения сопротивления (0..4)
+  int get resistanceLevel => _resistanceLevel;
 
   /// Стартовое здоровье персонажа в начале игры с учётом прокачки
   int get startingHealth => baseHealth + _healthLevel * healthPerLevel;
@@ -119,6 +185,15 @@ class PlayerStatsService {
   bool get isMerchantCardUpgradeMax =>
       _merchantCardUpgradeLevel >= maxMerchantCardUpgradeLevel;
 
+  /// Достигнут ли максимум прокачки золота с монстров
+  bool get isMonsterGoldMax => _monsterGoldLevel >= maxMonsterGoldLevel;
+
+  /// Достигнут ли максимум прокачки уклонения
+  bool get isDodgeMax => _dodgeLevel >= maxDodgeLevel;
+
+  /// Достигнут ли максимум прокачки сопротивления
+  bool get isResistanceMax => _resistanceLevel >= maxResistanceLevel;
+
   /// Доступен ли навык стартовых карт для прокачки (требуется минимум 3 открытые карты)
   bool get isStartingCardsUnlocked =>
       UnlockedItemsService.instance.count >=
@@ -132,6 +207,20 @@ class PlayerStatsService {
       (baseMerchantCardUpgradeChance +
               _merchantCardUpgradeLevel * merchantCardUpgradePerLevel)
           .clamp(5, 30);
+
+  /// Итоговый шанс получить золото при победе над монстром (0..25%)
+  int get monsterGoldChance =>
+      (baseMonsterGoldChance + _monsterGoldLevel * monsterGoldPerLevel)
+          .clamp(0, 25);
+
+  /// Итоговый шанс уклонения от потери HP/атаки (0..10%)
+  int get dodgeChance =>
+      (baseDodgeChance + _dodgeLevel * dodgePerLevel).clamp(0, 10);
+
+  /// Итоговый шанс сопротивления яду, кровотечению и слепоте (0..20%)
+  int get resistanceChance =>
+      (baseResistanceChance + _resistanceLevel * resistancePerLevel)
+          .clamp(0, 20);
 
   /// Стоимость следующего уровня здоровья (25, 50, 75, 100...)
   int get healthUpgradeCost => 25 + _healthLevel * 25;
@@ -149,6 +238,20 @@ class PlayerStatsService {
   /// Стоимость следующего уровня шанса карт у торговца (50, 80, 110, 140, 170)
   int get merchantCardUpgradeCost =>
       merchantCardUpgradeCostBase + _merchantCardUpgradeLevel * 30;
+
+  /// Стоимость следующего уровня шанса золота с монстров (40, 70, 100, 130, 160)
+  int get monsterGoldUpgradeCost =>
+      monsterGoldUpgradeCostBase +
+      _monsterGoldLevel * monsterGoldUpgradeCostPerLevel;
+
+  /// Стоимость следующего уровня уклонения (50, 80, 110, 140, 170)
+  int get dodgeUpgradeCost =>
+      dodgeUpgradeCostBase + _dodgeLevel * dodgeUpgradeCostPerLevel;
+
+  /// Стоимость следующего уровня сопротивления (50, 80, 110, 140)
+  int get resistanceUpgradeCost =>
+      resistanceUpgradeCostBase +
+      _resistanceLevel * resistanceUpgradeCostPerLevel;
 
   Future<void> load() async {
     if (_loaded) return;
@@ -173,6 +276,18 @@ class PlayerStatsService {
         (prefs.getInt(_merchantCardUpgradeLevelKey) ?? 0).clamp(
       0,
       maxMerchantCardUpgradeLevel,
+    );
+    _monsterGoldLevel = (prefs.getInt(_monsterGoldLevelKey) ?? 0).clamp(
+      0,
+      maxMonsterGoldLevel,
+    );
+    _dodgeLevel = (prefs.getInt(_dodgeLevelKey) ?? 0).clamp(
+      0,
+      maxDodgeLevel,
+    );
+    _resistanceLevel = (prefs.getInt(_resistanceLevelKey) ?? 0).clamp(
+      0,
+      maxResistanceLevel,
     );
     _loaded = true;
   }
@@ -242,6 +357,45 @@ class PlayerStatsService {
     return true;
   }
 
+  /// Прокачка шанса получить золото с монстров за монеты
+  bool upgradeMonsterGold() {
+    if (isMonsterGoldMax) return false;
+    final cost = monsterGoldUpgradeCost;
+    final coins = PlayerCoinsService.instance.balance;
+    if (coins < cost) return false;
+
+    PlayerCoinsService.instance.applyDelta(-cost);
+    _monsterGoldLevel++;
+    _persistAsync();
+    return true;
+  }
+
+  /// Прокачка уклонения за монеты
+  bool upgradeDodge() {
+    if (isDodgeMax) return false;
+    final cost = dodgeUpgradeCost;
+    final coins = PlayerCoinsService.instance.balance;
+    if (coins < cost) return false;
+
+    PlayerCoinsService.instance.applyDelta(-cost);
+    _dodgeLevel++;
+    _persistAsync();
+    return true;
+  }
+
+  /// Прокачка сопротивления за монеты
+  bool upgradeResistance() {
+    if (isResistanceMax) return false;
+    final cost = resistanceUpgradeCost;
+    final coins = PlayerCoinsService.instance.balance;
+    if (coins < cost) return false;
+
+    PlayerCoinsService.instance.applyDelta(-cost);
+    _resistanceLevel++;
+    _persistAsync();
+    return true;
+  }
+
   void _persistAsync() {
     SharedPreferences.getInstance().then((prefs) {
       prefs.setInt(_healthLevelKey, _healthLevel);
@@ -249,6 +403,9 @@ class PlayerStatsService {
       prefs.setInt(_merchantLevelKey, _merchantLevel);
       prefs.setInt(_startingCardsLevelKey, _startingCardsLevel);
       prefs.setInt(_merchantCardUpgradeLevelKey, _merchantCardUpgradeLevel);
+      prefs.setInt(_monsterGoldLevelKey, _monsterGoldLevel);
+      prefs.setInt(_dodgeLevelKey, _dodgeLevel);
+      prefs.setInt(_resistanceLevelKey, _resistanceLevel);
     });
   }
 
@@ -282,6 +439,24 @@ class PlayerStatsService {
     _persistAsync();
   }
 
+  /// Прямая установка уровня шанса золота с монстров (для настроек/отладки)
+  void setMonsterGoldLevel(int level) {
+    _monsterGoldLevel = level.clamp(0, maxMonsterGoldLevel);
+    _persistAsync();
+  }
+
+  /// Прямая установка уровня уклонения (для настроек/отладки)
+  void setDodgeLevel(int level) {
+    _dodgeLevel = level.clamp(0, maxDodgeLevel);
+    _persistAsync();
+  }
+
+  /// Прямая установка уровня сопротивления (для настроек/отладки)
+  void setResistanceLevel(int level) {
+    _resistanceLevel = level.clamp(0, maxResistanceLevel);
+    _persistAsync();
+  }
+
   /// Сброс уровней прокачки
   void resetStats() {
     _healthLevel = 0;
@@ -289,6 +464,9 @@ class PlayerStatsService {
     _merchantLevel = 0;
     _startingCardsLevel = 0;
     _merchantCardUpgradeLevel = 0;
+    _monsterGoldLevel = 0;
+    _dodgeLevel = 0;
+    _resistanceLevel = 0;
     _persistAsync();
   }
 
@@ -299,6 +477,9 @@ class PlayerStatsService {
     _merchantLevel = 0;
     _startingCardsLevel = 0;
     _merchantCardUpgradeLevel = 0;
+    _monsterGoldLevel = 0;
+    _dodgeLevel = 0;
+    _resistanceLevel = 0;
     _loaded = true;
   }
 
@@ -309,6 +490,9 @@ class PlayerStatsService {
     int? merchant,
     int? startingCards,
     int? merchantCardUpgrade,
+    int? monsterGold,
+    int? dodge,
+    int? resistance,
   }) {
     if (health != null) _healthLevel = health.clamp(0, maxHealthLevel);
     if (attack != null) _attackLevel = attack.clamp(0, maxAttackLevel);
@@ -319,6 +503,15 @@ class PlayerStatsService {
     if (merchantCardUpgrade != null) {
       _merchantCardUpgradeLevel =
           merchantCardUpgrade.clamp(0, maxMerchantCardUpgradeLevel);
+    }
+    if (monsterGold != null) {
+      _monsterGoldLevel = monsterGold.clamp(0, maxMonsterGoldLevel);
+    }
+    if (dodge != null) {
+      _dodgeLevel = dodge.clamp(0, maxDodgeLevel);
+    }
+    if (resistance != null) {
+      _resistanceLevel = resistance.clamp(0, maxResistanceLevel);
     }
     _loaded = true;
   }

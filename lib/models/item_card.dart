@@ -66,6 +66,12 @@ enum ItemEffectType {
 
   /// Свиток телепортации: перемещение вперёд на случайное число карт
   teleport,
+
+  /// Усиленный рунический щит: поглощение 50% урона в течение нескольких ходов
+  shieldTurns,
+
+  /// Мгновенное получение золотых монет
+  coins,
 }
 
 /// Расширение для работы с категориями и отображением эффектов предметов.
@@ -88,7 +94,9 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.stoneskin => 'Защита',
         ItemEffectType.antidote => 'Очищение',
         ItemEffectType.regeneration => 'Исцеление',
-        ItemEffectType.teleport => 'Свиток',
+        ItemEffectType.teleport => 'Телепортация',
+        ItemEffectType.shieldTurns => 'Защита',
+        ItemEffectType.coins => 'Золото',
       };
 
   /// Формирует компактный бейдж эффекта с учётом числового параметра [value]
@@ -109,7 +117,13 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.stoneskin => '🪨 Кожа',
         ItemEffectType.antidote => '🧪 Противоядие',
         ItemEffectType.regeneration => '🌿 +2❤/ход',
-        ItemEffectType.teleport => '🌀 1-3 карты',
+        ItemEffectType.teleport => value == 5
+            ? '🕳️ +5 карт'
+            : value == 4
+                ? '🌀 +2-4 к.'
+                : '🌀 +1-3 к.',
+        ItemEffectType.shieldTurns => '🛡️ 50% ($value х.)',
+        ItemEffectType.coins => '+$value 🪙',
       };
 }
 

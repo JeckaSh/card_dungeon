@@ -157,6 +157,14 @@ class AppLocalizations {
       _isRu ? 'Открыть сундук ($price 🪙)' : 'Open chest ($price 🪙)';
   String shopNotEnoughCoinsPrice(int price) =>
       _isRu ? 'Не хватает монет ($price 🪙)' : 'Not enough coins ($price 🪙)';
+  String shopOpenChestSilverKeysPrice(int price) =>
+      _isRu ? 'Открыть сундук ($price 🗝️)' : 'Open chest ($price 🗝️)';
+  String shopNotEnoughSilverKeysPrice(int price) =>
+      _isRu ? 'Не хватает ключей ($price 🗝️)' : 'Not enough keys ($price 🗝️)';
+  String shopOpenChestGoldKeysPrice(int price) =>
+      _isRu ? 'Открыть сундук ($price 🗝️)' : 'Open chest ($price 🗝️)';
+  String shopNotEnoughGoldKeysPrice(int price) =>
+      _isRu ? 'Не хватает ключей ($price 🗝️)' : 'Not enough keys ($price 🗝️)';
   String get shopNotEnoughCoins =>
       _isRu ? 'Недостаточно монет' : 'Not enough coins';
   String get shopNewCard => _isRu ? 'Новая карта!' : 'New card!';
@@ -182,6 +190,24 @@ class AppLocalizations {
       _isRu
           ? 'Все предметы героя собраны! Сундук больше недоступен.'
           : 'All hero items collected! Chest is no longer available.';
+  String get shopSilverChest => _isRu ? 'Серебряный сундук' : 'Silver Chest';
+  String get shopSilverChestDesc =>
+      _isRu
+          ? 'Открывается за серебряные ключи и хранит в себе драгоценные эликсиры жизни и атаки.'
+          : 'Opened with silver keys and contains precious elixirs of life and attack.';
+  String get shopSilverChestDescAllCollected =>
+      _isRu
+          ? 'Все эликсиры получены! Сундук больше недоступен.'
+          : 'All elixirs collected! Chest is no longer available.';
+  String get shopGoldChest => _isRu ? 'Золотой сундук' : 'Gold Chest';
+  String get shopGoldChestDesc =>
+      _isRu
+          ? 'Открывается за золотые ключи и хранит в себе легендарные божественные реликвии.'
+          : 'Opened with gold keys and contains legendary divine relics.';
+  String get shopGoldChestDescAllCollected =>
+      _isRu
+          ? 'Все божественные реликвии получены! Сундук больше недоступен.'
+          : 'All divine relics collected! Chest is no longer available.';
 
   // ── Валюты ────────────────────────────────────────────────────────────────
   String get currencyCoins => _isRu ? 'Монеты' : 'Coins';
@@ -192,9 +218,9 @@ class AppLocalizations {
   String get currencyCoinsTooltip =>
       _isRu ? 'Монеты — награда за забеги и задания' : 'Coins — earned from runs and quests';
   String get currencySilverKeysTooltip =>
-      _isRu ? 'Серебряные ключи — пока недоступны для получения' : 'Silver keys — not yet obtainable';
+      _isRu ? 'Серебряные ключи — нужны для открытия серебряного сундука' : 'Silver keys — used to open the silver chest';
   String get currencyGoldKeysTooltip =>
-      _isRu ? 'Золотые ключи — пока недоступны для получения' : 'Gold keys — not yet obtainable';
+      _isRu ? 'Золотые ключи — нужны для открытия золотого сундука' : 'Gold keys — used to open the gold chest';
 
   // ── Инвентарь ────────────────────────────────────────────────────────────
   String get inventoryTitle => _isRu ? 'Инвентарь' : 'Inventory';
@@ -209,6 +235,11 @@ class AppLocalizations {
   String get inventoryMerchant => _isRu ? 'Торговцы' : 'Merchants';
   String get inventoryMerchantLuck =>
       _isRu ? 'Удача торговца' : "Merchant's Luck";
+  String get inventoryMonsterGold =>
+      _isRu ? 'Трофеи с монстров' : 'Monster Bounty';
+  String get inventoryDodge => _isRu ? 'Уклонение' : 'Dodge';
+  String get inventoryResistance =>
+      _isRu ? 'Сопротивление' : 'Resistance';
   String invPerLevel(int count) =>
       _isRu ? '$count за ур.' : '$count per lvl';
   String get inventoryStartCards => _isRu ? 'Стартовые карты' : 'Starting Cards';
@@ -381,6 +412,8 @@ class AppLocalizations {
       _isRu ? 'Карта использована' : 'Card Used';
   String gameBuffShield(int charges) =>
       _isRu ? 'Щит ×$charges' : 'Shield ×$charges';
+  String gameBuffEnhancedShield(int turns) =>
+      _isRu ? 'Усил. щит ×$turns' : 'Enh. Shield ×$turns';
   String gameBuffDivineShield(int charges) =>
       _isRu ? 'Бож. щит ×$charges' : 'Divine Shield ×$charges';
   String gameBuffStoneskin(int turns) =>
@@ -476,6 +509,23 @@ class AppLocalizations {
         'dice_of_fate' => 'Dice of Fate',
         'smoke_bomb' => 'Smoke Bomb',
         'gold_bribe' => 'Golden Bribe',
+        'medicinal_herbs' => 'Medicinal Herbs',
+        'potion_regeneration' => 'Regeneration Potion',
+        'potion_stoneskin' => 'Stoneskin Potion',
+        'potion_antidote' => 'Antidote',
+        'divine_runic_shield' => 'Divine Runic Shield',
+        'divine_healing' => 'Divine Healing',
+        'divine_power' => 'Divine Power',
+        'enhanced_divine_runic_shield' => 'Enhanced Divine Shield',
+        'enhanced_runic_shield' => 'Enhanced Runic Shield',
+        'whetstone' => 'Whetstone',
+        'handful_of_gold' => 'Handful of Gold',
+        'small_gold_pouch' => 'Small Pouch of Gold',
+        'bag_of_gold' => 'Bag of Gold',
+        'huge_bag_of_gold' => 'Huge Bag of Gold',
+        'chest_of_gold' => 'Chest of Gold',
+        'wormhole' => 'Wormhole',
+        'black_hole' => 'Black Hole',
         _ => fallback,
       };
     }
@@ -499,6 +549,23 @@ class AppLocalizations {
         'dice_of_fate' => 'Random outcome: losses, an artifact, or jackpot (+5❤ +2⚡ +25🪙).',
         'smoke_bomb' => 'Instant escape: card is skipped, best coins are kept.',
         'gold_bribe' => 'Spend 15🪙 to choose the best outcome without consequences.',
+        'medicinal_herbs' => 'Restores +2 health',
+        'potion_regeneration' => 'Restores 2 health each turn for 3 turns.',
+        'potion_stoneskin' => 'Protects against bleed, poison, and blindness for 3 turns.',
+        'potion_antidote' => 'Removes bleed, poison, and blindness effects.',
+        'divine_runic_shield' => 'Next incoming health damage will be fully absorbed.',
+        'divine_healing' => 'Restores +12 health',
+        'divine_power' => 'Increases attack by +12',
+        'enhanced_divine_runic_shield' => 'Grants 3 divine shield charges (absorbs next 3 damage hits).',
+        'enhanced_runic_shield' => 'Reduces incoming health damage by 50% for 3 turns.',
+        'whetstone' => 'Increases attack by +2',
+        'handful_of_gold' => 'Grants +50 gold',
+        'small_gold_pouch' => 'Grants +100 gold',
+        'bag_of_gold' => 'Grants +250 gold',
+        'huge_bag_of_gold' => 'Grants +500 gold',
+        'chest_of_gold' => 'Grants +1000 gold',
+        'wormhole' => 'Moves forward by 2–4 cards. Cannot be used on bosses.',
+        'black_hole' => 'Moves forward by 5 cards. Cannot be used on bosses.',
         _ => fallback,
       };
     }
@@ -524,7 +591,9 @@ class AppLocalizations {
         ItemEffectType.stoneskin => 'Defense',
         ItemEffectType.antidote => 'Cleanse',
         ItemEffectType.regeneration => 'Healing',
-        ItemEffectType.teleport => 'Scroll',
+        ItemEffectType.teleport => 'Teleport',
+        ItemEffectType.shieldTurns => 'Defense',
+        ItemEffectType.coins => 'Gold',
       };
     }
     return type.categoryLabel;
@@ -549,7 +618,13 @@ class AppLocalizations {
         ItemEffectType.stoneskin => '🪨 Stoneskin',
         ItemEffectType.antidote => '🧪 Antidote',
         ItemEffectType.regeneration => '🌿 +2❤/turn',
-        ItemEffectType.teleport => '🌀 1-3 cards',
+        ItemEffectType.teleport => value == 5
+            ? '🕳️ +5 cards'
+            : value == 4
+                ? '🌀 +2-4 cards'
+                : '🌀 +1-3 cards',
+        ItemEffectType.shieldTurns => '🛡️ 50% ($value t.)',
+        ItemEffectType.coins => '+$value 🪙',
       };
     }
     return type.getBadge(value);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kki_cardgame/data/items.dart';
+import 'package:kki_cardgame/models/event_card.dart';
 import 'package:kki_cardgame/screens/game_screen.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';
@@ -22,8 +23,8 @@ void main() {
     await tester.pumpAndSettle();
 
     final useButton = find.text('Применить');
-    expect(useButton, findsOneWidget);
-    await tester.tap(useButton);
+    expect(useButton, findsWidgets);
+    await tester.tap(useButton.first);
     await tester.pumpAndSettle();
 
     final dismissButton = find.text('Отлично');
@@ -204,6 +205,181 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Свиток телепортации'), findsOneWidget);
+  });
+
+  testWidgets('enhanced_divine_runic_shield grants 3 divine shield charges and shows buff',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final shield =
+        allItemCards.firstWhere((i) => i.id == 'enhanced_divine_runic_shield');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [shield])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    expect(state.divineShieldCharges, equals(0));
+
+    await openInventoryAndUse(tester);
+
+    expect(state.divineShieldCharges, equals(3));
+    expect(find.textContaining('Бож. щит ×3'), findsOneWidget);
+  });
+
+  testWidgets('divine_healing and divine_power increase health and attack by 12',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final healing = allItemCards.firstWhere((i) => i.id == 'divine_healing');
+    final power = allItemCards.firstWhere((i) => i.id == 'divine_power');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [power, healing])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialAttack = state.attackForTesting;
+
+    // Use power
+    await openInventoryAndUse(tester);
+    expect(state.attackForTesting, equals(initialAttack + 12));
+  });
+
+  testWidgets(
+      'enhanced_runic_shield grants 3 shield turns, absorbs 50% damage, and counts down',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final shield =
+        allItemCards.firstWhere((i) => i.id == 'enhanced_runic_shield');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [shield])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    expect(state.shieldTurns, equals(0));
+
+    await openInventoryAndUse(tester);
+
+    expect(state.shieldTurns, equals(3));
+    expect(find.textContaining('Усил. щит ×3'), findsOneWidget);
+
+    // Set a card that deals 6 damage on left choice
+    final testMonster = EventCard(
+      id: 'test_monster',
+      type: EventType.monster,
+      title: 'Тестовый монстр',
+      description: 'Тест',
+      leftChoice: const CardChoice(label: 'Удар', healthDelta: -6),
+      rightChoice: const CardChoice(label: 'Побег', healthDelta: 0),
+    );
+    state.setCurrentCardForTesting(testMonster);
+    await tester.pumpAndSettle();
+
+    final healthBefore = state.healthForTesting;
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // Damage reduced by 50%: 6 / 2 = 3 damage taken
+    expect(state.healthForTesting, equals(healthBefore - 3));
+    expect(state.shieldTurns, equals(2));
+    expect(find.textContaining('Усил. щит ×2'), findsOneWidget);
+  });
+
+  testWidgets('whetstone grants +2 attack', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final whetstone = allItemCards.firstWhere((i) => i.id == 'whetstone');
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [whetstone])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialAttack = state.attackForTesting;
+
+    await openInventoryAndUse(tester);
+    expect(state.attackForTesting, equals(initialAttack + 2));
+  });
+
+  testWidgets('gold items (handful_of_gold, chest_of_gold) grant coins when used',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final handful = allItemCards.firstWhere((i) => i.id == 'handful_of_gold');
+    final chest = allItemCards.firstWhere((i) => i.id == 'chest_of_gold');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [handful, chest])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialCoins = state.coinsForTesting;
+
+    // Use handful_of_gold (+50)
+    await openInventoryAndUse(tester);
+    expect(state.coinsForTesting, equals(initialCoins + 50));
+
+    // Use chest_of_gold (+1000)
+    await openInventoryAndUse(tester);
+    expect(state.coinsForTesting, equals(initialCoins + 50 + 1000));
+  });
+
+  testWidgets('wormhole teleports forward by 2 to 4 cards', (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final wormhole = allItemCards.firstWhere((i) => i.id == 'wormhole');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [wormhole])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialPos = state.deckPosition;
+
+    await openInventoryAndUse(tester);
+    final skipped = state.deckPosition - initialPos;
+    expect(skipped >= 2 && skipped <= 4, isTrue,
+        reason: 'wormhole must skip between 2 and 4 cards');
+  });
+
+  testWidgets('black_hole teleports forward by exactly 5 cards',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final blackHole = allItemCards.firstWhere((i) => i.id == 'black_hole');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [blackHole])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialPos = state.deckPosition;
+
+    await openInventoryAndUse(tester);
+    final skipped = state.deckPosition - initialPos;
+    expect(skipped, equals(5),
+        reason: 'black_hole must skip exactly 5 cards');
   });
 }
 

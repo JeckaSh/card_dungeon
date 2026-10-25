@@ -227,7 +227,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        // ── Прокачка шанса улучшенной карты у торговца ──
+                        // ── Прокачка шанса карт у торговца и золота с монстров ──
                         Row(
                           children: [
                             Expanded(
@@ -248,6 +248,76 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                     coins >= stats.merchantCardUpgradeCost,
                                 onUpgrade: () {
                                   if (stats.upgradeMerchantCardChance()) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _StatUpgradeCard(
+                                title: l10n.inventoryMonsterGold,
+                                icon: Icons.monetization_on_outlined,
+                                color: const Color(0xFFFFA726),
+                                currentValue: '${stats.monsterGoldChance}%',
+                                level: stats.monsterGoldLevel,
+                                maxLevel:
+                                    PlayerStatsService.maxMonsterGoldLevel,
+                                bonusText:
+                                    '+${PlayerStatsService.monsterGoldPerLevel}% 🪙',
+                                cost: stats.monsterGoldUpgradeCost,
+                                isMax: stats.isMonsterGoldMax,
+                                canAfford:
+                                    coins >= stats.monsterGoldUpgradeCost,
+                                onUpgrade: () {
+                                  if (stats.upgradeMonsterGold()) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        // ── Прокачка уклонения и сопротивления ──
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatUpgradeCard(
+                                title: l10n.inventoryDodge,
+                                icon: Icons.directions_run_rounded,
+                                color: const Color(0xFF26C6DA),
+                                currentValue: '${stats.dodgeChance}%',
+                                level: stats.dodgeLevel,
+                                maxLevel: PlayerStatsService.maxDodgeLevel,
+                                bonusText:
+                                    '+${PlayerStatsService.dodgePerLevel}% 💨',
+                                cost: stats.dodgeUpgradeCost,
+                                isMax: stats.isDodgeMax,
+                                canAfford: coins >= stats.dodgeUpgradeCost,
+                                onUpgrade: () {
+                                  if (stats.upgradeDodge()) {
+                                    setState(() {});
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _StatUpgradeCard(
+                                title: l10n.inventoryResistance,
+                                icon: Icons.shield_outlined,
+                                color: const Color(0xFF66BB6A),
+                                currentValue: '${stats.resistanceChance}%',
+                                level: stats.resistanceLevel,
+                                maxLevel: PlayerStatsService.maxResistanceLevel,
+                                bonusText:
+                                    '+${PlayerStatsService.resistancePerLevel}% 🛡️',
+                                cost: stats.resistanceUpgradeCost,
+                                isMax: stats.isResistanceMax,
+                                canAfford: coins >= stats.resistanceUpgradeCost,
+                                onUpgrade: () {
+                                  if (stats.upgradeResistance()) {
                                     setState(() {});
                                   }
                                 },

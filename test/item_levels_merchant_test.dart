@@ -11,8 +11,8 @@ void main() {
 
   group('Item Levels & Merchant Filtering Tests', () {
     test('All items have levels between 1 and 3', () {
-      final allItems = [...magicChestItems, ...heroChestItems];
-      expect(allItems.length, 19);
+      final allItems = allItemCards;
+      expect(allItems.length, 32);
 
       for (final item in allItems) {
         expect(
@@ -32,8 +32,8 @@ void main() {
     });
 
     test('hasUnlockedItemCardsForLevel filters correctly', () {
-      // Unlocked only lvl 1 items (e.g. potion_heal, potion_attack)
-      final lvl1Unlocked = {'potion_heal', 'potion_attack'};
+      // Unlocked only lvl 1 items (e.g. medicinal_herbs, whetstone)
+      final lvl1Unlocked = {'medicinal_herbs', 'whetstone'};
 
       expect(hasUnlockedItemCardsForLevel(lvl1Unlocked, 1), isTrue);
       expect(hasUnlockedItemCardsForLevel(lvl1Unlocked, 2), isFalse);
@@ -41,12 +41,12 @@ void main() {
       expect(hasUnlockedItemCardsForLevel(lvl1Unlocked), isTrue);
 
       // Unlocked lvl 2 item (e.g. thornmail)
-      final withLvl2 = {'potion_heal', 'thornmail'};
+      final withLvl2 = {'medicinal_herbs', 'thornmail'};
       expect(hasUnlockedItemCardsForLevel(withLvl2, 2), isTrue);
       expect(hasUnlockedItemCardsForLevel(withLvl2, 3), isFalse);
 
-      // Unlocked lvl 3 item (e.g. divine_runic_shield)
-      final withLvl3 = {'divine_runic_shield'};
+      // Unlocked lvl 3 item (e.g. scroll_teleport)
+      final withLvl3 = {'scroll_teleport'};
       expect(hasUnlockedItemCardsForLevel(withLvl3, 1), isFalse);
       expect(hasUnlockedItemCardsForLevel(withLvl3, 2), isFalse);
       expect(hasUnlockedItemCardsForLevel(withLvl3, 3), isTrue);
@@ -55,12 +55,12 @@ void main() {
     test('getRandomUnlockedItemCard filters by level strictly', () {
       final random = Random(42);
       final allUnlocked = {
-        'potion_heal', // lvl 1
-        'potion_attack', // lvl 1
-        'thornmail', // lvl 2
+        'medicinal_herbs', // lvl 1
+        'whetstone', // lvl 1
+        'potion_heal', // lvl 2
         'dice_of_fate', // lvl 2
         'scroll_teleport', // lvl 3
-        'divine_runic_shield', // lvl 3
+        'enhanced_runic_shield', // lvl 3
       };
 
       for (var i = 0; i < 20; i++) {
@@ -92,7 +92,7 @@ void main() {
       // If level has no unlocked items, returns null
       final itemLvl3Missing = getRandomUnlockedItemCard(
         random,
-        {'potion_heal', 'thornmail'},
+        {'medicinal_herbs', 'thornmail'},
         level: 3,
       );
       expect(itemLvl3Missing, isNull);
@@ -100,7 +100,7 @@ void main() {
 
     test('UnlockedItemsService hasUnlockedForLevel reflects stored unlocked ids', () async {
       SharedPreferences.setMockInitialValues({
-        'unlocked_item_ids': ['potion_heal'], // only level 1
+        'unlocked_item_ids': ['medicinal_herbs'], // only level 1
       });
 
       final service = UnlockedItemsService.instance;
@@ -112,7 +112,7 @@ void main() {
 
       final lvl1Items = service.getUnlockedItems(1);
       expect(lvl1Items.every((i) => i.level == 1), isTrue);
-      expect(lvl1Items.any((i) => i.id == 'potion_heal'), isTrue);
+      expect(lvl1Items.any((i) => i.id == 'medicinal_herbs'), isTrue);
 
       expect(service.getUnlockedItems(2), isEmpty);
       expect(service.getUnlockedItems(3), isEmpty);
@@ -127,9 +127,9 @@ void main() {
     test('getRandomMerchantItemCard respects upgradeChancePercent and fallbacks', () {
       final random = Random(123);
       final unlocked = {
-        'potion_heal', // lvl 1
+        'medicinal_herbs', // lvl 1
         'thornmail', // lvl 2
-        'divine_runic_shield', // lvl 3
+        'scroll_teleport', // lvl 3
       };
 
       // 0% chance always gives base level
@@ -177,7 +177,7 @@ void main() {
       }
 
       // 100% chance falls back to base level if higher level has no unlocked items
-      final onlyLvl1 = {'potion_heal'};
+      final onlyLvl1 = {'medicinal_herbs'};
       final itemFallback = getRandomMerchantItemCard(
         random: random,
         unlockedIds: onlyLvl1,

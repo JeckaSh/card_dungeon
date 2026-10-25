@@ -1,11 +1,28 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kki_cardgame/models/event_card.dart';
 import 'package:kki_cardgame/screens/game_screen.dart';
 import 'package:kki_cardgame/screens/inventory_screen.dart';
 import 'package:kki_cardgame/services/player_coins_service.dart';
 import 'package:kki_cardgame/services/player_stats_service.dart';
 import 'package:kki_cardgame/services/unlocked_items_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _FixedTestRandom implements Random {
+  _FixedTestRandom(this.nextIntValue, {this.nextDoubleValue = 0.0});
+  final int nextIntValue;
+  final double nextDoubleValue;
+
+  @override
+  int nextInt(int max) => nextIntValue % max;
+
+  @override
+  bool nextBool() => false;
+
+  @override
+  double nextDouble() => nextDoubleValue;
+}
 
 void main() {
   setUp(() async {
@@ -281,5 +298,397 @@ void main() {
     expect(PlayerStatsService.instance.merchantCardUpgradeChance, 10);
     expect(find.text('10%'), findsOneWidget);
     expect(PlayerCoinsService.instance.balance, 150);
+  });
+
+  test('PlayerStatsService monster gold skill upgrades up to 5 levels (+5% per level, start 0%)', () {
+    final stats = PlayerStatsService.instance;
+    final coins = PlayerCoinsService.instance;
+    coins.restoreBalance(1000);
+
+    expect(stats.monsterGoldLevel, 0);
+    expect(stats.monsterGoldChance, 0);
+    expect(stats.isMonsterGoldMax, isFalse);
+    expect(stats.monsterGoldUpgradeCost, 40);
+
+    // Level 1: 0% -> 5% (cost 40)
+    expect(stats.upgradeMonsterGold(), isTrue);
+    expect(stats.monsterGoldLevel, 1);
+    expect(stats.monsterGoldChance, 5);
+    expect(stats.monsterGoldUpgradeCost, 70);
+    expect(coins.balance, 960);
+
+    // Level 2: 5% -> 10% (cost 70)
+    expect(stats.upgradeMonsterGold(), isTrue);
+    expect(stats.monsterGoldLevel, 2);
+    expect(stats.monsterGoldChance, 10);
+    expect(stats.monsterGoldUpgradeCost, 100);
+    expect(coins.balance, 890);
+
+    // Level 3: 10% -> 15% (cost 100)
+    expect(stats.upgradeMonsterGold(), isTrue);
+    expect(stats.monsterGoldLevel, 3);
+    expect(stats.monsterGoldChance, 15);
+    expect(stats.monsterGoldUpgradeCost, 130);
+    expect(coins.balance, 790);
+
+    // Level 4: 15% -> 20% (cost 130)
+    expect(stats.upgradeMonsterGold(), isTrue);
+    expect(stats.monsterGoldLevel, 4);
+    expect(stats.monsterGoldChance, 20);
+    expect(stats.monsterGoldUpgradeCost, 160);
+    expect(coins.balance, 660);
+
+    // Level 5: 20% -> 25% (cost 160) - Max level reached
+    expect(stats.upgradeMonsterGold(), isTrue);
+    expect(stats.monsterGoldLevel, 5);
+    expect(stats.monsterGoldChance, 25);
+    expect(stats.isMonsterGoldMax, isTrue);
+    expect(coins.balance, 500);
+
+    // Cannot upgrade beyond max
+    expect(stats.upgradeMonsterGold(), isFalse);
+    expect(stats.monsterGoldLevel, 5);
+    expect(stats.monsterGoldChance, 25);
+  });
+
+  testWidgets('InventoryScreen displays Monster Gold upgrade card and allows upgrading', (tester) async {
+    PlayerCoinsService.instance.restoreBalance(200);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: InventoryScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Трофеи с монстров'), findsOneWidget);
+    // Monster Gold, Dodge, and Resistance all start at 0%
+    expect(find.text('0%'), findsNWidgets(3));
+    final upgradeBtn = find.text('+5% 🪙 · 40 🪙');
+    expect(upgradeBtn, findsOneWidget);
+
+    await tester.ensureVisible(upgradeBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(upgradeBtn);
+    await tester.pumpAndSettle();
+
+    expect(PlayerStatsService.instance.monsterGoldLevel, 1);
+    expect(PlayerStatsService.instance.monsterGoldChance, 5);
+    // Merchant luck is 5% and Monster bounty is now 5% (2 widgets)
+    expect(find.text('5%'), findsNWidgets(2));
+    expect(PlayerCoinsService.instance.balance, 160);
+  });
+
+  testWidgets('GameScreen gives bonus gold when defeating monster with monster gold skill active', (tester) async {
+    PlayerStatsService.instance.setLevelsForTest(monsterGold: 5);
+    final mockRandom = _FixedTestRandom(0);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          random: mockRandom,
+          initialCoins: 0,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    const monsterCard = EventCard(
+      id: 'test_goblin',
+      type: EventType.monster,
+      title: 'Гоблин',
+      description: 'Тестовый гоблин',
+      leftChoice: CardChoice(label: 'Сражаться', healthDelta: -2),
+      rightChoice: CardChoice(label: 'Обойти', healthDelta: 0),
+      level: 1,
+    );
+    state.setCurrentCardForTesting(monsterCard);
+    await tester.pump();
+
+    expect(state.coinsForTesting, 0);
+
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // Got +5 coins from monster bounty (minimum of 5..20 range when random is 0)
+    expect(state.coinsForTesting, 5);
+  });
+
+  testWidgets('GameScreen awards up to 20 bonus gold when random rolls maximum in 5..20 range', (tester) async {
+    PlayerStatsService.instance.setLevelsForTest(monsterGold: 5);
+    // 15 % 100 = 15 (< 25 -> proc), 15 % 16 = 15 -> dropGold = 5 + 15 = 20
+    final mockRandom = _FixedTestRandom(15);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          random: mockRandom,
+          initialCoins: 0,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    const monsterCard = EventCard(
+      id: 'test_goblin',
+      type: EventType.monster,
+      title: 'Гоблин',
+      description: 'Тестовый гоблин',
+      leftChoice: CardChoice(label: 'Сражаться', healthDelta: -2),
+      rightChoice: CardChoice(label: 'Обойти', healthDelta: 0),
+      level: 1,
+    );
+    state.setCurrentCardForTesting(monsterCard);
+    await tester.pump();
+
+    expect(state.coinsForTesting, 0);
+
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // Got +20 coins from monster bounty (maximum of 5..20 range)
+    expect(state.coinsForTesting, 20);
+  });
+
+  testWidgets('GameScreen does not give bonus gold when monster gold skill level is 0', (tester) async {
+    PlayerStatsService.instance.setLevelsForTest(monsterGold: 0);
+    final mockRandom = _FixedTestRandom(0);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          random: mockRandom,
+          initialCoins: 0,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    const monsterCard = EventCard(
+      id: 'test_goblin',
+      type: EventType.monster,
+      title: 'Гоблин',
+      description: 'Тестовый гоблин',
+      leftChoice: CardChoice(label: 'Сражаться', healthDelta: -2),
+      rightChoice: CardChoice(label: 'Обойти', healthDelta: 0),
+      level: 1,
+    );
+    state.setCurrentCardForTesting(monsterCard);
+    await tester.pump();
+
+    expect(state.coinsForTesting, 0);
+
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // 0 bonus coins
+    expect(state.coinsForTesting, 0);
+  });
+
+  test('PlayerStatsService dodge skill upgrades up to 5 levels (+2% per level, start 0%)', () {
+    final stats = PlayerStatsService.instance;
+    final coins = PlayerCoinsService.instance;
+    coins.restoreBalance(1000);
+
+    expect(stats.dodgeLevel, 0);
+    expect(stats.dodgeChance, 0);
+    expect(stats.isDodgeMax, isFalse);
+    expect(stats.dodgeUpgradeCost, 50);
+
+    // Level 1: 0% -> 2% (cost 50)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 1);
+    expect(stats.dodgeChance, 2);
+    expect(stats.dodgeUpgradeCost, 80);
+    expect(coins.balance, 950);
+
+    // Level 2: 2% -> 4% (cost 80)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 2);
+    expect(stats.dodgeChance, 4);
+    expect(stats.dodgeUpgradeCost, 110);
+    expect(coins.balance, 870);
+
+    // Level 3: 4% -> 6% (cost 110)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 3);
+    expect(stats.dodgeChance, 6);
+    expect(stats.dodgeUpgradeCost, 140);
+    expect(coins.balance, 760);
+
+    // Level 4: 6% -> 8% (cost 140)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 4);
+    expect(stats.dodgeChance, 8);
+    expect(stats.dodgeUpgradeCost, 170);
+    expect(coins.balance, 620);
+
+    // Level 5: 8% -> 10% (cost 170, max)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 5);
+    expect(stats.dodgeChance, 10);
+    expect(stats.isDodgeMax, isTrue);
+    expect(coins.balance, 450);
+
+    // Cannot upgrade beyond max
+    expect(stats.upgradeDodge(), isFalse);
+  });
+
+  test('PlayerStatsService resistance skill upgrades up to 4 levels (+5% per level, start 0%)', () {
+    final stats = PlayerStatsService.instance;
+    final coins = PlayerCoinsService.instance;
+    coins.restoreBalance(1000);
+
+    expect(stats.resistanceLevel, 0);
+    expect(stats.resistanceChance, 0);
+    expect(stats.isResistanceMax, isFalse);
+    expect(stats.resistanceUpgradeCost, 50);
+
+    // Level 1: 0% -> 5% (cost 50)
+    expect(stats.upgradeResistance(), isTrue);
+    expect(stats.resistanceLevel, 1);
+    expect(stats.resistanceChance, 5);
+    expect(stats.resistanceUpgradeCost, 80);
+    expect(coins.balance, 950);
+
+    // Level 2: 5% -> 10% (cost 80)
+    expect(stats.upgradeResistance(), isTrue);
+    expect(stats.resistanceLevel, 2);
+    expect(stats.resistanceChance, 10);
+    expect(stats.resistanceUpgradeCost, 110);
+    expect(coins.balance, 870);
+
+    // Level 3: 10% -> 15% (cost 110)
+    expect(stats.upgradeResistance(), isTrue);
+    expect(stats.resistanceLevel, 3);
+    expect(stats.resistanceChance, 15);
+    expect(stats.resistanceUpgradeCost, 140);
+    expect(coins.balance, 760);
+
+    // Level 4: 15% -> 20% (cost 140, max)
+    expect(stats.upgradeResistance(), isTrue);
+    expect(stats.resistanceLevel, 4);
+    expect(stats.resistanceChance, 20);
+    expect(stats.isResistanceMax, isTrue);
+    expect(coins.balance, 620);
+
+    // Cannot upgrade beyond max
+    expect(stats.upgradeResistance(), isFalse);
+  });
+
+  testWidgets('InventoryScreen displays Dodge and Resistance upgrade cards and allows upgrading', (tester) async {
+    PlayerCoinsService.instance.restoreBalance(200);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: InventoryScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Уклонение'), findsOneWidget);
+    expect(find.text('Сопротивление'), findsOneWidget);
+
+    final dodgeUpgradeBtn = find.text('+2% 💨 · 50 🪙');
+    expect(dodgeUpgradeBtn, findsOneWidget);
+    await tester.ensureVisible(dodgeUpgradeBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(dodgeUpgradeBtn);
+    await tester.pumpAndSettle();
+
+    expect(PlayerStatsService.instance.dodgeLevel, 1);
+    expect(PlayerStatsService.instance.dodgeChance, 2);
+    expect(find.text('2%'), findsOneWidget);
+
+    final resUpgradeBtn = find.text('+5% 🛡️ · 50 🪙');
+    expect(resUpgradeBtn, findsOneWidget);
+    await tester.ensureVisible(resUpgradeBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(resUpgradeBtn);
+    await tester.pumpAndSettle();
+
+    expect(PlayerStatsService.instance.resistanceLevel, 1);
+    expect(PlayerStatsService.instance.resistanceChance, 5);
+  });
+
+  testWidgets('GameScreen dodge avoids losing health and attack on card swipe', (tester) async {
+    // 5 levels -> 10% chance
+    PlayerStatsService.instance.setLevelsForTest(dodge: 5);
+    final mockRandom = _FixedTestRandom(0); // 0 < 10 -> dodge procs!
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          random: mockRandom,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initialHp = state.healthForTesting;
+    final initialAtk = state.attackForTesting;
+
+    // Card with negative health and attack
+    const trapCard = EventCard(
+      id: 'test_trap',
+      type: EventType.trap,
+      title: 'Опасность',
+      description: 'Ловушка',
+      leftChoice: CardChoice(label: 'Пройти', healthDelta: -3, attackDelta: -2),
+      rightChoice: CardChoice(label: 'Обойти'),
+      level: 1,
+    );
+    state.setCurrentCardForTesting(trapCard);
+    await tester.pump();
+
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // Health and attack were not lost because dodge triggered
+    expect(state.healthForTesting, initialHp);
+    expect(state.attackForTesting, initialAtk);
+  });
+
+  testWidgets('GameScreen resistance avoids gaining poison, bleed, or blindness', (tester) async {
+    // 4 levels -> 20% chance
+    PlayerStatsService.instance.setLevelsForTest(resistance: 4);
+    final mockRandom = _FixedTestRandom(0, nextDoubleValue: 0.1); // statusChance 1.0 > 0.1, resistance 0 < 20 -> procs!
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GameScreen(
+          random: mockRandom,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+
+    const poisonCard = EventCard(
+      id: 'test_poison_snake',
+      type: EventType.monster,
+      title: 'Гадюка',
+      description: 'Ядовитая змея',
+      leftChoice: CardChoice(
+        label: 'Атаковать',
+        statusEffect: StatusEffectType.poison,
+        statusChance: 1.0,
+      ),
+      rightChoice: CardChoice(label: 'Бежать'),
+      level: 1,
+    );
+    state.setCurrentCardForTesting(poisonCard);
+    await tester.pump();
+
+    state.handleSwipeForTesting(false);
+    await tester.pumpAndSettle();
+
+    // Poison was avoided due to resistance
+    expect(state.poisonTurns, 0);
   });
 }

@@ -45,7 +45,18 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   void initState() {
     super.initState();
+    PlayerCoinsService.instance.addListener(_onCoinsChanged);
     _load();
+  }
+
+  @override
+  void dispose() {
+    PlayerCoinsService.instance.removeListener(_onCoinsChanged);
+    super.dispose();
+  }
+
+  void _onCoinsChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
@@ -56,11 +67,36 @@ class _ShopScreenState extends State<ShopScreen> {
     if (mounted) setState(() => _loading = false);
   }
 
+  int _getBalance(ChestCurrency currency) {
+    switch (currency) {
+      case ChestCurrency.coins:
+        return PlayerCoinsService.instance.balance;
+      case ChestCurrency.silverKeys:
+        return PlayerCoinsService.instance.silverKeys;
+      case ChestCurrency.goldKeys:
+        return PlayerCoinsService.instance.goldKeys;
+    }
+  }
+
+  void _deductCurrency(ChestCurrency currency, int amount) {
+    switch (currency) {
+      case ChestCurrency.coins:
+        PlayerCoinsService.instance.applyDelta(-amount);
+        break;
+      case ChestCurrency.silverKeys:
+        PlayerCoinsService.instance.applySilverKeysDelta(-amount);
+        break;
+      case ChestCurrency.goldKeys:
+        PlayerCoinsService.instance.applyGoldKeysDelta(-amount);
+        break;
+    }
+  }
+
   Future<void> _openChest(ShopChest chest) async {
     if (_openingChestId != null) return;
 
     final unlockedService = UnlockedItemsService.instance;
-    final balance = PlayerCoinsService.instance.balance;
+    final balance = _getBalance(chest.currency);
     final price = chest.getPrice(unlockedService.unlockedIds);
 
     if (chest.isAllUnlocked(unlockedService.unlockedIds) || balance < price) {
@@ -74,8 +110,8 @@ class _ShopScreenState extends State<ShopScreen> {
       _openingChestId = chest.id;
     });
 
-    // Списываем золото
-    PlayerCoinsService.instance.applyDelta(-price);
+    // Списываем валюту
+    _deductCurrency(chest.currency, price);
 
     // Разблокируем новую карту
     await unlockedService.unlock(item.id);
@@ -172,9 +208,9 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildChestWidget(
     ShopChest chest,
     AppLocalizations l10n,
-    int balance,
     UnlockedItemsService unlockedService,
   ) {
+    final balance = _getBalance(chest.currency);
     final allUnlocked = chest.isAllUnlocked(unlockedService.unlockedIds);
     final price = chest.getPrice(unlockedService.unlockedIds);
     final canBuy = !allUnlocked && balance >= price;
@@ -183,9 +219,17 @@ class _ShopScreenState extends State<ShopScreen> {
     if (allUnlocked) {
       buttonLabel = l10n.shopAllCardsObtained;
     } else if (canBuy) {
-      buttonLabel = l10n.shopOpenChestPrice(price);
+      buttonLabel = switch (chest.currency) {
+        ChestCurrency.coins => l10n.shopOpenChestPrice(price),
+        ChestCurrency.silverKeys => l10n.shopOpenChestSilverKeysPrice(price),
+        ChestCurrency.goldKeys => l10n.shopOpenChestGoldKeysPrice(price),
+      };
     } else {
-      buttonLabel = l10n.shopNotEnoughCoinsPrice(price);
+      buttonLabel = switch (chest.currency) {
+        ChestCurrency.coins => l10n.shopNotEnoughCoinsPrice(price),
+        ChestCurrency.silverKeys => l10n.shopNotEnoughSilverKeysPrice(price),
+        ChestCurrency.goldKeys => l10n.shopNotEnoughGoldKeysPrice(price),
+      };
     }
 
     final String description;
@@ -245,7 +289,6 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final balance = PlayerCoinsService.instance.balance;
     final unlockedService = UnlockedItemsService.instance;
     final chests = _chests;
 
@@ -284,7 +327,6 @@ class _ShopScreenState extends State<ShopScreen> {
                           _buildChestWidget(
                             chest,
                             l10n,
-                            balance,
                             unlockedService,
                           ),
                           const SizedBox(height: 16),
