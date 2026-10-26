@@ -658,7 +658,11 @@ class _ChoiceHint extends StatelessWidget {
       parts.add('🪙 ${choice.coinsDelta > 0 ? '+' : ''}${choice.coinsDelta}');
     }
     if (choice.givesRandomItem) {
-      parts.add(context.l10n.gameAddCardBag);
+      if (choice.randomItemsCount > 1) {
+        parts.add(context.l10n.gameAddCardBagCount(choice.randomItemsCount));
+      } else {
+        parts.add(context.l10n.gameAddCardBag);
+      }
     }
     if (choice.statusEffect != null) {
       parts.add('${choice.statusEffect!.icon} ${(choice.statusChance * 100).round()}%');

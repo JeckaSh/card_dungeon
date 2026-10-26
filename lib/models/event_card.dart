@@ -117,6 +117,7 @@ class CardChoice {
     this.attackDelta = 0,
     this.coinsDelta = 0,
     this.givesRandomItem = false,
+    this.randomItemsCount = 1,
     this.statusEffect,
     this.statusChance = 0.0,
   });
@@ -135,6 +136,9 @@ class CardChoice {
 
   /// Выдавать ли случайный предмет из открытых в коллекции при совершении выбора
   final bool givesRandomItem;
+
+  /// Количество случайных предметов, выдаваемых при выборе (по умолчанию 1)
+  final int randomItemsCount;
 
   /// Статус-эффект, который может быть наложен на героя при выборе
   final StatusEffectType? statusEffect;

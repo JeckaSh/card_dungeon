@@ -39,6 +39,12 @@ class PlayerStatsService {
   /// Максимальный уровень улучшения здоровья
   static const int maxHealthLevel = 10;
 
+  /// Базовая стоимость первого уровня здоровья
+  static const int healthUpgradeCostBase = 100;
+
+  /// Прирост стоимости улучшения здоровья за уровень
+  static const int healthUpgradeCostPerLevel = 100;
+
   /// Базовое значение силы атаки без улучшений
   static const int baseAttack = 5;
 
@@ -48,17 +54,29 @@ class PlayerStatsService {
   /// Максимальный уровень улучшения атаки
   static const int maxAttackLevel = 10;
 
+  /// Базовая стоимость первого уровня атаки
+  static const int attackUpgradeCostBase = 120;
+
+  /// Прирост стоимости улучшения атаки за уровень
+  static const int attackUpgradeCostPerLevel = 120;
+
   /// Максимальное количество гарантированных торговцев за уровень (0..2)
   static const int maxMerchantLevel = 2;
 
   /// Базовая стоимость первого уровня торговцев
-  static const int merchantUpgradeCostBase = 60;
+  static const int merchantUpgradeCostBase = 200;
 
-  /// Максимальный уровень навыка стартовых карт (0..3)
-  static const int maxStartingCardsLevel = 3;
+  /// Прирост стоимости улучшения торговцев за уровень
+  static const int merchantUpgradeCostPerLevel = 160;
+
+  /// Максимальный уровень навыка стартовых карт (0..5)
+  static const int maxStartingCardsLevel = 5;
 
   /// Базовая стоимость первого уровня стартовых карт
-  static const int startingCardsUpgradeCostBase = 50;
+  static const int startingCardsUpgradeCostBase = 200;
+
+  /// Прирост стоимости улучшения стартовых карт за уровень
+  static const int startingCardsUpgradeCostPerLevel = 200;
 
   /// Минимальное количество открытых карт в коллекции для разблокировки прокачки навыка
   static const int requiredUnlockedCardsForStartingCards = 3;
@@ -73,7 +91,10 @@ class PlayerStatsService {
   static const int maxMerchantCardUpgradeLevel = 5;
 
   /// Базовая стоимость первого уровня шанса
-  static const int merchantCardUpgradeCostBase = 50;
+  static const int merchantCardUpgradeCostBase = 160;
+
+  /// Прирост стоимости улучшения шанса карт у торговца за уровень
+  static const int merchantCardUpgradeCostPerLevel = 100;
 
   /// Базовый шанс получить золото при победе над монстром (в %)
   static const int baseMonsterGoldChance = 0;
@@ -85,10 +106,10 @@ class PlayerStatsService {
   static const int maxMonsterGoldLevel = 5;
 
   /// Базовая стоимость первого уровня шанса золота с монстров
-  static const int monsterGoldUpgradeCostBase = 40;
+  static const int monsterGoldUpgradeCostBase = 140;
 
   /// Прирост стоимости улучшения золота с монстров за уровень
-  static const int monsterGoldUpgradeCostPerLevel = 30;
+  static const int monsterGoldUpgradeCostPerLevel = 100;
 
   /// Минимальное количество бонусного золота с монстра при срабатывании навыка
   static const int minMonsterGoldReward = 5;
@@ -102,14 +123,14 @@ class PlayerStatsService {
   /// Прирост шанса уклонения за каждый уровень улучшения (в %)
   static const int dodgePerLevel = 2;
 
-  /// Максимальный уровень навыка уклонения (0..5 -> 0%..10%)
-  static const int maxDodgeLevel = 5;
+  /// Максимальный уровень навыка уклонения (0..10 -> 0%..20%)
+  static const int maxDodgeLevel = 10;
 
   /// Базовая стоимость первого уровня уклонения
-  static const int dodgeUpgradeCostBase = 50;
+  static const int dodgeUpgradeCostBase = 160;
 
   /// Прирост стоимости улучшения уклонения за уровень
-  static const int dodgeUpgradeCostPerLevel = 30;
+  static const int dodgeUpgradeCostPerLevel = 100;
 
   /// Базовый шанс сопротивления статусам (в %)
   static const int baseResistanceChance = 0;
@@ -117,14 +138,14 @@ class PlayerStatsService {
   /// Прирост шанса сопротивления за каждый уровень улучшения (в %)
   static const int resistancePerLevel = 5;
 
-  /// Максимальный уровень навыка сопротивления (0..4 -> 0%..20%)
-  static const int maxResistanceLevel = 4;
+  /// Максимальный уровень навыка сопротивления (0..5 -> 0%..25%)
+  static const int maxResistanceLevel = 5;
 
   /// Базовая стоимость первого уровня сопротивления
-  static const int resistanceUpgradeCostBase = 50;
+  static const int resistanceUpgradeCostBase = 160;
 
   /// Прирост стоимости улучшения сопротивления за уровень
-  static const int resistanceUpgradeCostPerLevel = 30;
+  static const int resistanceUpgradeCostPerLevel = 100;
 
   int _healthLevel = 0;
   int _attackLevel = 0;
@@ -145,7 +166,7 @@ class PlayerStatsService {
   /// Текущий уровень улучшения торговцев (0..2)
   int get merchantLevel => _merchantLevel;
 
-  /// Текущий уровень улучшения стартовых карт (0..3)
+  /// Текущий уровень улучшения стартовых карт (0..5)
   int get startingCardsLevel => _startingCardsLevel;
 
   /// Текущий уровень улучшения шанса карты высшего уровня у торговца (0..5)
@@ -154,10 +175,10 @@ class PlayerStatsService {
   /// Текущий уровень улучшения шанса золота с монстров (0..5)
   int get monsterGoldLevel => _monsterGoldLevel;
 
-  /// Текущий уровень улучшения уклонения (0..5)
+  /// Текущий уровень улучшения уклонения (0..10)
   int get dodgeLevel => _dodgeLevel;
 
-  /// Текущий уровень улучшения сопротивления (0..4)
+  /// Текущий уровень улучшения сопротивления (0..5)
   int get resistanceLevel => _resistanceLevel;
 
   /// Стартовое здоровье персонажа в начале игры с учётом прокачки
@@ -166,7 +187,7 @@ class PlayerStatsService {
   /// Стартовая атака персонажа в начале игры с учётом прокачки
   int get startingAttack => baseAttack + _attackLevel * attackPerLevel;
 
-  /// Количество случайных карт, выдаваемых при старте игры (уровень 1 = 1, уровень 2 = 2, уровень 3 = 3)
+  /// Количество случайных карт, выдаваемых при старте игры (уровень 1 = 1 .. уровень 5 = 5)
   int get startingCardsCount => _startingCardsLevel;
 
   /// Достигнут ли максимум прокачки здоровья
@@ -213,42 +234,47 @@ class PlayerStatsService {
       (baseMonsterGoldChance + _monsterGoldLevel * monsterGoldPerLevel)
           .clamp(0, 25);
 
-  /// Итоговый шанс уклонения от потери HP/атаки (0..10%)
+  /// Итоговый шанс уклонения от потери HP/атаки (0..20%)
   int get dodgeChance =>
-      (baseDodgeChance + _dodgeLevel * dodgePerLevel).clamp(0, 10);
+      (baseDodgeChance + _dodgeLevel * dodgePerLevel).clamp(0, 20);
 
-  /// Итоговый шанс сопротивления яду, кровотечению и слепоте (0..20%)
+  /// Итоговый шанс сопротивления яду, кровотечению и слепоте (0..25%)
   int get resistanceChance =>
       (baseResistanceChance + _resistanceLevel * resistancePerLevel)
-          .clamp(0, 20);
+          .clamp(0, 25);
 
-  /// Стоимость следующего уровня здоровья (25, 50, 75, 100...)
-  int get healthUpgradeCost => 25 + _healthLevel * 25;
+  /// Стоимость следующего уровня здоровья (100, 200, 300, 400...)
+  int get healthUpgradeCost =>
+      healthUpgradeCostBase + _healthLevel * healthUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня атаки (30, 60, 90, 120...)
-  int get attackUpgradeCost => 30 + _attackLevel * 30;
+  /// Стоимость следующего уровня атаки (120, 240, 360, 480...)
+  int get attackUpgradeCost =>
+      attackUpgradeCostBase + _attackLevel * attackUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня торговцев (60, 100)
-  int get merchantUpgradeCost => merchantUpgradeCostBase + _merchantLevel * 40;
+  /// Стоимость следующего уровня торговцев (200, 360)
+  int get merchantUpgradeCost =>
+      merchantUpgradeCostBase + _merchantLevel * merchantUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня стартовых карт (50, 100, 150)
+  /// Стоимость следующего уровня стартовых карт (200, 400, 600, 800, 1000)
   int get startingCardsUpgradeCost =>
-      startingCardsUpgradeCostBase + _startingCardsLevel * 50;
+      startingCardsUpgradeCostBase +
+      _startingCardsLevel * startingCardsUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня шанса карт у торговца (50, 80, 110, 140, 170)
+  /// Стоимость следующего уровня шанса карт у торговца (160, 260, 360, 460, 560)
   int get merchantCardUpgradeCost =>
-      merchantCardUpgradeCostBase + _merchantCardUpgradeLevel * 30;
+      merchantCardUpgradeCostBase +
+      _merchantCardUpgradeLevel * merchantCardUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня шанса золота с монстров (40, 70, 100, 130, 160)
+  /// Стоимость следующего уровня шанса золота с монстров (140, 240, 340, 440, 540)
   int get monsterGoldUpgradeCost =>
       monsterGoldUpgradeCostBase +
       _monsterGoldLevel * monsterGoldUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня уклонения (50, 80, 110, 140, 170)
+  /// Стоимость следующего уровня уклонения (160, 260, 360, 460, 560...)
   int get dodgeUpgradeCost =>
       dodgeUpgradeCostBase + _dodgeLevel * dodgeUpgradeCostPerLevel;
 
-  /// Стоимость следующего уровня сопротивления (50, 80, 110, 140)
+  /// Стоимость следующего уровня сопротивления (160, 260, 360, 460, 560)
   int get resistanceUpgradeCost =>
       resistanceUpgradeCostBase +
       _resistanceLevel * resistanceUpgradeCostPerLevel;

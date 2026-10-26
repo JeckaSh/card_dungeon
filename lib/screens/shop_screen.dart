@@ -216,20 +216,65 @@ class _ShopScreenState extends State<ShopScreen> {
     final canBuy = !allUnlocked && balance >= price;
 
     final String buttonLabel;
+    final Widget? buttonChild;
+
     if (allUnlocked) {
       buttonLabel = l10n.shopAllCardsObtained;
+      buttonChild = null;
+    } else if (chest.currency == ChestCurrency.silverKeys ||
+        chest.currency == ChestCurrency.goldKeys) {
+      final isSilver = chest.currency == ChestCurrency.silverKeys;
+      final prefix = canBuy
+          ? l10n.shopOpenChestPricePrefix(price)
+          : l10n.shopNotEnoughKeysPricePrefix(price);
+      final textColor = canBuy ? Colors.white : Colors.white.withValues(alpha: 0.4);
+      final iconColor = canBuy
+          ? (isSilver ? const Color(0xFFDDE4F0) : const Color(0xFFFFB300))
+          : (isSilver ? const Color(0xFFDDE4F0) : const Color(0xFFFFB300))
+              .withValues(alpha: 0.4);
+      final keyIcon = isSilver ? Icons.vpn_key_rounded : Icons.key_rounded;
+
+      buttonLabel = canBuy
+          ? (isSilver
+              ? l10n.shopOpenChestSilverKeysPrice(price)
+              : l10n.shopOpenChestGoldKeysPrice(price))
+          : (isSilver
+              ? l10n.shopNotEnoughSilverKeysPrice(price)
+              : l10n.shopNotEnoughGoldKeysPrice(price));
+
+      buttonChild = Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            '$prefix ',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          Icon(
+            keyIcon,
+            size: 18,
+            color: iconColor,
+          ),
+          Text(
+            ')',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
+      );
     } else if (canBuy) {
-      buttonLabel = switch (chest.currency) {
-        ChestCurrency.coins => l10n.shopOpenChestPrice(price),
-        ChestCurrency.silverKeys => l10n.shopOpenChestSilverKeysPrice(price),
-        ChestCurrency.goldKeys => l10n.shopOpenChestGoldKeysPrice(price),
-      };
+      buttonLabel = l10n.shopOpenChestPrice(price);
+      buttonChild = null;
     } else {
-      buttonLabel = switch (chest.currency) {
-        ChestCurrency.coins => l10n.shopNotEnoughCoinsPrice(price),
-        ChestCurrency.silverKeys => l10n.shopNotEnoughSilverKeysPrice(price),
-        ChestCurrency.goldKeys => l10n.shopNotEnoughGoldKeysPrice(price),
-      };
+      buttonLabel = l10n.shopNotEnoughCoinsPrice(price);
+      buttonChild = null;
     }
 
     final String description;
@@ -248,6 +293,7 @@ class _ShopScreenState extends State<ShopScreen> {
       accentColor: chest.accentColor,
       gradientColors: chest.gradientColors,
       buttonLabel: buttonLabel,
+      buttonChild: buttonChild,
       canBuy: canBuy,
       isOpening: _openingChestId == chest.id,
       onOpen: () => _openChest(chest),
@@ -432,6 +478,7 @@ class _ChestBlock extends StatelessWidget {
     required this.canBuy,
     required this.isOpening,
     required this.onOpen,
+    this.buttonChild,
   });
 
   final String title;
@@ -444,6 +491,7 @@ class _ChestBlock extends StatelessWidget {
   final bool canBuy;
   final bool isOpening;
   final VoidCallback onOpen;
+  final Widget? buttonChild;
 
   @override
   Widget build(BuildContext context) {
@@ -523,16 +571,17 @@ class _ChestBlock extends StatelessWidget {
                         strokeWidth: 2.5,
                       ),
                     )
-                  : Text(
-                      buttonLabel,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: canBuy
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.4),
-                      ),
-                    ),
+                  : (buttonChild ??
+                      Text(
+                        buttonLabel,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: canBuy
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.4),
+                        ),
+                      )),
             ),
           ),
         ],

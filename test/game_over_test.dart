@@ -175,7 +175,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Phase 1
     await tester.drag(find.byType(SwipeCard), const Offset(-300, 0));

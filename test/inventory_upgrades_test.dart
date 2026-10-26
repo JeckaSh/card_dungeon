@@ -35,35 +35,37 @@ void main() {
   test('PlayerStatsService upgrades health and attack and deducts coins', () {
     final stats = PlayerStatsService.instance;
     final coins = PlayerCoinsService.instance;
+    coins.restoreBalance(300);
 
     expect(stats.startingHealth, 10);
     expect(stats.startingAttack, 5);
     expect(stats.healthLevel, 0);
     expect(stats.attackLevel, 0);
-    expect(stats.healthUpgradeCost, 25);
-    expect(stats.attackUpgradeCost, 30);
+    expect(stats.healthUpgradeCost, 100);
+    expect(stats.attackUpgradeCost, 120);
 
-    // Upgrade health (costs 25)
+    // Upgrade health (costs 100)
     final upgradedHp = stats.upgradeHealth();
     expect(upgradedHp, isTrue);
     expect(stats.healthLevel, 1);
     expect(stats.startingHealth, 12);
-    expect(coins.balance, 75);
-    expect(stats.healthUpgradeCost, 50);
+    expect(coins.balance, 200);
+    expect(stats.healthUpgradeCost, 200);
 
-    // Upgrade attack (costs 30)
+    // Upgrade attack (costs 120)
     final upgradedAtk = stats.upgradeAttack();
     expect(upgradedAtk, isTrue);
     expect(stats.attackLevel, 1);
     expect(stats.startingAttack, 6);
-    expect(coins.balance, 45);
-    expect(stats.attackUpgradeCost, 60);
+    expect(coins.balance, 80);
+    expect(stats.attackUpgradeCost, 240);
 
-    // Cannot upgrade attack with insufficient coins (45 < 60)
+    // Cannot upgrade attack with insufficient coins (80 < 240)
     expect(stats.upgradeAttack(), isFalse);
   });
 
   testWidgets('InventoryScreen shows character upgrade section and allows upgrading', (tester) async {
+    PlayerCoinsService.instance.restoreBalance(200);
     await tester.pumpWidget(
       const MaterialApp(
         home: InventoryScreen(),
@@ -82,15 +84,15 @@ void main() {
     expect(find.text('Атака'), findsOneWidget);
     expect(find.text('5 ⚡'), findsOneWidget);
 
-    // Tap upgrade health button (+2 ❤ · 25 🪙)
-    final hpUpgradeButton = find.text('+2 ❤ · 25 🪙');
+    // Tap upgrade health button (+2 ❤ · 100 🪙)
+    final hpUpgradeButton = find.text('+2 ❤ · 100 🪙');
     expect(hpUpgradeButton, findsOneWidget);
     await tester.tap(hpUpgradeButton);
     await tester.pumpAndSettle();
 
-    // Health is now 12 ❤, coins became 75
+    // Health is now 12 ❤, coins became 100
     expect(find.text('12 ❤'), findsOneWidget);
-    expect(find.text('75'), findsOneWidget);
+    expect(find.text('100'), findsOneWidget);
     expect(find.text('Ур. 1'), findsOneWidget);
   });
 
@@ -116,7 +118,7 @@ void main() {
   test('PlayerStatsService requires at least 3 unlocked cards to upgrade starting cards', () async {
     final stats = PlayerStatsService.instance;
     final coins = PlayerCoinsService.instance;
-    coins.restoreBalance(500);
+    coins.restoreBalance(4000);
 
     // Initially 0 cards unlocked: locked!
     expect(stats.isStartingCardsUnlocked, isFalse);
@@ -133,37 +135,51 @@ void main() {
 
     expect(stats.startingCardsLevel, 0);
     expect(stats.startingCardsCount, 0);
-    expect(stats.startingCardsUpgradeCost, 50);
+    expect(stats.startingCardsUpgradeCost, 200);
     expect(stats.isStartingCardsMax, isFalse);
 
-    // Level 1 (costs 50)
+    // Level 1 (costs 200)
     expect(stats.upgradeStartingCards(), isTrue);
     expect(stats.startingCardsLevel, 1);
     expect(stats.startingCardsCount, 1);
-    expect(coins.balance, 450);
-    expect(stats.startingCardsUpgradeCost, 100);
+    expect(coins.balance, 3800);
+    expect(stats.startingCardsUpgradeCost, 400);
 
-    // Level 2 (costs 100)
+    // Level 2 (costs 400)
     expect(stats.upgradeStartingCards(), isTrue);
     expect(stats.startingCardsLevel, 2);
     expect(stats.startingCardsCount, 2);
-    expect(coins.balance, 350);
-    expect(stats.startingCardsUpgradeCost, 150);
+    expect(coins.balance, 3400);
+    expect(stats.startingCardsUpgradeCost, 600);
 
-    // Level 3 (costs 150)
+    // Level 3 (costs 600)
     expect(stats.upgradeStartingCards(), isTrue);
     expect(stats.startingCardsLevel, 3);
     expect(stats.startingCardsCount, 3);
-    expect(coins.balance, 200);
+    expect(coins.balance, 2800);
+    expect(stats.startingCardsUpgradeCost, 800);
+
+    // Level 4 (costs 800)
+    expect(stats.upgradeStartingCards(), isTrue);
+    expect(stats.startingCardsLevel, 4);
+    expect(stats.startingCardsCount, 4);
+    expect(coins.balance, 2000);
+    expect(stats.startingCardsUpgradeCost, 1000);
+
+    // Level 5 (costs 1000)
+    expect(stats.upgradeStartingCards(), isTrue);
+    expect(stats.startingCardsLevel, 5);
+    expect(stats.startingCardsCount, 5);
+    expect(coins.balance, 1000);
     expect(stats.isStartingCardsMax, isTrue);
 
-    // Level 4 cannot be purchased (max level reached)
+    // Level 6 cannot be purchased (max level reached)
     expect(stats.upgradeStartingCards(), isFalse);
-    expect(stats.startingCardsLevel, 3);
+    expect(stats.startingCardsLevel, 5);
   });
 
   testWidgets('InventoryScreen displays locked starting cards upgrade when < 3 cards unlocked, and allows upgrade when >= 3 cards unlocked', (tester) async {
-    PlayerCoinsService.instance.restoreBalance(200);
+    PlayerCoinsService.instance.restoreBalance(500);
 
     // With 0 unlocked cards: locked
     await tester.pumpWidget(
@@ -176,7 +192,7 @@ void main() {
     expect(find.text('Стартовые карты'), findsOneWidget);
     expect(find.text('закрыто'), findsOneWidget);
     expect(find.text('Нужно 3 карты (0/3)'), findsOneWidget);
-    expect(find.text('+1 🃏 · 50 🪙'), findsNothing);
+    expect(find.text('+1 🃏 · 200 🪙'), findsNothing);
 
     // Now unlock 3 cards
     await UnlockedItemsService.instance.unlockAll(['potion_heal', 'potion_attack', 'scroll_skip']);
@@ -191,7 +207,7 @@ void main() {
 
     // Now unlocked!
     expect(find.text('0 карт'), findsOneWidget);
-    final upgradeButton = find.text('+1 🃏 · 50 🪙');
+    final upgradeButton = find.text('+1 🃏 · 200 🪙');
     expect(upgradeButton, findsOneWidget);
 
     await tester.tap(upgradeButton);
@@ -199,7 +215,7 @@ void main() {
 
     expect(PlayerStatsService.instance.startingCardsLevel, 1);
     expect(find.text('1 карта'), findsOneWidget);
-    expect(PlayerCoinsService.instance.balance, 150);
+    expect(PlayerCoinsService.instance.balance, 300);
   });
 
   testWidgets('GameScreen excludes unopened cards at start if 0 cards are unlocked', (tester) async {
@@ -275,7 +291,7 @@ void main() {
   });
 
   testWidgets('InventoryScreen displays Merchant Luck upgrade card and allows upgrading', (tester) async {
-    PlayerCoinsService.instance.restoreBalance(200);
+    PlayerCoinsService.instance.restoreBalance(300);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -286,7 +302,7 @@ void main() {
 
     expect(find.text('Удача торговца'), findsOneWidget);
     expect(find.text('5%'), findsOneWidget);
-    final upgradeBtn = find.text('+5% ⭐ · 50 🪙');
+    final upgradeBtn = find.text('+5% ⭐ · 160 🪙');
     expect(upgradeBtn, findsOneWidget);
 
     await tester.ensureVisible(upgradeBtn);
@@ -297,53 +313,53 @@ void main() {
     expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 1);
     expect(PlayerStatsService.instance.merchantCardUpgradeChance, 10);
     expect(find.text('10%'), findsOneWidget);
-    expect(PlayerCoinsService.instance.balance, 150);
+    expect(PlayerCoinsService.instance.balance, 140);
   });
 
   test('PlayerStatsService monster gold skill upgrades up to 5 levels (+5% per level, start 0%)', () {
     final stats = PlayerStatsService.instance;
     final coins = PlayerCoinsService.instance;
-    coins.restoreBalance(1000);
+    coins.restoreBalance(2000);
 
     expect(stats.monsterGoldLevel, 0);
     expect(stats.monsterGoldChance, 0);
     expect(stats.isMonsterGoldMax, isFalse);
-    expect(stats.monsterGoldUpgradeCost, 40);
+    expect(stats.monsterGoldUpgradeCost, 140);
 
-    // Level 1: 0% -> 5% (cost 40)
+    // Level 1: 0% -> 5% (cost 140)
     expect(stats.upgradeMonsterGold(), isTrue);
     expect(stats.monsterGoldLevel, 1);
     expect(stats.monsterGoldChance, 5);
-    expect(stats.monsterGoldUpgradeCost, 70);
-    expect(coins.balance, 960);
+    expect(stats.monsterGoldUpgradeCost, 240);
+    expect(coins.balance, 1860);
 
-    // Level 2: 5% -> 10% (cost 70)
+    // Level 2: 5% -> 10% (cost 240)
     expect(stats.upgradeMonsterGold(), isTrue);
     expect(stats.monsterGoldLevel, 2);
     expect(stats.monsterGoldChance, 10);
-    expect(stats.monsterGoldUpgradeCost, 100);
-    expect(coins.balance, 890);
+    expect(stats.monsterGoldUpgradeCost, 340);
+    expect(coins.balance, 1620);
 
-    // Level 3: 10% -> 15% (cost 100)
+    // Level 3: 10% -> 15% (cost 340)
     expect(stats.upgradeMonsterGold(), isTrue);
     expect(stats.monsterGoldLevel, 3);
     expect(stats.monsterGoldChance, 15);
-    expect(stats.monsterGoldUpgradeCost, 130);
-    expect(coins.balance, 790);
+    expect(stats.monsterGoldUpgradeCost, 440);
+    expect(coins.balance, 1280);
 
-    // Level 4: 15% -> 20% (cost 130)
+    // Level 4: 15% -> 20% (cost 440)
     expect(stats.upgradeMonsterGold(), isTrue);
     expect(stats.monsterGoldLevel, 4);
     expect(stats.monsterGoldChance, 20);
-    expect(stats.monsterGoldUpgradeCost, 160);
-    expect(coins.balance, 660);
+    expect(stats.monsterGoldUpgradeCost, 540);
+    expect(coins.balance, 840);
 
-    // Level 5: 20% -> 25% (cost 160) - Max level reached
+    // Level 5: 20% -> 25% (cost 540) - Max level reached
     expect(stats.upgradeMonsterGold(), isTrue);
     expect(stats.monsterGoldLevel, 5);
     expect(stats.monsterGoldChance, 25);
     expect(stats.isMonsterGoldMax, isTrue);
-    expect(coins.balance, 500);
+    expect(coins.balance, 300);
 
     // Cannot upgrade beyond max
     expect(stats.upgradeMonsterGold(), isFalse);
@@ -352,7 +368,7 @@ void main() {
   });
 
   testWidgets('InventoryScreen displays Monster Gold upgrade card and allows upgrading', (tester) async {
-    PlayerCoinsService.instance.restoreBalance(200);
+    PlayerCoinsService.instance.restoreBalance(300);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -364,7 +380,7 @@ void main() {
     expect(find.text('Трофеи с монстров'), findsOneWidget);
     // Monster Gold, Dodge, and Resistance all start at 0%
     expect(find.text('0%'), findsNWidgets(3));
-    final upgradeBtn = find.text('+5% 🪙 · 40 🪙');
+    final upgradeBtn = find.text('+5% 🪙 · 140 🪙');
     expect(upgradeBtn, findsOneWidget);
 
     await tester.ensureVisible(upgradeBtn);
@@ -488,99 +504,141 @@ void main() {
     expect(state.coinsForTesting, 0);
   });
 
-  test('PlayerStatsService dodge skill upgrades up to 5 levels (+2% per level, start 0%)', () {
+  test('PlayerStatsService dodge skill upgrades up to 10 levels (+2% per level, start 0%)', () {
     final stats = PlayerStatsService.instance;
     final coins = PlayerCoinsService.instance;
-    coins.restoreBalance(1000);
+    coins.restoreBalance(10000);
 
     expect(stats.dodgeLevel, 0);
     expect(stats.dodgeChance, 0);
     expect(stats.isDodgeMax, isFalse);
-    expect(stats.dodgeUpgradeCost, 50);
+    expect(stats.dodgeUpgradeCost, 160);
 
-    // Level 1: 0% -> 2% (cost 50)
+    // Level 1: 0% -> 2% (cost 160)
     expect(stats.upgradeDodge(), isTrue);
     expect(stats.dodgeLevel, 1);
     expect(stats.dodgeChance, 2);
-    expect(stats.dodgeUpgradeCost, 80);
-    expect(coins.balance, 950);
+    expect(stats.dodgeUpgradeCost, 260);
+    expect(coins.balance, 9840);
 
-    // Level 2: 2% -> 4% (cost 80)
+    // Level 2: 2% -> 4% (cost 260)
     expect(stats.upgradeDodge(), isTrue);
     expect(stats.dodgeLevel, 2);
     expect(stats.dodgeChance, 4);
-    expect(stats.dodgeUpgradeCost, 110);
-    expect(coins.balance, 870);
+    expect(stats.dodgeUpgradeCost, 360);
+    expect(coins.balance, 9580);
 
-    // Level 3: 4% -> 6% (cost 110)
+    // Level 3: 4% -> 6% (cost 360)
     expect(stats.upgradeDodge(), isTrue);
     expect(stats.dodgeLevel, 3);
     expect(stats.dodgeChance, 6);
-    expect(stats.dodgeUpgradeCost, 140);
-    expect(coins.balance, 760);
+    expect(stats.dodgeUpgradeCost, 460);
+    expect(coins.balance, 9220);
 
-    // Level 4: 6% -> 8% (cost 140)
+    // Level 4: 6% -> 8% (cost 460)
     expect(stats.upgradeDodge(), isTrue);
     expect(stats.dodgeLevel, 4);
     expect(stats.dodgeChance, 8);
-    expect(stats.dodgeUpgradeCost, 170);
-    expect(coins.balance, 620);
+    expect(stats.dodgeUpgradeCost, 560);
+    expect(coins.balance, 8760);
 
-    // Level 5: 8% -> 10% (cost 170, max)
+    // Level 5: 8% -> 10% (cost 560)
     expect(stats.upgradeDodge(), isTrue);
     expect(stats.dodgeLevel, 5);
     expect(stats.dodgeChance, 10);
+    expect(stats.dodgeUpgradeCost, 660);
+    expect(coins.balance, 8200);
+
+    // Level 6: 10% -> 12% (cost 660)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 6);
+    expect(stats.dodgeChance, 12);
+    expect(stats.dodgeUpgradeCost, 760);
+    expect(coins.balance, 7540);
+
+    // Level 7: 12% -> 14% (cost 760)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 7);
+    expect(stats.dodgeChance, 14);
+    expect(stats.dodgeUpgradeCost, 860);
+    expect(coins.balance, 6780);
+
+    // Level 8: 14% -> 16% (cost 860)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 8);
+    expect(stats.dodgeChance, 16);
+    expect(stats.dodgeUpgradeCost, 960);
+    expect(coins.balance, 5920);
+
+    // Level 9: 16% -> 18% (cost 960)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 9);
+    expect(stats.dodgeChance, 18);
+    expect(stats.dodgeUpgradeCost, 1060);
+    expect(coins.balance, 4960);
+
+    // Level 10: 18% -> 20% (cost 1060, max)
+    expect(stats.upgradeDodge(), isTrue);
+    expect(stats.dodgeLevel, 10);
+    expect(stats.dodgeChance, 20);
     expect(stats.isDodgeMax, isTrue);
-    expect(coins.balance, 450);
+    expect(coins.balance, 3900);
 
     // Cannot upgrade beyond max
     expect(stats.upgradeDodge(), isFalse);
   });
 
-  test('PlayerStatsService resistance skill upgrades up to 4 levels (+5% per level, start 0%)', () {
+  test('PlayerStatsService resistance skill upgrades up to 5 levels (+5% per level, start 0%)', () {
     final stats = PlayerStatsService.instance;
     final coins = PlayerCoinsService.instance;
-    coins.restoreBalance(1000);
+    coins.restoreBalance(3000);
 
     expect(stats.resistanceLevel, 0);
     expect(stats.resistanceChance, 0);
     expect(stats.isResistanceMax, isFalse);
-    expect(stats.resistanceUpgradeCost, 50);
+    expect(stats.resistanceUpgradeCost, 160);
 
-    // Level 1: 0% -> 5% (cost 50)
+    // Level 1: 0% -> 5% (cost 160)
     expect(stats.upgradeResistance(), isTrue);
     expect(stats.resistanceLevel, 1);
     expect(stats.resistanceChance, 5);
-    expect(stats.resistanceUpgradeCost, 80);
-    expect(coins.balance, 950);
+    expect(stats.resistanceUpgradeCost, 260);
+    expect(coins.balance, 2840);
 
-    // Level 2: 5% -> 10% (cost 80)
+    // Level 2: 5% -> 10% (cost 260)
     expect(stats.upgradeResistance(), isTrue);
     expect(stats.resistanceLevel, 2);
     expect(stats.resistanceChance, 10);
-    expect(stats.resistanceUpgradeCost, 110);
-    expect(coins.balance, 870);
+    expect(stats.resistanceUpgradeCost, 360);
+    expect(coins.balance, 2580);
 
-    // Level 3: 10% -> 15% (cost 110)
+    // Level 3: 10% -> 15% (cost 360)
     expect(stats.upgradeResistance(), isTrue);
     expect(stats.resistanceLevel, 3);
     expect(stats.resistanceChance, 15);
-    expect(stats.resistanceUpgradeCost, 140);
-    expect(coins.balance, 760);
+    expect(stats.resistanceUpgradeCost, 460);
+    expect(coins.balance, 2220);
 
-    // Level 4: 15% -> 20% (cost 140, max)
+    // Level 4: 15% -> 20% (cost 460)
     expect(stats.upgradeResistance(), isTrue);
     expect(stats.resistanceLevel, 4);
     expect(stats.resistanceChance, 20);
+    expect(stats.resistanceUpgradeCost, 560);
+    expect(coins.balance, 1760);
+
+    // Level 5: 20% -> 25% (cost 560, max)
+    expect(stats.upgradeResistance(), isTrue);
+    expect(stats.resistanceLevel, 5);
+    expect(stats.resistanceChance, 25);
     expect(stats.isResistanceMax, isTrue);
-    expect(coins.balance, 620);
+    expect(coins.balance, 1200);
 
     // Cannot upgrade beyond max
     expect(stats.upgradeResistance(), isFalse);
   });
 
   testWidgets('InventoryScreen displays Dodge and Resistance upgrade cards and allows upgrading', (tester) async {
-    PlayerCoinsService.instance.restoreBalance(200);
+    PlayerCoinsService.instance.restoreBalance(500);
 
     await tester.pumpWidget(
       const MaterialApp(
@@ -592,7 +650,7 @@ void main() {
     expect(find.text('Уклонение'), findsOneWidget);
     expect(find.text('Сопротивление'), findsOneWidget);
 
-    final dodgeUpgradeBtn = find.text('+2% 💨 · 50 🪙');
+    final dodgeUpgradeBtn = find.text('+2% 💨 · 160 🪙');
     expect(dodgeUpgradeBtn, findsOneWidget);
     await tester.ensureVisible(dodgeUpgradeBtn);
     await tester.pumpAndSettle();
@@ -603,7 +661,7 @@ void main() {
     expect(PlayerStatsService.instance.dodgeChance, 2);
     expect(find.text('2%'), findsOneWidget);
 
-    final resUpgradeBtn = find.text('+5% 🛡️ · 50 🪙');
+    final resUpgradeBtn = find.text('+5% 🛡️ · 160 🪙');
     expect(resUpgradeBtn, findsOneWidget);
     await tester.ensureVisible(resUpgradeBtn);
     await tester.pumpAndSettle();

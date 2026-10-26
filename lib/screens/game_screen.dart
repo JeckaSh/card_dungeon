@@ -77,6 +77,7 @@ class GameScreen extends StatefulWidget {
     this.initialDungeonLevel,
     this.initialCardsPassed,
     this.initialCoins,
+    this.customDeck,
     this.dungeon = cursedForestDungeon,
     this.random,
   });
@@ -92,6 +93,9 @@ class GameScreen extends StatefulWidget {
 
   /// Стартовые монеты забега (для тестов/отладки)
   final int? initialCoins;
+
+  /// Пользовательская колода (для тестов/отладки)
+  final List<EventCard>? customDeck;
 
   /// Выбранное подземелье с уникальным набором этажей и боссов
   final Dungeon dungeon;
@@ -135,7 +139,8 @@ class GameScreenState extends State<GameScreen> {
   int _divineShieldCharges = 0;
   int _stoneskinTurns = 0;
   int _regenerationTurns = 0;
-  bool _invertNextChoice = false;
+  int _regenerationHpPerTurn = 2;
+  int _mirrorTurns = 0;
   bool _isRevealingChoices = false;
   int _greedMagnetTurns = 0;
   bool _thornmailActive = false;
@@ -146,6 +151,17 @@ class GameScreenState extends State<GameScreen> {
   final List<JournalEntry> _journal = [];
 
   // ─── Геттеры ────────────────────────────────
+
+  /// Оставшиеся ходы зеркала искажения.
+  int get mirrorTurns => _mirrorTurns;
+
+  /// Активно ли зеркало искажения (хотя бы 1 ход).
+  bool get invertNextChoice => _mirrorTurns > 0;
+
+  @visibleForTesting
+  void setMirrorTurnsForTesting(int turns) {
+    _mirrorTurns = turns;
+  }
 
   /// true, если сейчас идёт боссовый бой (включая активные фазы многофазного боя).
   bool get _isCurrentBoss =>
@@ -248,7 +264,8 @@ class GameScreenState extends State<GameScreen> {
     _divineShieldCharges = 0;
     _stoneskinTurns = 0;
     _regenerationTurns = 0;
-    _invertNextChoice = false;
+    _regenerationHpPerTurn = 2;
+    _mirrorTurns = 0;
     _isRevealingChoices = false;
     _greedMagnetTurns = 0;
     _thornmailActive = false;
@@ -311,6 +328,11 @@ class GameScreenState extends State<GameScreen> {
   /// в первых [_bossEvery]-1 позициях (до встречи с боссом).
   /// При 0 — торговцы появляются случайно.
   void _rebuildDeck() {
+    if (widget.customDeck != null && widget.customDeck!.isNotEmpty) {
+      _deck = List.of(widget.customDeck!);
+      _deckPosition = 0;
+      return;
+    }
     final currentDungeonId = widget.dungeon.id;
     var cards = allEvents
         .where((e) =>
@@ -404,8 +426,14 @@ class GameScreenState extends State<GameScreen> {
   int get regenerationTurns => _regenerationTurns;
 
   @visibleForTesting
-  void setRegenerationForTesting(int turns) =>
-      setState(() => _regenerationTurns = turns);
+  int get regenerationHpPerTurn => _regenerationHpPerTurn;
+
+  @visibleForTesting
+  void setRegenerationForTesting(int turns, [int hpPerTurn = 2]) =>
+      setState(() {
+        _regenerationTurns = turns;
+        _regenerationHpPerTurn = hpPerTurn;
+      });
 
   @visibleForTesting
   int get poisonTurns => _poisonTurns;
@@ -442,6 +470,14 @@ class GameScreenState extends State<GameScreen> {
 
   @visibleForTesting
   int get attackForTesting => _attack;
+
+  @visibleForTesting
+  void setStatsForTesting({int? health, int? attack}) {
+    setState(() {
+      if (health != null) _health = health;
+      if (attack != null) _attack = attack;
+    });
+  }
 
   @visibleForTesting
   int get coinsForTesting => _coins;
@@ -591,20 +627,27 @@ class GameScreenState extends State<GameScreen> {
     final triggeredBuffs = <String>[];
 
     ItemCard? receivedItem;
+    final List<ItemCard> receivedItems = [];
     if (choice.givesRandomItem) {
-      receivedItem = getRandomMerchantItemCard(
-        random: _random,
-        unlockedIds: UnlockedItemsService.instance.unlockedIds,
-        baseLevel: effectiveCard.level,
-        upgradeChancePercent:
-            PlayerStatsService.instance.merchantCardUpgradeChance,
-      );
-      if (receivedItem != null) {
-        _inventoryItems.add(receivedItem);
-        if (receivedItem.level > effectiveCard.level) {
-          triggeredBuffs.add(
-            '⭐ Удача торговца: получена карта ${receivedItem.level} уровня!',
-          );
+      final itemsToGrant =
+          choice.randomItemsCount > 0 ? choice.randomItemsCount : 1;
+      for (int i = 0; i < itemsToGrant; i++) {
+        final item = getRandomMerchantItemCard(
+          random: _random,
+          unlockedIds: UnlockedItemsService.instance.unlockedIds,
+          baseLevel: effectiveCard.level,
+          upgradeChancePercent:
+              PlayerStatsService.instance.merchantCardUpgradeChance,
+        );
+        if (item != null) {
+          _inventoryItems.add(item);
+          receivedItems.add(item);
+          receivedItem ??= item;
+          if (item.level > effectiveCard.level) {
+            triggeredBuffs.add(
+              '⭐ Удача торговца: получена карта ${item.level} уровня!',
+            );
+          }
         }
       }
     }
@@ -620,8 +663,8 @@ class GameScreenState extends State<GameScreen> {
     }
 
     // 1. Зеркало искажения
-    if (_invertNextChoice) {
-      _invertNextChoice = false;
+    if (_mirrorTurns > 0) {
+      _mirrorTurns--;
       if (effectiveHealthDelta < 0) {
         effectiveHealthDelta = -effectiveHealthDelta;
       }
@@ -670,7 +713,7 @@ class GameScreenState extends State<GameScreen> {
     // 3. Шипы
     if (effectiveHealthDelta < 0 && _thornmailActive) {
       _thornmailActive = false;
-      final bonusGold = effectiveHealthDelta.abs() * 2;
+      final bonusGold = effectiveHealthDelta.abs() * 10;
       effectiveCoinsDelta += bonusGold;
       triggeredBuffs.add('🌵 Шипы дали +$bonusGold 🪙');
     }
@@ -681,7 +724,7 @@ class GameScreenState extends State<GameScreen> {
               effectiveHealthDelta -
               (_poisonTurns > 0 ? 1 : 0) -
               (_bleedTurns > 0 ? 2 : 0) +
-              (_regenerationTurns > 0 ? 2 : 0)) >
+              (_regenerationTurns > 0 ? _regenerationHpPerTurn : 0)) >
           0;
       if (willSurvive) {
         final monsterGoldChance =
@@ -787,9 +830,12 @@ class GameScreenState extends State<GameScreen> {
     }
     int regenHeal = 0;
     if (_regenerationTurns > 0) {
-      regenHeal = 2;
+      regenHeal = _regenerationHpPerTurn;
       _regenerationTurns--;
-      triggeredBuffs.add('🌿 Регенерация (+2 ❤)');
+      triggeredBuffs.add('🌿 Регенерация (+$_regenerationHpPerTurn ❤)');
+      if (_regenerationTurns == 0) {
+        _regenerationHpPerTurn = 2;
+      }
     }
 
     _isRevealingChoices = false;
@@ -827,8 +873,14 @@ class GameScreenState extends State<GameScreen> {
           '${effectiveCoinsDelta > 0 ? '+' : ''}$effectiveCoinsDelta 🪙',
         );
       }
-      if (receivedItem != null) {
-        details.add('🎒 ${receivedItem.title}');
+      if (receivedItems.isNotEmpty) {
+        if (receivedItems.length == 1) {
+          details.add('🎒 ${receivedItems.first.title}');
+        } else {
+          details.add(
+            '🎒 ${receivedItems.map((i) => i.title).join(', ')}',
+          );
+        }
       }
       if (triggeredBuffs.isNotEmpty) {
         details.addAll(triggeredBuffs);
@@ -1117,16 +1169,19 @@ class GameScreenState extends State<GameScreen> {
               'Противоядие нейтрализует опасные токсины, останавливает кровотечение и возвращает зрение.\nВременные эффекты яда, кровотечения и слепоты полностью сняты с персонажа.';
           break;
         case ItemEffectType.regeneration:
-          _regenerationTurns += item.value;
+          final turns = item.duration > 0 ? item.duration : (item.value > 0 ? item.value : 3);
+          final hpPerTurn = (item.duration > 0 && item.value > 0) ? item.value : 2;
+          _regenerationTurns += turns;
+          _regenerationHpPerTurn = _regenerationTurns == turns ? hpPerTurn : max(_regenerationHpPerTurn, hpPerTurn);
           _lastFeedback =
-              'Регенерация: +2 ❤ каждый ход на +${item.value} х.! 🌿';
+              'Регенерация: +$_regenerationHpPerTurn ❤ каждый ход на +$turns х.! 🌿';
           _addJournalEntry(
             '🌿',
-            'Использовано ${item.title}: регенерация (+2 ❤/ход) на $_regenerationTurns х.',
+            'Использовано ${item.title}: регенерация (+$hpPerTurn ❤/ход) на $turns х. (всего: $_regenerationTurns х.)',
           );
           resultTitle = 'Регенерация 🌿';
           resultDescription =
-              'Целебное зелье активирует регенерацию!\nВ течение $_regenerationTurns ходов вы будете восстанавливать по 2 очка здоровья каждый ход.';
+              '${item.title} активирует регенерацию!\nВ течение $_regenerationTurns ходов вы будете восстанавливать по $_regenerationHpPerTurn очков здоровья каждый ход.';
           break;
         case ItemEffectType.teleport:
           if (_isCurrentBoss) {
@@ -1172,15 +1227,21 @@ class GameScreenState extends State<GameScreen> {
           }
           break;
         case ItemEffectType.invertNext:
-          _invertNextChoice = true;
-          _lastFeedback = 'Зеркало искажения: потери станут выгодой! 🫞';
+          final turns = item.duration > 0
+              ? item.duration
+              : (item.value > 0 ? item.value : 1);
+          _mirrorTurns += turns;
+          _lastFeedback = _mirrorTurns > 1
+              ? 'Зеркало искажения: потери станут выгодой на $_mirrorTurns х.! 🫞'
+              : 'Зеркало искажения: потери станут выгодой! 🫞';
           _addJournalEntry(
             '🪞',
-            'Использовано ${item.title}: искажение активировано',
+            'Использовано ${item.title}: искажение активировано ($_mirrorTurns х.)',
           );
-          resultTitle = 'Зеркало искажения 🪞';
-          resultDescription =
-              'Искажение активировано! На следующем ходу любые потери здоровья, атаки или монет превратятся в равную выгоду.';
+          resultTitle = '${item.title} 🪞';
+          resultDescription = turns > 1
+              ? 'Искажение активировано! В течение следующих $turns ходов любые потери здоровья, атаки или монет превратятся в равную выгоду.'
+              : 'Искажение активировано! На следующем ходу любые потери здоровья, атаки или монет превратятся в равную выгоду.';
           break;
         case ItemEffectType.thornmail:
           _thornmailActive = true;
@@ -1195,7 +1256,8 @@ class GameScreenState extends State<GameScreen> {
           break;
         case ItemEffectType.transmute:
           if (_coins >= 10) {
-            final maxBundles = 5; // Ограничение: максимум 50 монет (5 * 10)
+            final maxCoins = item.value > 0 ? item.value : 50;
+            final maxBundles = maxCoins ~/ 10;
             final bundles = min(_coins ~/ 10, maxBundles);
             final usedCoins = bundles * 10;
             _coins -= usedCoins;
@@ -1207,7 +1269,7 @@ class GameScreenState extends State<GameScreen> {
               '⚗️',
               'Алхимия: $usedCoins🪙 → +$bundles⚡ +${bundles * 2}❤',
             );
-            resultTitle = 'Трансмутация ⚗️';
+            resultTitle = '${item.title} ⚗️';
             resultDescription =
                 'Алхимический процесс успешен: $usedCoins 🪙 превращены в +$bundles ⚡ к атаке и +${bundles * 2} ❤ к здоровью!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           } else {
@@ -1292,6 +1354,77 @@ class GameScreenState extends State<GameScreen> {
                 'Невероятное везение! Вы сорвали куш: +5 ❤ здоровья, +2 ⚡ к атаке и +25 🪙!\nЗдоровье: $_health ❤, атака: $_attack ⚡.';
           }
           break;
+        case ItemEffectType.casinoOfFate:
+          final roll = _random.nextInt(6) + 1;
+          if (roll == 1) {
+            if (_coins >= 15 && _random.nextBool()) {
+              _coins = (_coins - 15).clamp(0, 999999);
+              _lastFeedback = '🎰 Казино [$roll]: Ставка не сыграла (-15 🪙)';
+              _addJournalEntry('🎰', 'Казино судьбы [$roll]: потеряно 15 🪙');
+              resultTitle = 'Казино [$roll]: Проигрыш 🎰';
+              resultDescription =
+                  'Ставка не сыграла! Казино забрало 15 🪙.\nТекущий баланс: $_coins 🪙.';
+            } else {
+              _health = (_health - 2).clamp(1, 999);
+              _lastFeedback = '🎰 Казино [$roll]: Проигрыш (-2 ❤)';
+              _addJournalEntry('🎰', 'Казино судьбы [$roll]: потеряно 2 ❤');
+              resultTitle = 'Казино [$roll]: Урон 🎰';
+              resultDescription =
+                  'Неудача! Казино отняло 2 ❤.\nТекущее здоровье: $_health ❤.';
+            }
+          } else if (roll <= 3) {
+            final diceCard =
+                getRandomUnlockedItemCard(
+                  _random,
+                  UnlockedItemsService.instance.unlockedIds,
+                ) ??
+                allItemCards[_random.nextInt(allItemCards.length)];
+            _inventoryItems.add(diceCard);
+            _coins = (_coins + 30).clamp(0, 999999);
+            _lastFeedback =
+                '🎰 Казино [$roll]: Артефакт "${diceCard.title}" и +30 🪙! 🎁';
+            _addJournalEntry(
+              '🎰',
+              'Казино судьбы [$roll]: артефакт "${diceCard.title}" и +30 🪙',
+            );
+            resultTitle = 'Казино [$roll]: Выигрыш! 🎁';
+            resultDescription =
+                'Удачная ставка! Вы выиграли артефакт "${diceCard.title}" и +30 🪙!\nТекущий баланс: $_coins 🪙.';
+          } else if (roll <= 5) {
+            _health = (_health + 8).clamp(0, 999);
+            _attack = (_attack + 3).clamp(0, 99);
+            _coins = (_coins + 50).clamp(0, 999999);
+            _lastFeedback =
+                '🎰 Казино [$roll]: Крупный куш! +8 ❤, +3 ⚡, +50 🪙 💰';
+            _addJournalEntry(
+              '🎰',
+              'Казино судьбы [$roll]: Крупный куш (+8❤ +3⚡ +50🪙)',
+            );
+            resultTitle = 'Казино [$roll]: Крупный куш! 💰';
+            resultDescription =
+                'Отличный расклад! Крупный куш: +8 ❤ здоровья, +3 ⚡ к атаке и +50 🪙!\nЗдоровье: $_health ❤, атака: $_attack ⚡, золото: $_coins 🪙.';
+          } else {
+            final bonusCard =
+                getRandomUnlockedItemCard(
+                  _random,
+                  UnlockedItemsService.instance.unlockedIds,
+                ) ??
+                allItemCards[_random.nextInt(allItemCards.length)];
+            _inventoryItems.add(bonusCard);
+            _health = (_health + 12).clamp(0, 999);
+            _attack = (_attack + 5).clamp(0, 99);
+            _coins = (_coins + 100).clamp(0, 999999);
+            _lastFeedback =
+                '🎰 Казино [777]: МЕГА-ДЖЕКПОТ! +12 ❤, +5 ⚡, +100 🪙 и "${bonusCard.title}"! 🎉';
+            _addJournalEntry(
+              '🎰',
+              'Казино судьбы [777]: МЕГА-ДЖЕКПОТ (+12❤ +5⚡ +100🪙 + ${bonusCard.title})',
+            );
+            resultTitle = 'Казино [777]: МЕГА-ДЖЕКПОТ! 👑';
+            resultDescription =
+                'Невероятная удача! Вы сорвали МЕГА-ДЖЕКПОТ 777:\n+12 ❤ здоровья, +5 ⚡ к атаке, +100 🪙 и легендарный артефакт "${bonusCard.title}"!\nЗдоровье: $_health ❤, атака: $_attack ⚡, золото: $_coins 🪙.';
+          }
+          break;
         case ItemEffectType.smokeBomb:
           final wasBoss = _isCurrentBoss;
           final ec = _effectiveCard;
@@ -1342,9 +1475,9 @@ class GameScreenState extends State<GameScreen> {
           }
           break;
         case ItemEffectType.bribery:
-          if (_coins >= 15) {
+          if (_coins >= 50) {
             final wasBoss = _isCurrentBoss;
-            _coins -= 15;
+            _coins -= 50;
             final ec2 = _effectiveCard;
             final leftScore =
                 ec2.leftChoice.coinsDelta +
@@ -1369,17 +1502,35 @@ class GameScreenState extends State<GameScreen> {
               0,
               999999,
             );
-            ItemCard? bribeItem;
+            final List<ItemCard> bribeItems = [];
             if (bestChoice.givesRandomItem) {
-              bribeItem = getRandomMerchantItemCard(
-                random: _random,
-                unlockedIds: UnlockedItemsService.instance.unlockedIds,
-                baseLevel: _effectiveCard.level,
-                upgradeChancePercent:
-                    PlayerStatsService.instance.merchantCardUpgradeChance,
-              );
-              if (bribeItem != null) _inventoryItems.add(bribeItem);
+              final count = bestChoice.randomItemsCount > 0
+                  ? bestChoice.randomItemsCount
+                  : 1;
+              for (int i = 0; i < count; i++) {
+                final item = getRandomMerchantItemCard(
+                  random: _random,
+                  unlockedIds: UnlockedItemsService.instance.unlockedIds,
+                  baseLevel: _effectiveCard.level,
+                  upgradeChancePercent:
+                      PlayerStatsService.instance.merchantCardUpgradeChance,
+                );
+                if (item != null) {
+                  _inventoryItems.add(item);
+                  bribeItems.add(item);
+                }
+              }
             }
+            final bribeItemsStr = bribeItems.isEmpty
+                ? ''
+                : bribeItems.length == 1
+                    ? ', 🎒 ${bribeItems.first.title}'
+                    : ', 🎒 ${bribeItems.map((i) => i.title).join(', ')}';
+            final bribeItemsDesc = bribeItems.isEmpty
+                ? ''
+                : bribeItems.length == 1
+                    ? ', также получен предмет "${bribeItems.first.title}"'
+                    : ', также получены предметы: ${bribeItems.map((i) => '"${i.title}"').join(', ')}';
             final skippedCard = _currentCard.title;
             final boss = _activeBossCard ?? _currentCard;
             final isMultiPhase = wasBoss && boss.isMultiPhase;
@@ -1393,35 +1544,50 @@ class GameScreenState extends State<GameScreen> {
               _bossPhase = nextPhase;
               _cardKey++;
               _lastFeedback =
-                  '💰 Подкуп удался (-15 🪙): фаза $skippedPhase нейтрализована! Следующая: $nextPhaseTitle';
+                  '💰 Подкуп удался (-50 🪙): фаза $skippedPhase нейтрализована! Следующая: $nextPhaseTitle';
               _addJournalEntry(
                 '💰',
-                'Подкуп (-15 🪙): нейтрализована фаза $skippedPhase "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
+                'Подкуп (-50 🪙): нейтрализована фаза $skippedPhase "$skippedCard"$bribeItemsStr',
               );
               resultTitle = 'Фаза $skippedPhase нейтрализована 💰';
               resultDescription =
-                  'За 15 монет вы откупились от фазы $skippedPhase босса "$skippedCard"! Следующая фаза: $nextPhaseTitle${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.';
+                  'За 50 монет вы откупились от фазы $skippedPhase босса "$skippedCard"! Следующая фаза: $nextPhaseTitle$bribeItemsDesc.';
             } else {
               _bossPhase = 0;
               _activeBossCard = null;
               _advanceCard(wasBoss: wasBoss);
-              _lastFeedback = '💰 Подкуп удался (-15 🪙): угроза нейтрализована!';
+              _lastFeedback = '💰 Подкуп удался (-50 🪙): угроза нейтрализована!';
               _addJournalEntry(
                 '💰',
-                'Подкуп (-15 🪙): нейтрализовано "$skippedCard"${bribeItem != null ? ', 🎒 ${bribeItem.title}' : ''}',
+                'Подкуп (-50 🪙): нейтрализовано "$skippedCard"$bribeItemsStr',
               );
               resultTitle = wasBoss ? 'Босс подкуплен 💰' : 'Угроза нейтрализована';
               resultDescription = wasBoss
-                  ? 'За 15 монет вы успешно откупились от босса "$skippedCard"! Уровень подземелья пройден без боя${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.'
-                  : 'За 15 монет вы благополучно избежали опасности "$skippedCard"${bribeItem != null ? ', также получен предмет "${bribeItem.title}"' : ''}.';
+                  ? 'За 50 монет вы успешно откупились от босса "$skippedCard"! Уровень подземелья пройден без боя$bribeItemsDesc.'
+                  : 'За 50 монет вы благополучно избежали опасности "$skippedCard"$bribeItemsDesc.';
             }
           } else {
             _inventoryItems.insert(index, item);
-            _lastFeedback = 'Недостаточно монет (нужно 15 🪙)!';
+            _lastFeedback = 'Недостаточно монет (нужно 50 🪙)!';
             resultTitle = 'Недостаточно монет 💰';
             resultDescription =
-                'Для подкупа требуется как минимум 15 🪙. Предмет сохранён в инвентаре.';
+                'Для подкупа требуется как минимум 50 🪙. Предмет сохранён в инвентаре.';
           }
+          break;
+        case ItemEffectType.rebirth:
+          final prevHp = _health;
+          final prevAtk = _attack;
+          _health = _initialHealth;
+          _attack = _initialAttack;
+          _lastFeedback =
+              'Тотем перерождения: здоровье ($_health ❤) и атака ($_attack ⚡) возвращены к исходу! 🔄';
+          _addJournalEntry(
+            '🔄',
+            'Тотем перерождения: HP $prevHp→$_health, Атака $prevAtk→$_attack',
+          );
+          resultTitle = 'Тотем перерождения 🔄';
+          resultDescription =
+              'Тотем высвободил древнюю силу и вернул ваши характеристики к исходным стартовым значениям:\nЗдоровье: $_health ❤, Атака: $_attack ⚡.';
           break;
       }
     });
@@ -1608,7 +1774,9 @@ class GameScreenState extends State<GameScreen> {
                       divineShieldCharges: _divineShieldCharges,
                       stoneskinTurns: _stoneskinTurns,
                       regenerationTurns: _regenerationTurns,
-                      invertNextChoice: _invertNextChoice,
+                      regenerationHp: _regenerationHpPerTurn,
+                      mirrorTurns: _mirrorTurns,
+                      invertNextChoice: _mirrorTurns > 0,
                       isRevealingChoices: _isRevealingChoices,
                       greedMagnetTurns: _greedMagnetTurns,
                       thornmailActive: _thornmailActive,
@@ -1644,16 +1812,15 @@ class GameScreenState extends State<GameScreen> {
                         ),
                       ),
                     ),
-                  // Предупреждение о боссе / индикатор фазы
-                  if (_result == GameResult.playing && isBoss) ...[
-                    _BossWarningBanner(dungeonLevel: _dungeonLevel),
-                    if (isMultiPhaseBoss)
-                      _BossPhaseIndicator(
-                        bossName: _activeBossCard!.title,
-                        currentPhase: bossPhase,
-                        totalPhases: 3,
-                      ),
-                  ],
+                  // Индикатор фазы босса
+                  if (_result == GameResult.playing &&
+                      isBoss &&
+                      isMultiPhaseBoss)
+                    _BossPhaseIndicator(
+                      bossName: _activeBossCard!.title,
+                      currentPhase: bossPhase,
+                      totalPhases: 3,
+                    ),
                   Expanded(
                     child: Center(
                       child: _result == GameResult.playing
@@ -1771,52 +1938,6 @@ class GameScreenState extends State<GameScreen> {
   }
 }
 
-// ─── Баннер появления босса ─────────────────────────────────
-
-class _BossWarningBanner extends StatelessWidget {
-  const _BossWarningBanner({required this.dungeonLevel});
-
-  final int dungeonLevel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF7B0000), Color(0xFFB71C1C)],
-        ),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFEF5350).withValues(alpha: 0.3),
-            blurRadius: 10,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.crisis_alert, color: Colors.white, size: 16),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              context.l10n.gameBossWarning(dungeonLevel),
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ─── Индикатор фазы босса ────────────────────────────────────
 
@@ -1918,7 +2039,9 @@ class _ActiveBuffsBar extends StatelessWidget {
     this.divineShieldCharges = 0,
     this.stoneskinTurns = 0,
     this.regenerationTurns = 0,
-    required this.invertNextChoice,
+    this.regenerationHp = 2,
+    this.mirrorTurns = 0,
+    this.invertNextChoice = false,
     required this.isRevealingChoices,
     required this.greedMagnetTurns,
     required this.thornmailActive,
@@ -1933,6 +2056,8 @@ class _ActiveBuffsBar extends StatelessWidget {
   final int divineShieldCharges;
   final int stoneskinTurns;
   final int regenerationTurns;
+  final int regenerationHp;
+  final int mirrorTurns;
   final bool invertNextChoice;
   final bool isRevealingChoices;
   final int greedMagnetTurns;
@@ -1948,6 +2073,7 @@ class _ActiveBuffsBar extends StatelessWidget {
       divineShieldCharges > 0 ||
       stoneskinTurns > 0 ||
       regenerationTurns > 0 ||
+      mirrorTurns > 0 ||
       invertNextChoice ||
       isRevealingChoices ||
       greedMagnetTurns > 0 ||
@@ -2003,13 +2129,15 @@ class _ActiveBuffsBar extends StatelessWidget {
             if (regenerationTurns > 0)
               _BuffChip(
                 emoji: '🌿',
-                label: context.l10n.gameBuffRegen(regenerationTurns),
+                label: context.l10n.gameBuffRegen(regenerationTurns, regenerationHp),
                 color: const Color(0xFF66BB6A),
               ),
-            if (invertNextChoice)
+            if (mirrorTurns > 0 || invertNextChoice)
               _BuffChip(
                 emoji: '🪞',
-                label: context.l10n.gameBuffMirror,
+                label: mirrorTurns > 1
+                    ? context.l10n.gameBuffMirrorTurns(mirrorTurns)
+                    : context.l10n.gameBuffMirror,
                 color: const Color(0xFFAB47BC),
               ),
             if (isRevealingChoices)

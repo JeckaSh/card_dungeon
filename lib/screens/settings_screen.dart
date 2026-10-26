@@ -55,7 +55,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(height: 16),
                             _LanguageOption(
-                              flag: '🇷🇺',
+                              countryCode: 'ru',
                               nativeName: l10n.settingsLangRuNative,
                               localName: l10n.settingsLangRu,
                               isSelected: isRu,
@@ -63,7 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(height: 10),
                             _LanguageOption(
-                              flag: '🇬🇧',
+                              countryCode: 'en',
                               nativeName: l10n.settingsLangEnNative,
                               localName: l10n.settingsLangEn,
                               isSelected: !isRu,
@@ -215,14 +215,14 @@ class _SectionHeader extends StatelessWidget {
 
 class _LanguageOption extends StatelessWidget {
   const _LanguageOption({
-    required this.flag,
+    required this.countryCode,
     required this.nativeName,
     required this.localName,
     required this.isSelected,
     required this.onTap,
   });
 
-  final String flag;
+  final String countryCode;
   final String nativeName;
   final String localName;
   final bool isSelected;
@@ -262,8 +262,8 @@ class _LanguageOption extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Row(
             children: [
-              // Флаг
-              Text(flag, style: const TextStyle(fontSize: 28)),
+              // Графический флаг (одинаково отображается на Windows, Mac, Android и iOS)
+              _CountryFlagWidget(countryCode: countryCode),
               const SizedBox(width: 16),
               // Названия
               Expanded(
@@ -314,4 +314,172 @@ class _LanguageOption extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Виджет для кроссплатформенного отображения флагов стран (включая Windows,
+/// где эмодзи флагов рендерятся как буквы RU / GB).
+class _CountryFlagWidget extends StatelessWidget {
+  const _CountryFlagWidget({required this.countryCode});
+
+  final String countryCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 24,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.25),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 1.5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: countryCode == 'ru'
+            ? const _RussianFlag()
+            : const _BritishFlag(),
+      ),
+    );
+  }
+}
+
+/// Российский триколор (Белый, Синий, Красный)
+class _RussianFlag extends StatelessWidget {
+  const _RussianFlag();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(
+      size: Size(36, 24),
+      painter: _RussianFlagPainter(),
+    );
+  }
+}
+
+class _RussianFlagPainter extends CustomPainter {
+  const _RussianFlagPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stripeH = size.height / 3;
+    final w = size.width;
+
+    // 1. Белая полоса (верх)
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, w, stripeH),
+      Paint()..color = const Color(0xFFFFFFFF),
+    );
+    // 2. Синяя полоса (центр)
+    canvas.drawRect(
+      Rect.fromLTWH(0, stripeH, w, stripeH),
+      Paint()..color = const Color(0xFF0039A6),
+    );
+    // 3. Красная полоса (низ)
+    canvas.drawRect(
+      Rect.fromLTWH(0, stripeH * 2, w, size.height - stripeH * 2),
+      Paint()..color = const Color(0xFFD52B1E),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Британский флаг (Union Jack)
+class _BritishFlag extends StatelessWidget {
+  const _BritishFlag();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(
+      size: Size(36, 24),
+      painter: _UkFlagPainter(),
+    );
+  }
+}
+
+class _UkFlagPainter extends CustomPainter {
+  const _UkFlagPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // 1. Синий фон
+    final bluePaint = Paint()..color = const Color(0xFF012169);
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), bluePaint);
+
+    // 2. Белый Андреевский диагональный крест
+    final whiteDiagonalPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = w * 0.22
+      ..strokeCap = StrokeCap.square
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset.zero, Offset(w, h), whiteDiagonalPaint);
+    canvas.drawLine(Offset(w, 0), Offset(0, h), whiteDiagonalPaint);
+
+    // 3. Красный диагональный крест Святого Патрика
+    final redDiagonalPaint = Paint()
+      ..color = const Color(0xFFC8102E)
+      ..strokeWidth = w * 0.08
+      ..strokeCap = StrokeCap.square
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(Offset.zero, Offset(w, h), redDiagonalPaint);
+    canvas.drawLine(Offset(w, 0), Offset(0, h), redDiagonalPaint);
+
+    // 4. Белый прямой крест Святого Георгия (подложка)
+    final whiteCrossPaint = Paint()..color = Colors.white;
+    final whiteCrossW = w * 0.32;
+    final whiteCrossH = h * 0.38;
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(w / 2, h / 2),
+        width: whiteCrossW,
+        height: h,
+      ),
+      whiteCrossPaint,
+    );
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(w / 2, h / 2),
+        width: w,
+        height: whiteCrossH,
+      ),
+      whiteCrossPaint,
+    );
+
+    // 5. Красный прямой крест Святого Георгия
+    final redCrossPaint = Paint()..color = const Color(0xFFC8102E);
+    final redCrossW = w * 0.18;
+    final redCrossH = h * 0.22;
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(w / 2, h / 2),
+        width: redCrossW,
+        height: h,
+      ),
+      redCrossPaint,
+    );
+    canvas.drawRect(
+      Rect.fromCenter(
+        center: Offset(w / 2, h / 2),
+        width: w,
+        height: redCrossH,
+      ),
+      redCrossPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

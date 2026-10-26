@@ -113,7 +113,6 @@ void main() {
           ].contains(w.data)),
       findsOneWidget,
     );
-    expect(find.textContaining('готовься к бою!'), findsOneWidget);
 
     // Open inventory
     final inventoryButtonFinder =

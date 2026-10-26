@@ -381,6 +381,58 @@ void main() {
     expect(skipped, equals(5),
         reason: 'black_hole must skip exactly 5 cards');
   });
+
+  testWidgets('totem_of_rebirth resets health and attack to initial values',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final totem = allItemCards.firstWhere((i) => i.id == 'totem_of_rebirth');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [totem])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    final initHp = state.healthForTesting;
+    final initAtk = state.attackForTesting;
+
+    // Modify stats away from initial values
+    state.setStatsForTesting(health: initHp - 5, attack: initAtk + 7);
+    await tester.pumpAndSettle();
+
+    expect(state.healthForTesting, equals(initHp - 5));
+    expect(state.attackForTesting, equals(initAtk + 7));
+
+    await openInventoryAndUse(tester);
+
+    expect(state.healthForTesting, equals(initHp));
+    expect(state.attackForTesting, equals(initAtk));
+  });
+
+  testWidgets('casino_of_fate grants valid outcome when used',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 1800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    final casino = allItemCards.firstWhere((i) => i.id == 'casino_of_fate');
+
+    await tester.pumpWidget(
+      MaterialApp(home: GameScreen(initialInventory: [casino])),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.state<GameScreenState>(find.byType(GameScreen));
+    expect(state.healthForTesting, greaterThan(0));
+
+    await openInventoryAndUse(tester);
+
+    expect(state.healthForTesting, greaterThan(0));
+    expect(find.byType(GameScreen), findsOneWidget);
+  });
 }
 
 

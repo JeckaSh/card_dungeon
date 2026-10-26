@@ -22,7 +22,8 @@ class DailyRewardService extends ChangeNotifier {
 
   static const _storageKeyLastClaimDate = 'daily_reward_last_claim_date';
   static const _storageKeyStreak = 'daily_reward_streak';
-  static const _storageKeyLastClaimTimestamp = 'daily_reward_last_claim_timestamp';
+  static const _storageKeyLastClaimTimestamp =
+      'daily_reward_last_claim_timestamp';
 
   String? _lastClaimDate; // формат: 'YYYY-MM-DD'
   int _streak = 0; // последний зафиксированный день (0..7)
@@ -61,7 +62,8 @@ class DailyRewardService extends ChangeNotifier {
   bool get isRollbackDetected {
     if (WorldTimeService.instance.isRollbackDetected) return true;
     if (_lastClaimTimestampMs != null) {
-      final currentUtcMs = WorldTimeService.instance.nowUtc.millisecondsSinceEpoch;
+      final currentUtcMs =
+          WorldTimeService.instance.nowUtc.millisecondsSinceEpoch;
       // Если текущее время меньше времени последнего получения более чем на 2 минуты
       if (currentUtcMs < _lastClaimTimestampMs! - 120000) {
         return true;
@@ -133,7 +135,8 @@ class DailyRewardService extends ChangeNotifier {
   /// Возвращает сумму награды в монетах за указанный день (1-й: 100, 2-й: 200, ..., 7-й: 700)
   static int getRewardForDay(int day) {
     final clamped = day.clamp(1, 7);
-    return clamped * 100;
+    if (clamped == 7) return 1000;
+    return clamped * 150;
   }
 
   /// Возвращает количество серебряных ключей за указанный день:
@@ -142,7 +145,7 @@ class DailyRewardService extends ChangeNotifier {
   /// * остальные дни: 0.
   static int getSilverKeysForDay(int day) {
     final clamped = day.clamp(1, 7);
-    if (clamped == 3) return 1;
+    if (clamped == 3) return 2;
     if (clamped == 5) return 3;
     return 0;
   }
@@ -152,7 +155,7 @@ class DailyRewardService extends ChangeNotifier {
   /// * остальные дни: 0.
   static int getGoldKeysForDay(int day) {
     final clamped = day.clamp(1, 7);
-    if (clamped == 7) return 1;
+    if (clamped == 7) return 3;
     return 0;
   }
 
@@ -260,7 +263,8 @@ class DailyRewardService extends ChangeNotifier {
     _lastErrorMessage = null;
     if (claimedToday) {
       _lastClaimDate = todayMskKey;
-      _lastClaimTimestampMs = WorldTimeService.instance.nowUtc.millisecondsSinceEpoch;
+      _lastClaimTimestampMs =
+          WorldTimeService.instance.nowUtc.millisecondsSinceEpoch;
     } else {
       final yesterday = todayMskDate.subtract(const Duration(days: 1));
       final y = yesterday.year.toString().padLeft(4, '0');

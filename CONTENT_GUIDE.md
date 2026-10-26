@@ -432,25 +432,25 @@ case ItemEffectType.freezeTime:
 | Параметр | Поле / константа | Начальное значение | Стоимость прокачки |
 | :--- | :--- | :--- | :--- |
 | **Базовое здоровье** | `baseHealth` | `10 HP` | — |
-| **Прирост HP за уровень** | `healthPerLevel` | `+2 HP` | `25 + level * 25` (25, 50, 75...) |
+| **Прирост HP за уровень** | `healthPerLevel` | `+2 HP` | `100 + level * 100` (100, 200, 300...) |
 | **Макс. уровень HP** | `maxHealthLevel` | `10` (макс. 30 HP) | — |
 | **Базовая атака** | `baseAttack` | `5 ⚡` | — |
-| **Прирост атаки за ур.** | `attackPerLevel` | `+1 ⚡` | `30 + level * 30` (30, 60, 90...) |
+| **Прирост атаки за ур.** | `attackPerLevel` | `+1 ⚡` | `120 + level * 120` (120, 240, 360...) |
 | **Макс. уровень атаки** | `maxAttackLevel` | `10` (макс. 15 ⚡) | — |
-| **Гарант. торговцы** | `maxMerchantLevel` | `2` торговца | `60 + level * 40` (60, 100) |
-| **Стартовые карты** | `maxStartingCardsLevel` | `3` карты | `50 + level * 50` (50, 100, 150) |
-| **Удача торговца** | `maxMerchantCardUpgradeLevel` | `5%` (макс. 30%) | `50 + level * 30` (50, 80, 110, 140, 170) |
-| **Трофеи с монстров** | `maxMonsterGoldLevel` | `0%` (макс. 25%, +5% за ур., награда: 5–20 🪙) | `40 + level * 30` (40, 70, 100, 130, 160) |
-| **Уклонение** | `maxDodgeLevel` | `0%` (макс. 10%, +2% за ур.) | `50 + level * 30` (50, 80, 110, 140, 170) |
-| **Сопротивление** | `maxResistanceLevel` | `0%` (макс. 20%, +5% за ур.) | `50 + level * 30` (50, 80, 110, 140) |
+| **Гарант. торговцы** | `maxMerchantLevel` | `2` торговца | `200 + level * 160` (200, 360) |
+| **Стартовые карты** | `maxStartingCardsLevel` | `5` карт | `200 + level * 200` (200, 400, 600, 800, 1000) |
+| **Удача торговца** | `maxMerchantCardUpgradeLevel` | `5%` (макс. 30%) | `160 + level * 100` (160, 260, 360, 460, 560) |
+| **Трофеи с монстров** | `maxMonsterGoldLevel` | `0%` (макс. 25%, +5% за ур., награда: 5–20 🪙) | `140 + level * 100` (140, 240, 340, 440, 540) |
+| **Уклонение** | `maxDodgeLevel` | `0%` (макс. 20%, +2% за ур., 10 ур.) | `160 + level * 100` (160, 260, 360, 460, 560...) |
+| **Сопротивление** | `maxResistanceLevel` | `0%` (макс. 25%, +5% за ур., 5 ур.) | `160 + level * 100` (160, 260, 360, 460, 560) |
 
 ### Настройка сундуков в магазине (`ShopScreen` и `ShopChest`):
 Сундуки конфигурируются через модель [ShopChest](lib/models/shop_chest.dart) и объявляются в [defaultShopChests](lib/data/shop_chests.dart):
-1. **Сундук новичка** (`novice_chest`): содержит 6 базовых карт 1 уровня (`levels: [1]`, базовая цена: 50 🪙, шаг: +25 🪙): `medicinal_herbs` (+2 HP), `whetstone` (+2 ⚡), `runic_shield` (50% защиты), `potion_antidote` (снятие дебаффов), `scroll_skip` (пропуск), `handful_of_gold` (горсть золота, +50 🪙);
-2. **Сундук приключенца** (`adventurer_chest`): содержит 11 продвинутых карт 2 уровня (`levels: [2]`, базовая цена: 75 🪙, шаг: +35 🪙): апгрейды характеристик (`potion_heal` +4 HP, `potion_attack` +4 ⚡, `potion_regeneration` +6 HP), защиты (`divine_runic_shield` 100% блок, `potion_stoneskin` иммунитет 3 хода, `thornmail`), улучшенного побега (`smoke_bomb`, `gold_bribe`), фарма (`greed_magnet`, `dice_of_fate`) и `small_gold_pouch` (маленький мешочек золота, +100 🪙);
-3. **Сундук героя** (`hero_chest`): содержит 6 легендарных артефактов 3 уровня (`levels: [3]`, базовая цена: 100 🪙, шаг: +50 🪙): `enhanced_runic_shield` (50% на 3 хода), `mirror_distortion` (инверсия потерь в прибыль), `scroll_teleport` (пропуск 1–3 карт), `philosophers_stone` (золото в статы), `shadow_pact` (риск/награда), `bag_of_gold` (мешок золота, +250 🪙);
-4. **Серебряный сундук** (`silver_chest`): открывается за серебряные ключи и содержит эликсиры, пространственную червоточину и богатство (`itemIds: ['elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole']`, `currency: ChestCurrency.silverKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7 🗝️; `wormhole` перемещает вперёд на 2–4 карты]);
-5. **Золотой сундук** (`gold_chest`): открывается за золотые ключи и содержит божественные реликвии, чёрную дыру и казну (`itemIds: ['divine_healing', 'divine_power', 'enhanced_divine_runic_shield', 'chest_of_gold', 'black_hole']`, `currency: ChestCurrency.goldKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7, 9 🗝️; `black_hole` перемещает вперёд на 5 карт]).
+1. **Сундук новичка** (`novice_chest`): содержит 8 базовых карт 1 уровня (`levels: [1]`, базовая цена: 50 🪙, шаг: +25 🪙): `medicinal_herbs` (+2 HP), `whetstone` (+2 ⚡), `runic_shield` (50% защиты), `potion_antidote` (снятие дебаффов), `scroll_skip` (пропуск), `handful_of_gold` (горсть золота, +50 🪙), `gold_bribe` (золотой подкуп за 50 🪙), `sweet_roll` (сладкий рулет, +3 HP);
+2. **Сундук приключенца** (`adventurer_chest`): содержит 9 продвинутых карт 2 уровня (`levels: [2]`, базовая цена: 75 🪙, шаг: +35 🪙): апгрейды характеристик (`potion_heal` +4 HP, `potion_attack` +4 ⚡, `potion_regeneration` +2 HP/ход на 3 хода), защиты (`potion_stoneskin` иммунитет 3 хода, `thornmail`), побега (`smoke_bomb`), фарма (`greed_magnet`, `dice_of_fate`) и `small_gold_pouch` (маленький мешочек золота, +100 🪙);
+3. **Сундук героя** (`hero_chest`): содержит 7 легендарных артефактов 3 уровня (`levels: [3]`, базовая цена: 100 🪙, шаг: +50 🪙): `divine_runic_shield` (100% блок следующего урона), `enhanced_runic_shield` (50% на 3 хода), `mirror_distortion` (инверсия потерь в прибыль), `scroll_teleport` (пропуск 1–3 карт), `philosophers_stone` (золото в статы), `bag_of_gold` (мешок золота, +250 🪙), `strong_regeneration_potion` (сильное зелье регенерации, +3 HP/ход на 3 хода);
+4. **Серебряный сундук** (`silver_chest`): открывается за серебряные ключи и содержит эликсиры, теневой пакт, мощную регенерацию, пространственную червоточину, богатство и заряженное зеркало искажения (`itemIds: ['elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole', 'shadow_pact', 'powerful_regeneration_potion', 'charged_mirror_distortion']`, `currency: ChestCurrency.silverKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7, 9, 11, 13 🗝️; `powerful_regeneration_potion` +3 HP/ход на 5 ходов, `charged_mirror_distortion` инверсия на 3 хода]);
+5. **Золотой сундук** (`gold_chest`): открывается за золотые ключи и содержит божественные реликвии, великую регенерацию, великий философский камень, чёрную дыру и казну (`itemIds: ['divine_healing', 'divine_power', 'enhanced_divine_runic_shield', 'chest_of_gold', 'black_hole', 'great_regeneration_potion', 'great_philosophers_stone']`, `currency: ChestCurrency.goldKeys`, цена: 1 🗝️, шаг: +2 🗝️ [1, 3, 5, 7, 9, 11, 13 🗝️; `great_regeneration_potion` +5 HP/ход на 3 хода, `great_philosophers_stone` трансмутация до 100 монет]).
 
 #### Валюты и гибкая настройка сундуков:
 Класс `ShopChest` поддерживает любые комбинации карт и валют:

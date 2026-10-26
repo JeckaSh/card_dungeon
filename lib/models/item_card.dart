@@ -8,13 +8,13 @@ import 'package:flutter/material.dart';
 /// * [skip] — безопасно пропускает текущую карточку события или босса без потерь.
 /// * [shield] — даёт [ItemCard.value] зарядов рунического щита, поглощающего урон.
 /// * [invertNext] — активирует искажение: следующий выбор обращает потери в выгоду.
-/// * [thornmail] — следующий полученный урон конвертируется в двойное золото.
+/// * [thornmail] — следующий полученный урон конвертируется в золото ×10.
 /// * [transmute] — тратит монеты (кратно 10, до 100) и даёт здоровье и атаку.
 /// * [shadowPact] — жертвует 50% текущего HP, взамен удваивает монеты и даёт случайную карту.
 /// * [greedMagnet] — удваивает золото от выборов на протяжении следующих 3 ходов.
 /// * [diceOfFate] — бросок кубика d6 со случайным исходом (потеря, карта или джекпот).
 /// * [smokeBomb] — мгновенный побег от карты/босса с подбором доступных монет.
-/// * [bribery] — за 15 монет позволяет выбрать наилучший исход без боя.
+/// * [bribery] — за 50 монет позволяет выбрать наилучший исход без боя.
 enum ItemEffectType {
   /// Восстановление здоровья героя
   heal,
@@ -72,6 +72,12 @@ enum ItemEffectType {
 
   /// Мгновенное получение золотых монет
   coins,
+
+  /// Возврат здоровья и атаки к исходному стартовому значению
+  rebirth,
+
+  /// Казино судьбы: усиленная версия кубика судьбы с повышенными ставками и мега-джекпотом
+  casinoOfFate,
 }
 
 /// Расширение для работы с категориями и отображением эффектов предметов.
@@ -97,6 +103,8 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.teleport => 'Телепортация',
         ItemEffectType.shieldTurns => 'Защита',
         ItemEffectType.coins => 'Золото',
+        ItemEffectType.rebirth => 'Перерождение',
+        ItemEffectType.casinoOfFate => 'Удача',
       };
 
   /// Формирует компактный бейдж эффекта с учётом числового параметра [value]
@@ -105,7 +113,8 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.attack => '+$value ⚡',
         ItemEffectType.skip => 'Пропуск',
         ItemEffectType.shield => '🛡️ 50%',
-        ItemEffectType.invertNext => '🪞 Инверсия',
+        ItemEffectType.invertNext =>
+            value > 1 ? '🪞 Инверсия ($value х.)' : '🪞 Инверсия',
         ItemEffectType.thornmail => '🌵 Шипы',
         ItemEffectType.transmute => '⚗️ Алхимия',
         ItemEffectType.shadowPact => '📜 Пакт',
@@ -116,7 +125,7 @@ extension ItemEffectTypeExtension on ItemEffectType {
         ItemEffectType.divineShield => '✨🛡️ 100%',
         ItemEffectType.stoneskin => '🪨 Кожа',
         ItemEffectType.antidote => '🧪 Противоядие',
-        ItemEffectType.regeneration => '🌿 +2❤/ход',
+        ItemEffectType.regeneration => '🌿 +$value❤/ход',
         ItemEffectType.teleport => value == 5
             ? '🕳️ +5 карт'
             : value == 4
@@ -124,6 +133,8 @@ extension ItemEffectTypeExtension on ItemEffectType {
                 : '🌀 +1-3 к.',
         ItemEffectType.shieldTurns => '🛡️ 50% ($value х.)',
         ItemEffectType.coins => '+$value 🪙',
+        ItemEffectType.rebirth => '🔄 Исходные',
+        ItemEffectType.casinoOfFate => '🎰 Казино',
       };
 }
 
@@ -143,6 +154,7 @@ class ItemCard {
     required this.description,
     required this.effectType,
     required this.value,
+    this.duration = 0,
     required this.icon,
     required this.color,
     this.level = 1,
@@ -167,6 +179,10 @@ class ItemCard {
   /// Числовой модификатор эффекта (например, количество восстанавливаемого HP,
   /// прирост атаки, заряды щита или ходы действия)
   final int value;
+
+  /// Длительность действия эффекта в ходах (для эффектов с двумя параметрами,
+  /// например регенерации: value = HP за ход, duration = количество ходов)
+  final int duration;
 
   /// Иконка для визуального отображения карточки
   final IconData icon;

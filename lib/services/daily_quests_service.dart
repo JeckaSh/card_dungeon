@@ -41,10 +41,9 @@ class DailyQuest {
     this.targetDungeonId,
     this.isWeekly = false,
     int? rewardCoins,
-  }) : rewardCoins = rewardCoins ??
-            (isWeekly
-                ? defaultWeeklyRewardCoins
-                : defaultDailyRewardCoins);
+  }) : rewardCoins =
+           rewardCoins ??
+           (isWeekly ? defaultWeeklyRewardCoins : defaultDailyRewardCoins);
 
   factory DailyQuest.fromJson(Map<String, dynamic> json) {
     final isWeekly = json['isWeekly'] as bool? ?? false;
@@ -59,10 +58,9 @@ class DailyQuest {
           : null,
       targetDungeonId: json['targetDungeonId'] as String?,
       isWeekly: isWeekly,
-      rewardCoins: json['rewardCoins'] as int? ??
-          (isWeekly
-              ? defaultWeeklyRewardCoins
-              : defaultDailyRewardCoins),
+      rewardCoins:
+          json['rewardCoins'] as int? ??
+          (isWeekly ? defaultWeeklyRewardCoins : defaultDailyRewardCoins),
     );
   }
 
@@ -84,16 +82,16 @@ class DailyQuest {
   bool get canClaim => isCompleted && !isClaimed;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'target': target,
-        'progress': progress,
-        'isClaimed': isClaimed,
-        'targetEventType': targetEventType?.name,
-        'targetDungeonId': targetDungeonId,
-        'isWeekly': isWeekly,
-        'rewardCoins': rewardCoins,
-      };
+    'id': id,
+    'type': type.name,
+    'target': target,
+    'progress': progress,
+    'isClaimed': isClaimed,
+    'targetEventType': targetEventType?.name,
+    'targetDungeonId': targetDungeonId,
+    'isWeekly': isWeekly,
+    'rewardCoins': rewardCoins,
+  };
 }
 
 /// Сервис управления ежедневными и еженедельными заданиями.
@@ -128,7 +126,7 @@ class DailyQuestsService extends ChangeNotifier {
   static const int allDailyQuestsSilverKeysReward = 2;
 
   /// Количество золотых ключей за выполнение всех еженедельных заданий недели
-  static const int allWeeklyQuestsGoldKeysReward = 2;
+  static const int allWeeklyQuestsGoldKeysReward = 3;
 
   String? _dateKey;
   String? _weeklyDateKey;
@@ -179,7 +177,9 @@ class DailyQuestsService extends ChangeNotifier {
     final todayKey = DailyRewardService.todayMskKey;
     final thisWeekKey = WorldTimeService.instance.thisWeekMskKey;
 
-    if (_loaded && _dateKey == todayKey && _weeklyDateKey == thisWeekKey) return;
+    if (_loaded && _dateKey == todayKey && _weeklyDateKey == thisWeekKey) {
+      return;
+    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -197,12 +197,14 @@ class DailyQuestsService extends ChangeNotifier {
         if (savedDate == todayKey) {
           _quests = parsedQuests;
           _dateKey = todayKey;
-          _isDailyBonusClaimed = prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
+          _isDailyBonusClaimed =
+              prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
         } else if (todayKey.compareTo(savedDate) < 0 ||
             WorldTimeService.instance.isRollbackDetected) {
           _quests = parsedQuests;
           _dateKey = savedDate;
-          _isDailyBonusClaimed = prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
+          _isDailyBonusClaimed =
+              prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
         } else {
           // Переход на новый день
           if (!WorldTimeService.instance.isSynchronized) {
@@ -213,7 +215,8 @@ class DailyQuestsService extends ChangeNotifier {
           } else {
             _quests = parsedQuests;
             _dateKey = savedDate;
-            _isDailyBonusClaimed = prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
+            _isDailyBonusClaimed =
+                prefs.getBool(_storageKeyDailyBonusClaimed) ?? false;
           }
         }
       } catch (_) {
@@ -237,12 +240,14 @@ class DailyQuestsService extends ChangeNotifier {
         if (savedWeeklyDate == thisWeekKey) {
           _weeklyQuests = parsedWeekly;
           _weeklyDateKey = thisWeekKey;
-          _isWeeklyBonusClaimed = prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
+          _isWeeklyBonusClaimed =
+              prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
         } else if (thisWeekKey.compareTo(savedWeeklyDate) < 0 ||
             WorldTimeService.instance.isRollbackDetected) {
           _weeklyQuests = parsedWeekly;
           _weeklyDateKey = savedWeeklyDate;
-          _isWeeklyBonusClaimed = prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
+          _isWeeklyBonusClaimed =
+              prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
         } else {
           // Переход на новую неделю
           if (!WorldTimeService.instance.isSynchronized) {
@@ -253,7 +258,8 @@ class DailyQuestsService extends ChangeNotifier {
           } else {
             _weeklyQuests = parsedWeekly;
             _weeklyDateKey = savedWeeklyDate;
-            _isWeeklyBonusClaimed = prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
+            _isWeeklyBonusClaimed =
+                prefs.getBool(_storageKeyWeeklyBonusClaimed) ?? false;
           }
         }
       } catch (_) {
@@ -274,7 +280,8 @@ class DailyQuestsService extends ChangeNotifier {
     final thisWeekKey = WorldTimeService.instance.thisWeekMskKey;
 
     bool needsDailyUpdate = _dateKey != null && _dateKey != todayKey;
-    bool needsWeeklyUpdate = _weeklyDateKey != null && _weeklyDateKey != thisWeekKey;
+    bool needsWeeklyUpdate =
+        _weeklyDateKey != null && _weeklyDateKey != thisWeekKey;
 
     if (!needsDailyUpdate && !needsWeeklyUpdate) return;
 
@@ -303,7 +310,8 @@ class DailyQuestsService extends ChangeNotifier {
 
   void _generateDailyQuests(String todayKey, {Random? customRandom}) {
     final rng = customRandom ?? Random();
-    final availableTypes = List<DailyQuestType>.from(DailyQuestType.values)..shuffle(rng);
+    final availableTypes = List<DailyQuestType>.from(DailyQuestType.values)
+      ..shuffle(rng);
     final chosenTypes = availableTypes.take(2).toList();
 
     _quests = chosenTypes.map((type) => _createDailyQuest(type, rng)).toList();
@@ -323,7 +331,7 @@ class DailyQuestsService extends ChangeNotifier {
           rewardCoins: DailyQuest.defaultDailyRewardCoins,
         );
       case DailyQuestType.killBosses:
-        final target = 3 + rng.nextInt(3);
+        final target = 1 + rng.nextInt(3);
         return DailyQuest(
           id: 'bosses_$target',
           type: type,
@@ -348,7 +356,8 @@ class DailyQuestsService extends ChangeNotifier {
           EventType.rest,
           EventType.mystery,
         ];
-        final eventType = possibleEventTypes[rng.nextInt(possibleEventTypes.length)];
+        final eventType =
+            possibleEventTypes[rng.nextInt(possibleEventTypes.length)];
         return DailyQuest(
           id: 'cards_${eventType.name}',
           type: type,
@@ -376,10 +385,13 @@ class DailyQuestsService extends ChangeNotifier {
 
   void _generateWeeklyQuests(String weekKey, {Random? customRandom}) {
     final rng = customRandom ?? Random();
-    final availableTypes = List<DailyQuestType>.from(DailyQuestType.values)..shuffle(rng);
+    final availableTypes = List<DailyQuestType>.from(DailyQuestType.values)
+      ..shuffle(rng);
     final chosenTypes = availableTypes.take(2).toList();
 
-    _weeklyQuests = chosenTypes.map((type) => _createWeeklyQuest(type, rng)).toList();
+    _weeklyQuests = chosenTypes
+        .map((type) => _createWeeklyQuest(type, rng))
+        .toList();
     _weeklyDateKey = weekKey;
     _isWeeklyBonusClaimed = false;
   }
@@ -388,7 +400,7 @@ class DailyQuestsService extends ChangeNotifier {
     switch (type) {
       case DailyQuestType.dungeonRuns:
         // В 3-5 раз сложнее: 5-10 забегов
-        final target = 5 + rng.nextInt(6);
+        final target = 3 + rng.nextInt(5);
         return DailyQuest(
           id: 'weekly_runs_$target',
           type: type,
@@ -398,7 +410,7 @@ class DailyQuestsService extends ChangeNotifier {
         );
       case DailyQuestType.killBosses:
         // В 3-5 раз сложнее: 12-20 боссов
-        final target = 12 + rng.nextInt(9);
+        final target = 3 + rng.nextInt(5);
         return DailyQuest(
           id: 'weekly_bosses_$target',
           type: type,
@@ -426,7 +438,8 @@ class DailyQuestsService extends ChangeNotifier {
           EventType.rest,
           EventType.mystery,
         ];
-        final eventType = possibleEventTypes[rng.nextInt(possibleEventTypes.length)];
+        final eventType =
+            possibleEventTypes[rng.nextInt(possibleEventTypes.length)];
         const cardTargets = [90, 120, 150];
         final target = cardTargets[rng.nextInt(cardTargets.length)];
         return DailyQuest(
@@ -441,7 +454,7 @@ class DailyQuestsService extends ChangeNotifier {
         // В 3-5 раз сложнее: 5-10 забегов в указанном подземелье
         final available = allDungeons.where((d) => d.isAvailable).toList();
         final dungeon = available[rng.nextInt(available.length)];
-        final target = 5 + rng.nextInt(6);
+        final target = 3 + rng.nextInt(5);
         return DailyQuest(
           id: 'weekly_dungeon_${dungeon.id}_$target',
           type: type,
@@ -465,7 +478,9 @@ class DailyQuestsService extends ChangeNotifier {
     if (_weeklyDateKey != null) {
       await prefs.setString(_storageKeyWeeklyDate, _weeklyDateKey!);
     }
-    final encodedWeekly = jsonEncode(_weeklyQuests.map((q) => q.toJson()).toList());
+    final encodedWeekly = jsonEncode(
+      _weeklyQuests.map((q) => q.toJson()).toList(),
+    );
     await prefs.setString(_storageKeyWeeklyList, encodedWeekly);
     await prefs.setBool(_storageKeyWeeklyBonusClaimed, _isWeeklyBonusClaimed);
   }
@@ -480,7 +495,9 @@ class DailyQuestsService extends ChangeNotifier {
         q.progress = (q.progress + 1).clamp(0, q.target);
         changed = true;
       }
-      if (isVictory && q.type == DailyQuestType.clearDungeon && !q.isCompleted) {
+      if (isVictory &&
+          q.type == DailyQuestType.clearDungeon &&
+          !q.isCompleted) {
         q.progress = (q.progress + 1).clamp(0, q.target);
         changed = true;
       }
@@ -566,7 +583,9 @@ class DailyQuestsService extends ChangeNotifier {
 
     await PlayerCoinsService.instance.load();
     _isDailyBonusClaimed = true;
-    PlayerCoinsService.instance.applySilverKeysDelta(allDailyQuestsSilverKeysReward);
+    PlayerCoinsService.instance.applySilverKeysDelta(
+      allDailyQuestsSilverKeysReward,
+    );
 
     await _save();
     notifyListeners();
@@ -580,7 +599,9 @@ class DailyQuestsService extends ChangeNotifier {
 
     await PlayerCoinsService.instance.load();
     _isWeeklyBonusClaimed = true;
-    PlayerCoinsService.instance.applyGoldKeysDelta(allWeeklyQuestsGoldKeysReward);
+    PlayerCoinsService.instance.applyGoldKeysDelta(
+      allWeeklyQuestsGoldKeysReward,
+    );
 
     await _save();
     notifyListeners();

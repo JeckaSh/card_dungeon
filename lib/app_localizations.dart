@@ -162,9 +162,13 @@ class AppLocalizations {
   String shopNotEnoughSilverKeysPrice(int price) =>
       _isRu ? 'Не хватает ключей ($price 🗝️)' : 'Not enough keys ($price 🗝️)';
   String shopOpenChestGoldKeysPrice(int price) =>
-      _isRu ? 'Открыть сундук ($price 🗝️)' : 'Open chest ($price 🗝️)';
+      _isRu ? 'Открыть сундук ($price 🔑)' : 'Open chest ($price 🔑)';
   String shopNotEnoughGoldKeysPrice(int price) =>
-      _isRu ? 'Не хватает ключей ($price 🗝️)' : 'Not enough keys ($price 🗝️)';
+      _isRu ? 'Не хватает ключей ($price 🔑)' : 'Not enough keys ($price 🔑)';
+  String shopOpenChestPricePrefix(int price) =>
+      _isRu ? 'Открыть сундук ($price' : 'Open chest ($price';
+  String shopNotEnoughKeysPricePrefix(int price) =>
+      _isRu ? 'Не хватает ключей ($price' : 'Not enough keys ($price';
   String get shopNotEnoughCoins =>
       _isRu ? 'Недостаточно монет' : 'Not enough coins';
   String get shopNewCard => _isRu ? 'Новая карта!' : 'New card!';
@@ -355,8 +359,8 @@ class AppLocalizations {
       _isRu ? 'Обучение завершено!' : 'Tutorial Complete!';
   String get tutorialCompletedBody =>
       _isRu
-          ? 'Ты освоил все основы выживания в подземелье!\nТеперь ты знаешь, как делать правильные выборы, использовать артефакты и сражаться с боссами.'
-          : 'You have mastered all the dungeon survival basics!\nNow you know how to make the right choices, use artifacts and fight bosses.';
+          ? 'Ты освоил все ключевые механики выживания в подземелье!\nТеперь ты готов к настоящим походам, битвам с боссами и сбору легендарных сокровищ.'
+          : 'You have mastered all the key dungeon survival mechanics!\nNow you are ready for real runs, boss battles, and collecting legendary treasures.';
   String get tutorialRewardLabel =>
       _isRu ? 'Награда за обучение' : 'Tutorial Reward';
   String get tutorialRewardCoins =>
@@ -365,6 +369,141 @@ class AppLocalizations {
       _isRu ? 'Награда уже получена ранее' : 'Reward already claimed';
   String get tutorialToMenu =>
       _isRu ? 'В главное меню' : 'Main Menu';
+
+  // Памятка искателю приключений на победном экране обучения
+  String get tutorialGuideTitle =>
+      _isRu ? 'Памятка искателю приключений' : 'Adventurer\'s Field Guide';
+  String get tutorialGuideDungeonsTitle =>
+      _isRu ? 'Выбор подземелья' : 'Dungeon Selection';
+  String get tutorialGuideDungeonsDesc =>
+      _isRu
+          ? 'Выбирай одно из доступных подземелий с собственными уникальными монстрами и ловушками.'
+          : 'Choose one of the available dungeons with unique monsters and traps.';
+  String get tutorialGuideSkillsTitle =>
+      _isRu ? 'Прокачка в Инвентаре' : 'Inventory Upgrades';
+  String get tutorialGuideSkillsDesc =>
+      _isRu
+          ? 'Улучшай характеристики персонажа в инвентаре и становись сильней.'
+          : 'Upgrade your character stats in the inventory and become stronger.';
+  String get tutorialGuideShopTitle =>
+      _isRu ? 'Магазин и 5 видов сундуков' : 'Shop & 5 Chest Types';
+  String get tutorialGuideShopDesc =>
+      _isRu
+          ? 'Открывай сундуки Новичка, Приключенца и Героя за монеты, а редкие Серебряный и Золотой сундуки — за ключи.'
+          : 'Unlock Novice, Adventurer, and Hero chests for coins, plus rare Silver and Gold chests for keys.';
+  String get tutorialGuideQuestsTitle =>
+      _isRu ? 'Задания и награды за вход' : 'Quests & Daily Streak';
+  String get tutorialGuideQuestsDesc =>
+      _isRu
+          ? 'Выполняй ежедневные и еженедельные квесты, зарабатывай ключи и сохраняй 7-дневный календарь стрика заходов.'
+          : 'Complete daily and weekly quests, earn keys, and maintain your 7-day login streak.';
+
+  // Шаги обучения (тексты наставника и карт)
+  String get tutorialStep1Mentor =>
+      _isRu
+          ? 'Добро пожаловать в подземелье! Сверху три твоих ресурса: Здоровье (❤ — при 0 поход окончен), Атака (⚡ — сила для ударов по монстрам) и Золото (🪙 — сохраняется навсегда). Оттяни карту влево или вправо и сделай выбор!'
+          : 'Welcome to the dungeon! At the top are your 3 vitals: Health (❤ — reaching 0 means defeat), Attack (⚡ — strength to battle monsters), and Gold (🪙 — kept forever between runs). Drag the card left or right and make your choice!';
+  String get tutorialStep1CardTitle =>
+      _isRu ? 'Развилка в подземелье' : 'Dungeon Crossroad';
+  String get tutorialStep1CardDesc =>
+      _isRu
+          ? 'Перед тобой два пути: левый ведёт к целебному фонтану, правый — к древнему алтарю силы.'
+          : 'Two paths lie ahead: the left leads to a healing fountain, the right to an ancient altar of power.';
+  String get tutorialStep1Left =>
+      _isRu ? 'Целебный источник (+3 ❤)' : 'Healing Spring (+3 ❤)';
+  String get tutorialStep1Right =>
+      _isRu ? 'Алтарь силы (+2 ⚡)' : 'Altar of Power (+2 ⚡)';
+
+  String get tutorialStep2Mentor =>
+      _isRu
+          ? 'Внимание на красный замочек 🔒! Если не хватает Атаки (⚡) или Монет (🪙), выбор блокируется! Нельзя уйти в минус. У тебя недостаточно сил для прямого удара (нужно 10 ⚡). Потяни влево — сработает блок, затем свайпни вправо!'
+          : 'Watch out for the red lock 🔒! If you lack Attack (⚡) or Coins (🪙), the choice is blocked! You cannot go negative. You lack strength for a direct hit (needs 10 ⚡). Drag left to see the lock, then swipe right!';
+  String get tutorialStep2CardTitle =>
+      _isRu ? 'Пещерный тролль' : 'Cave Troll';
+  String get tutorialStep2CardDesc =>
+      _isRu
+          ? 'Огромный свирепый тролль с каменной дубиной преграждает узкий коридор.'
+          : 'A ferocious cave troll with a massive stone club blocks the narrow corridor.';
+  String get tutorialStep2Left =>
+      _isRu ? 'Сокрушительный удар (-10 ⚡)' : 'Crushing Blow (-10 ⚡)';
+  String get tutorialStep2Right =>
+      _isRu ? 'Принять удар на щит (-2 ❤, +15 🪙)' : 'Block with shield (-2 ❤, +15 🪙)';
+
+  String get tutorialStep3Mentor =>
+      _isRu
+          ? 'В подземелье есть Тайники и Сокровищницы (1, 2 и 3 ур.). Здесь предстоит тактический выбор: получить ценные карты предметов прямо в инвентарь или забрать увесистый кошель золота!'
+          : 'You will encounter Secret Caches and Treasuries (Lv. 1, 2, 3). You face a tactical choice: claim valuable item cards directly into your inventory or pocket a purse of gold coins!';
+  String get tutorialStep3CardTitle =>
+      _isRu ? 'Тайник чародея' : 'Sorcerer\'s Cache';
+  String get tutorialStep3CardDesc =>
+      _isRu
+          ? 'Древний магический тайник, озарённый руническим сиянием. Внутри лежат реликвии и золото.'
+          : 'An ancient magical cache glowing with runic light. Relics and gold rest within.';
+  String get tutorialStep3Left =>
+      _isRu ? 'Забрать реликвию (+1 🎒 карта)' : 'Take relic (+1 🎒 card)';
+  String get tutorialStep3Right =>
+      _isRu ? 'Забрать золото (+25 🪙)' : 'Pocket gold (+25 🪙)';
+
+  String get tutorialStep4Mentor =>
+      _isRu
+          ? 'Торговцы («Бродячий торговец», «Контрабандист», «Астральный меняла») продают открытые в Магазине карты. А если хочешь сберечь золото — всегда можно бесплатно выбрать «Идти дальше»!'
+          : 'Merchants (Wandering Merchant, Smuggler, Astral Trader) sell cards you unlocked in the Shop. If you want to save coins, choose "Walk away" for free!';
+  String get tutorialStep4CardTitle =>
+      _isRu ? 'Бродячий торговец' : 'Wandering Merchant';
+  String get tutorialStep4CardDesc =>
+      _isRu
+          ? 'Приветливый торговец раскладывает свой товар: «Загляни в мою лавку, путник!»'
+          : 'A friendly trader unpacks his wares: "Have a look at my goods, traveler!"';
+  String get tutorialStep4Left =>
+      _isRu ? 'Точильный камень (-15 🪙, +1 🎒)' : 'Whetstone (-15 🪙, +1 🎒)';
+  String get tutorialStep4Right =>
+      _isRu ? 'Идти дальше (0 🪙)' : 'Walk away (0 🪙)';
+
+  String get tutorialStep5Mentor =>
+      _isRu
+          ? 'Внизу экрана твой Инвентарь. Предметы можно активировать в любой момент до свайпа! Открой Инвентарь прямо сейчас и активируй «Рунический щит» 🛡️, чтобы полностью поглотить урон от ловушки!'
+          : 'At the bottom is your Inventory. Cards can be used anytime before swiping! Open Inventory now and activate "Runic Shield" 🛡️ to absorb the trap\'s damage completely!';
+  String get tutorialStep5CardTitle =>
+      _isRu ? 'Шипастый коридор' : 'Spiked Corridor';
+  String get tutorialStep5CardDesc =>
+      _isRu
+          ? 'Пол усеян нажимными плитами. Острые лезвия готовы пронзить неосторожного путника.'
+          : 'The floor is riddled with pressure plates. Sharp spikes await the unwary.';
+  String get tutorialStep5Left =>
+      _isRu ? 'Идти напролом (-3 ❤)' : 'Charge through (-3 ❤)';
+  String get tutorialStep5Right =>
+      _isRu ? 'Проползти в щель (-1 ⚡)' : 'Crawl through (-1 ⚡)';
+
+  String get tutorialStep6Mentor =>
+      _isRu
+          ? 'Остерегайся DoT-эффектов! В игре 4 статуса (на 3 хода): 🟢 Яд (-1 ❤), 🩸 Кровотечение (-2 ❤), 👁️ Слепота (скрывает исходы знаками ???) и 🪙 Проклятие Мидаса. Навык «Сопротивление» позволяет отражать их!'
+          : 'Beware of DoT effects! 4 statuses last 3 turns: 🟢 Poison (-1 ❤), 🩸 Bleeding (-2 ❤), 👁️ Blindness (hides outcomes with ???), and 🪙 Midas Curse. The "Resistance" skill lets you shrug them off!';
+  String get tutorialStep6CardTitle =>
+      _isRu ? 'Ядовитые споровики' : 'Poison Spores';
+  String get tutorialStep6CardDesc =>
+      _isRu
+          ? 'Из трещин в стенах сочатся гигантские грибы, распыляющие едкий удушающий яд.'
+          : 'Giant fungi seep through the cracks, releasing caustic choking poison into the air.';
+  String get tutorialStep6Left =>
+      _isRu ? 'Пробежать сквозь газ (-1 ❤)' : 'Dash through gas (-1 ❤)';
+  String get tutorialStep6Right =>
+      _isRu ? 'Разрубить очаг мечом (+1 ⚡)' : 'Slash with sword (+1 ⚡)';
+
+  String get tutorialStep7Mentor =>
+      _isRu
+          ? 'Финальный экзамен — БОСС! Каждые 20 карт этажа тебя ждёт босс в золотой рамке. У всех боссов 3 фазы с уникальными атаками и растущей мощью. Победи Тренировочного Колосса, чтобы завершить обучение!'
+          : 'Final trial — the BOSS! Every 20 cards on each floor, a gold-framed boss awaits. All bosses have 3 phases with unique attacks and scaling power. Defeat the Training Colossus to finish the tutorial!';
+  String get tutorialStep7CardTitle =>
+      _isRu ? 'Тренировочный Колосс' : 'Training Colossus';
+  String get tutorialStep7CardDesc =>
+      _isRu
+          ? 'Магический исполин, созданный древними магами для проверки боевых навыков героев.'
+          : 'A towering magical construct forged by ancient mages to test the combat prowess of heroes.';
+  String get tutorialStep7Left =>
+      _isRu ? 'Принять удар на доспех (-3 ❤, +20 🪙)' : 'Brace for impact (-3 ❤, +20 🪙)';
+  String get tutorialStep7Right =>
+      _isRu ? 'Сокрушить ядро (-2 ⚡, +20 🪙)' : 'Shatter power core (-2 ⚡, +20 🪙)';
+
 
   // ── Игровой экран ────────────────────────────────────────────────────────
   String get gameHealth => _isRu ? 'Здоровье' : 'Health';
@@ -418,9 +557,11 @@ class AppLocalizations {
       _isRu ? 'Бож. щит ×$charges' : 'Divine Shield ×$charges';
   String gameBuffStoneskin(int turns) =>
       _isRu ? 'Каменная кожа ×$turns' : 'Stoneskin ×$turns';
-  String gameBuffRegen(int turns) =>
-      _isRu ? 'Регенерация ×$turns (+2❤)' : 'Regen ×$turns (+2❤)';
+  String gameBuffRegen(int turns, [int hp = 2]) =>
+      _isRu ? 'Регенерация ×$turns (+$hp❤)' : 'Regen ×$turns (+$hp❤)';
   String get gameBuffMirror => _isRu ? 'Зеркало' : 'Mirror';
+  String gameBuffMirrorTurns(int turns) =>
+      _isRu ? 'Зеркало ×$turns' : 'Mirror ×$turns';
   String get gameBuffClairvoyance =>
       _isRu ? 'Ясновидение' : 'Clairvoyance';
   String gameBuffGreed(int turns) =>
@@ -452,6 +593,12 @@ class AppLocalizations {
       _isRu ? 'Нужно: $amount ⚡' : 'Need: $amount ⚡';
   String get gameAddCardBag =>
       _isRu ? '🎒 +1 карта' : '🎒 +1 card';
+  String gameAddCardBagCount(int count) {
+    if (!_isRu) return count == 1 ? '🎒 +1 card' : '🎒 +$count cards';
+    if (count == 1) return '🎒 +1 карта';
+    if (count >= 2 && count <= 4) return '🎒 +$count карты';
+    return '🎒 +$count карт';
+  }
   String get gameVictory => _isRu ? 'Победа!' : 'Victory!';
   String get gameDefeat => _isRu ? 'Поражение' : 'Defeat';
   String get gameToMenu => _isRu ? 'В меню' : 'Menu';
@@ -525,7 +672,14 @@ class AppLocalizations {
         'huge_bag_of_gold' => 'Huge Bag of Gold',
         'chest_of_gold' => 'Chest of Gold',
         'wormhole' => 'Wormhole',
-        'black_hole' => 'Black Hole',
+        'sweet_roll' => 'Sweetroll',
+        'strong_regeneration_potion' => 'Strong Regeneration Potion',
+        'powerful_regeneration_potion' => 'Powerful Regeneration Potion',
+        'great_regeneration_potion' => 'Great Regeneration Potion',
+        'charged_mirror_distortion' => 'Charged Distortion Mirror',
+        'great_philosophers_stone' => 'Great Philosopher\'s Stone',
+        'totem_of_rebirth' => 'Totem of Rebirth',
+        'casino_of_fate' => 'Casino of Fate',
         _ => fallback,
       };
     }
@@ -542,13 +696,13 @@ class AppLocalizations {
         'elixir_life' => 'Restores +8 health',
         'runic_shield' => 'Next incoming health damage will be fully absorbed.',
         'mirror_distortion' => 'Next turn: all losses turn into equal gains.',
-        'thornmail' => 'Next hit: converts damage into double gold.',
+        'thornmail' => 'Next hit: converts damage into 10x gold.',
         'philosophers_stone' => 'Converts coins (×10, max 50🪙) into attack (+1) and health (+2).',
         'shadow_pact' => 'Sacrifice half HP → double coins + random card.',
         'greed_magnet' => 'Doubles all coins gained in events for 3 turns.',
         'dice_of_fate' => 'Random outcome: losses, an artifact, or jackpot (+5❤ +2⚡ +25🪙).',
         'smoke_bomb' => 'Instant escape: card is skipped, best coins are kept.',
-        'gold_bribe' => 'Spend 15🪙 to choose the best outcome without consequences.',
+        'gold_bribe' => 'Spend 50🪙 to choose the best outcome without consequences.',
         'medicinal_herbs' => 'Restores +2 health',
         'potion_regeneration' => 'Restores 2 health each turn for 3 turns.',
         'potion_stoneskin' => 'Protects against bleed, poison, and blindness for 3 turns.',
@@ -566,6 +720,14 @@ class AppLocalizations {
         'chest_of_gold' => 'Grants +1000 gold',
         'wormhole' => 'Moves forward by 2–4 cards. Cannot be used on bosses.',
         'black_hole' => 'Moves forward by 5 cards. Cannot be used on bosses.',
+        'sweet_roll' => 'Restores +3 health. Seems someone stole it...',
+        'strong_regeneration_potion' => 'Restores 3 health each turn for 3 turns.',
+        'powerful_regeneration_potion' => 'Restores 3 health each turn for 5 turns.',
+        'great_regeneration_potion' => 'Restores 5 health each turn for 3 turns.',
+        'charged_mirror_distortion' => 'For the next 3 turns: all losses turn into equal gains.',
+        'great_philosophers_stone' => 'Converts coins (×10, max 100🪙) into attack (+1) and health (+2).',
+        'totem_of_rebirth' => 'Resets health and attack back to their initial starting values.',
+        'casino_of_fate' => 'High-stakes gamble: valuable artifacts, gold, or mega jackpot (+12❤ +5⚡ +100🪙).',
         _ => fallback,
       };
     }
@@ -594,6 +756,8 @@ class AppLocalizations {
         ItemEffectType.teleport => 'Teleport',
         ItemEffectType.shieldTurns => 'Defense',
         ItemEffectType.coins => 'Gold',
+        ItemEffectType.rebirth => 'Rebirth',
+        ItemEffectType.casinoOfFate => 'Luck',
       };
     }
     return type.categoryLabel;
@@ -606,7 +770,8 @@ class AppLocalizations {
         ItemEffectType.attack => '+$value ⚡',
         ItemEffectType.skip => 'Skip',
         ItemEffectType.shield => '🛡️ 50%',
-        ItemEffectType.invertNext => '🪞 Inversion',
+        ItemEffectType.invertNext =>
+            value > 1 ? '🪞 Inversion ($value t.)' : '🪞 Inversion',
         ItemEffectType.thornmail => '🌵 Thorns',
         ItemEffectType.transmute => '⚗️ Alchemy',
         ItemEffectType.shadowPact => '📜 Pact',
@@ -617,7 +782,7 @@ class AppLocalizations {
         ItemEffectType.divineShield => '✨🛡️ 100%',
         ItemEffectType.stoneskin => '🪨 Stoneskin',
         ItemEffectType.antidote => '🧪 Antidote',
-        ItemEffectType.regeneration => '🌿 +2❤/turn',
+        ItemEffectType.regeneration => '🌿 +$value❤/turn',
         ItemEffectType.teleport => value == 5
             ? '🕳️ +5 cards'
             : value == 4
@@ -625,6 +790,8 @@ class AppLocalizations {
                 : '🌀 +1-3 cards',
         ItemEffectType.shieldTurns => '🛡️ 50% ($value t.)',
         ItemEffectType.coins => '+$value 🪙',
+        ItemEffectType.rebirth => '🔄 Reset',
+        ItemEffectType.casinoOfFate => '🎰 Casino',
       };
     }
     return type.getBadge(value);
@@ -752,7 +919,7 @@ class AppLocalizations {
       _isRu ? '+$count случ. карт' : '+$count random cards';
   String get debugResetStats => _isRu ? 'Сбросить в 0' : 'Reset to 0';
   String get debugMaxStats =>
-      _isRu ? 'Максимум (10/10/2/3)' : 'Max (10/10/2/3)';
+      _isRu ? 'Максимум (10/10/2/5)' : 'Max (10/10/2/5)';
   String get debugChronicleTitle =>
       _isRu ? 'Хроника забегов' : 'Run Chronicle';
   String debugChronicleRecords(int count, int max) =>

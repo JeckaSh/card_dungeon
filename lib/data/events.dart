@@ -47,6 +47,26 @@ const List<EventCard> allEvents = [
     dungeonId: DungeonId.common,
   ),
   EventCard(
+    id: 'treasure_scout_cache',
+    type: EventType.treasure,
+    title: 'Схрон следопыта',
+    description:
+        'Среди камней укрыт сундучок следопыта. Внутри лежит запасная сумка со снаряжением и тугой кошель с монетами.',
+    leftChoice: CardChoice(
+      label: 'Взять снаряжение',
+      healthDelta: 1,
+      givesRandomItem: true,
+      randomItemsCount: 1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Забрать монеты',
+      attackDelta: 1,
+      coinsDelta: 20,
+    ),
+    level: 1,
+    dungeonId: DungeonId.common,
+  ),
+  EventCard(
     id: 'item_merchant',
     type: EventType.merchant,
     title: 'Торговец реликвиями',
@@ -359,6 +379,26 @@ const List<EventCard> allEvents = [
     dungeonId: DungeonId.common,
   ),
   EventCard(
+    id: 'treasure_mage_cache',
+    type: EventType.treasure,
+    title: 'Тайник чародея',
+    description:
+        'Рунический ларец хранит сумки с магическими свитками гильдии и увесистый кошель золота.',
+    leftChoice: CardChoice(
+      label: 'Взять артефакт',
+      healthDelta: 2,
+      givesRandomItem: true,
+      randomItemsCount: 1,
+    ),
+    rightChoice: CardChoice(
+      label: 'Забрать золото',
+      attackDelta: 2,
+      coinsDelta: 45,
+    ),
+    level: 2,
+    dungeonId: DungeonId.common,
+  ),
+  EventCard(
     id: 'black_market',
     type: EventType.merchant,
     title: 'Подпольный скупщик',
@@ -658,6 +698,26 @@ const List<EventCard> allEvents = [
       label: 'Сразить дракона в сердце',
       attackDelta: -5,
       coinsDelta: 120,
+    ),
+    level: 3,
+    dungeonId: DungeonId.common,
+  ),
+  EventCard(
+    id: 'treasure_royal_vault',
+    type: EventType.treasure,
+    title: 'Королевская сокровищница',
+    description:
+        'В тайной нише покоится золоченый ковчег правителей древности с легендарными реликвиями и королевской казной.',
+    leftChoice: CardChoice(
+      label: 'Взять 2 реликвии',
+      healthDelta: 3,
+      givesRandomItem: true,
+      randomItemsCount: 2,
+    ),
+    rightChoice: CardChoice(
+      label: 'Забрать казну',
+      attackDelta: 3,
+      coinsDelta: 90,
     ),
     level: 3,
     dungeonId: DungeonId.common,

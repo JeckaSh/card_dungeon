@@ -222,54 +222,103 @@ void main() {
 
     // Check silver chest is rendered with not enough keys button (initial price 1)
     expect(find.text('Серебряный сундук'), findsWidgets);
-    expect(find.textContaining('Не хватает ключей (1 🗝️)'), findsWidgets);
+    expect(find.textContaining('Не хватает ключей (1'), findsWidgets);
+    expect(find.widgetWithIcon(ElevatedButton, Icons.vpn_key_rounded), findsWidgets);
 
-    // Give 16 silver keys (1 key + 3 keys + 5 keys + 7 keys = 16 keys)
-    PlayerCoinsService.instance.setSilverKeys(16);
+    // Give 64 silver keys (1 + 3 + 5 + 7 + 9 + 11 + 13 + 15 = 64 keys)
+    PlayerCoinsService.instance.setSilverKeys(64);
     await tester.pumpAndSettle();
 
     // First card: price is 1 key
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (1 🗝️)'), findsWidgets);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (1 🗝️)').first);
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (1 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (1 ').first);
     await tester.pumpAndSettle();
 
     // Reward dialog
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
     final dropped1 = UnlockedItemsService.instance.unlockedIds.first;
-    expect(['elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole'].contains(dropped1), isTrue);
-    expect(PlayerCoinsService.instance.silverKeys, equals(15));
+    expect(['elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole', 'shadow_pact', 'powerful_regeneration_potion', 'charged_mirror_distortion', 'casino_of_fate'].contains(dropped1), isTrue);
+    expect(PlayerCoinsService.instance.silverKeys, equals(63));
 
     // Close dialog
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
     // Second card: price increased by 2 -> now costs 3 keys!
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 🗝️)'), findsWidgets);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 🗝️)').first);
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 ').first);
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
-    expect(PlayerCoinsService.instance.silverKeys, equals(12));
+    expect(PlayerCoinsService.instance.silverKeys, equals(60));
 
     // Close dialog
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
     // Third card: price increased by 2 -> now costs 5 keys!
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 🗝️)'), findsWidgets);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 🗝️)').first);
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 ').first);
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
-    expect(PlayerCoinsService.instance.silverKeys, equals(7));
+    expect(PlayerCoinsService.instance.silverKeys, equals(55));
 
     // Close dialog
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
     // Fourth card: price increased by 2 -> now costs 7 keys!
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 🗝️)'), findsWidgets);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 🗝️)').first);
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 ').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.silverKeys, equals(48));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Fifth card: price increased by 2 -> now costs 9 keys!
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 ').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.silverKeys, equals(39));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Sixth card: price increased by 2 -> now costs 11 keys!
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (11 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (11 ').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.silverKeys, equals(28));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Seventh card: price increased by 2 -> now costs 13 keys!
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (13 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (13 ').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.silverKeys, equals(15));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Eighth card: price increased by 2 -> now costs 15 keys!
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (15 '), findsWidgets);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (15 ').first);
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
@@ -277,6 +326,10 @@ void main() {
     expect(UnlockedItemsService.instance.isUnlocked('elixir_attack'), isTrue);
     expect(UnlockedItemsService.instance.isUnlocked('huge_bag_of_gold'), isTrue);
     expect(UnlockedItemsService.instance.isUnlocked('wormhole'), isTrue);
+    expect(UnlockedItemsService.instance.isUnlocked('shadow_pact'), isTrue);
+    expect(UnlockedItemsService.instance.isUnlocked('powerful_regeneration_potion'), isTrue);
+    expect(UnlockedItemsService.instance.isUnlocked('charged_mirror_distortion'), isTrue);
+    expect(UnlockedItemsService.instance.isUnlocked('casino_of_fate'), isTrue);
     expect(PlayerCoinsService.instance.silverKeys, equals(0));
 
     // Close dialog
@@ -313,8 +366,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Open first card (1 key)
-    final openButtons1 = find.widgetWithText(ElevatedButton, 'Открыть сундук (1 🗝️)');
+    final openButtons1 = find.widgetWithText(ElevatedButton, 'Открыть сундук (1 ');
     expect(openButtons1, findsWidgets);
+    expect(find.widgetWithIcon(ElevatedButton, Icons.key_rounded), findsWidgets);
     await tester.tap(openButtons1.last);
     await tester.pumpAndSettle();
 
@@ -325,15 +379,15 @@ void main() {
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
-    // Price is now 3 keys -> not enough keys (3 🗝️)
-    expect(find.textContaining('Не хватает ключей (3 🗝️)'), findsOneWidget);
+    // Price is now 3 keys -> not enough keys (3
+    expect(find.textContaining('Не хватает ключей (3 '), findsOneWidget);
 
     // Give 3 gold keys for second card
     PlayerCoinsService.instance.setGoldKeys(3);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 🗝️)'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 🗝️)'));
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (3 '));
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
@@ -343,15 +397,15 @@ void main() {
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
-    // Price is now 5 keys -> not enough keys (5 🗝️)
-    expect(find.textContaining('Не хватает ключей (5 🗝️)'), findsOneWidget);
+    // Price is now 5 keys -> not enough keys (5
+    expect(find.textContaining('Не хватает ключей (5 '), findsOneWidget);
 
     // Give 5 gold keys for third card
     PlayerCoinsService.instance.setGoldKeys(5);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 🗝️)'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 🗝️)'));
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (5 '));
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
@@ -361,15 +415,15 @@ void main() {
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
-    // Price is now 7 keys -> not enough keys (7 🗝️)
-    expect(find.textContaining('Не хватает ключей (7 🗝️)'), findsOneWidget);
+    // Price is now 7 keys -> not enough keys (7
+    expect(find.textContaining('Не хватает ключей (7 '), findsOneWidget);
 
     // Give 7 gold keys for fourth card
     PlayerCoinsService.instance.setGoldKeys(7);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 🗝️)'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 🗝️)'));
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (7 '));
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
@@ -379,15 +433,69 @@ void main() {
     await tester.tap(find.text('Отлично'));
     await tester.pumpAndSettle();
 
-    // Price is now 9 keys -> not enough keys (9 🗝️)
-    expect(find.textContaining('Не хватает ключей (9 🗝️)'), findsOneWidget);
+    // Price is now 9 keys -> not enough keys (9
+    expect(find.textContaining('Не хватает ключей (9 '), findsOneWidget);
 
     // Give 9 gold keys for fifth card
     PlayerCoinsService.instance.setGoldKeys(9);
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 🗝️)'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 🗝️)'));
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (9 '));
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.goldKeys, equals(0));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Price is now 11 keys -> not enough keys (11
+    expect(find.textContaining('Не хватает ключей (11 '), findsOneWidget);
+
+    // Give 11 gold keys for sixth card
+    PlayerCoinsService.instance.setGoldKeys(11);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (11 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (11 '));
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.goldKeys, equals(0));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Price is now 13 keys -> not enough keys (13
+    expect(find.textContaining('Не хватает ключей (13 '), findsOneWidget);
+
+    // Give 13 gold keys for seventh card
+    PlayerCoinsService.instance.setGoldKeys(13);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (13 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (13 '));
+    await tester.pumpAndSettle();
+
+    expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
+    expect(PlayerCoinsService.instance.goldKeys, equals(0));
+
+    // Close dialog
+    await tester.tap(find.text('Отлично'));
+    await tester.pumpAndSettle();
+
+    // Price is now 15 keys -> not enough keys (15
+    expect(find.textContaining('Не хватает ключей (15 '), findsOneWidget);
+
+    // Give 15 gold keys for eighth card
+    PlayerCoinsService.instance.setGoldKeys(15);
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ElevatedButton, 'Открыть сундук (15 '), findsOneWidget);
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Открыть сундук (15 '));
     await tester.pumpAndSettle();
 
     expect(find.text('🎉 НОВАЯ КАРТА!'), findsOneWidget);
@@ -417,7 +525,7 @@ void main() {
 
       expect(novicePool.isNotEmpty, isTrue);
       expect(novicePool.every((i) => i.level == 1), isTrue);
-      expect(novicePool.length, equals(6));
+      expect(novicePool.length, equals(8));
       expect(
         novicePool.map((i) => i.id).toSet(),
         equals({
@@ -427,12 +535,14 @@ void main() {
           'potion_antidote',
           'scroll_skip',
           'handful_of_gold',
+          'gold_bribe',
+          'sweet_roll',
         }),
       );
 
       expect(adventurerPool.isNotEmpty, isTrue);
       expect(adventurerPool.every((i) => i.level == 2), isTrue);
-      expect(adventurerPool.length, equals(11));
+      expect(adventurerPool.length, equals(9));
       expect(
         adventurerPool.map((i) => i.id).toSet(),
         equals({
@@ -440,19 +550,17 @@ void main() {
           'potion_attack',
           'potion_regeneration',
           'potion_stoneskin',
-          'divine_runic_shield',
           'smoke_bomb',
           'thornmail',
           'greed_magnet',
           'dice_of_fate',
-          'gold_bribe',
           'small_gold_pouch',
         }),
       );
 
       expect(heroPool.isNotEmpty, isTrue);
       expect(heroPool.every((i) => i.level == 3), isTrue);
-      expect(heroPool.length, equals(6));
+      expect(heroPool.length, equals(7));
       expect(
         heroPool.map((i) => i.id).toSet(),
         equals({
@@ -460,10 +568,16 @@ void main() {
           'mirror_distortion',
           'scroll_teleport',
           'philosophers_stone',
-          'shadow_pact',
+          'divine_runic_shield',
           'bag_of_gold',
+          'strong_regeneration_potion',
         }),
       );
+      expect(heroPool.any((i) => i.id == 'shadow_pact'), isFalse);
+      expect(heroPool.any((i) => i.id == 'powerful_regeneration_potion'), isFalse);
+      expect(heroPool.any((i) => i.id == 'great_regeneration_potion'), isFalse);
+      expect(heroPool.any((i) => i.id == 'charged_mirror_distortion'), isFalse);
+      expect(heroPool.any((i) => i.id == 'great_philosophers_stone'), isFalse);
       expect(heroPool.any((i) => i.id == 'elixir_life'), isFalse);
       expect(heroPool.any((i) => i.id == 'elixir_attack'), isFalse);
       expect(heroPool.any((i) => i.id == 'divine_healing'), isFalse);
@@ -473,17 +587,27 @@ void main() {
       expect(heroPool.any((i) => i.id == 'chest_of_gold'), isFalse);
       expect(heroPool.any((i) => i.id == 'wormhole'), isFalse);
       expect(heroPool.any((i) => i.id == 'black_hole'), isFalse);
+      expect(heroPool.any((i) => i.id == 'casino_of_fate'), isFalse);
 
-      expect(silverPool.length, equals(4));
+      expect(silverPool.length, equals(8));
       expect(
         silverPool.map((i) => i.id).toSet(),
-        equals({'elixir_life', 'elixir_attack', 'huge_bag_of_gold', 'wormhole'}),
+        equals({
+          'elixir_life',
+          'elixir_attack',
+          'huge_bag_of_gold',
+          'wormhole',
+          'shadow_pact',
+          'powerful_regeneration_potion',
+          'charged_mirror_distortion',
+          'casino_of_fate',
+        }),
       );
       expect(silverChest.currency, equals(ChestCurrency.silverKeys));
       expect(silverChest.basePrice, equals(1));
       expect(silverChest.priceStep, equals(2));
 
-      expect(goldPool.length, equals(5));
+      expect(goldPool.length, equals(8));
       expect(
         goldPool.map((i) => i.id).toSet(),
         equals({
@@ -492,6 +616,9 @@ void main() {
           'enhanced_divine_runic_shield',
           'chest_of_gold',
           'black_hole',
+          'great_regeneration_potion',
+          'great_philosophers_stone',
+          'totem_of_rebirth',
         }),
       );
       expect(goldChest.currency, equals(ChestCurrency.goldKeys));
@@ -501,7 +628,7 @@ void main() {
       // Check total unique cards match all items
       final combined = {...novicePool, ...adventurerPool, ...heroPool, ...silverPool, ...goldPool};
       expect(combined.length, equals(allItemCards.length));
-      expect(combined.length, equals(32));
+      expect(combined.length, equals(40));
     });
 
     test('Thematic chest with mixed levels (1 and 3)', () {

@@ -12,7 +12,7 @@ void main() {
   group('Item Levels & Merchant Filtering Tests', () {
     test('All items have levels between 1 and 3', () {
       final allItems = allItemCards;
-      expect(allItems.length, 32);
+      expect(allItems.length, 40);
 
       for (final item in allItems) {
         expect(
@@ -194,23 +194,23 @@ void main() {
       expect(stats.merchantCardUpgradeLevel, 0);
       expect(stats.merchantCardUpgradeChance, 5);
       expect(stats.isMerchantCardUpgradeMax, isFalse);
-      expect(stats.merchantCardUpgradeCost, 50);
+      expect(stats.merchantCardUpgradeCost, 160);
 
       stats.setLevelsForTest(merchantCardUpgrade: 1);
       expect(stats.merchantCardUpgradeChance, 10);
-      expect(stats.merchantCardUpgradeCost, 80);
+      expect(stats.merchantCardUpgradeCost, 260);
 
       stats.setLevelsForTest(merchantCardUpgrade: 2);
       expect(stats.merchantCardUpgradeChance, 15);
-      expect(stats.merchantCardUpgradeCost, 110);
+      expect(stats.merchantCardUpgradeCost, 360);
 
       stats.setLevelsForTest(merchantCardUpgrade: 3);
       expect(stats.merchantCardUpgradeChance, 20);
-      expect(stats.merchantCardUpgradeCost, 140);
+      expect(stats.merchantCardUpgradeCost, 460);
 
       stats.setLevelsForTest(merchantCardUpgrade: 4);
       expect(stats.merchantCardUpgradeChance, 25);
-      expect(stats.merchantCardUpgradeCost, 170);
+      expect(stats.merchantCardUpgradeCost, 560);
 
       stats.setLevelsForTest(merchantCardUpgrade: 5);
       expect(stats.merchantCardUpgradeChance, 30);

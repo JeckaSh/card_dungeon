@@ -40,8 +40,7 @@ void main() {
     expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 0);
     expect(find.text('Ур. 0 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 0 / 2'), findsOneWidget);
-    expect(find.text('Ур. 0 / 3'), findsOneWidget);
-    expect(find.text('Ур. 0 / 5'), findsOneWidget);
+    expect(find.text('Ур. 0 / 5'), findsNWidgets(2));
 
     // Tap Max button in health card
     final maxButtons = find.text('Макс (10)');
@@ -73,14 +72,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.startingCardsLevel, 1);
-    expect(find.text('Ур. 1 / 3'), findsOneWidget);
+    expect(find.text('Ур. 1 / 5'), findsOneWidget);
 
     // Tap + button on merchant luck card (5th + button out of 5)
     await tester.tap(addButtons.at(4));
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 1);
-    expect(find.text('Ур. 1 / 5'), findsOneWidget);
+    expect(find.text('Ур. 1 / 5'), findsNWidgets(2));
 
     // Tap 'Сбросить в 0'
     await tester.tap(find.text('Сбросить в 0'));
@@ -93,22 +92,20 @@ void main() {
     expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 0);
     expect(find.text('Ур. 0 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 0 / 2'), findsOneWidget);
-    expect(find.text('Ур. 0 / 3'), findsOneWidget);
-    expect(find.text('Ур. 0 / 5'), findsOneWidget);
+    expect(find.text('Ур. 0 / 5'), findsNWidgets(2));
 
-    // Tap 'Максимум (10/10/2/3)'
-    await tester.tap(find.text('Максимум (10/10/2/3)'));
+    // Tap 'Максимум (10/10/2/5)'
+    await tester.tap(find.text('Максимум (10/10/2/5)'));
     await tester.pumpAndSettle();
 
     expect(PlayerStatsService.instance.healthLevel, 10);
     expect(PlayerStatsService.instance.attackLevel, 10);
     expect(PlayerStatsService.instance.merchantLevel, 2);
-    expect(PlayerStatsService.instance.startingCardsLevel, 3);
+    expect(PlayerStatsService.instance.startingCardsLevel, 5);
     expect(PlayerStatsService.instance.merchantCardUpgradeLevel, 5);
     expect(find.text('Ур. 10 / 10'), findsNWidgets(2));
     expect(find.text('Ур. 2 / 2'), findsOneWidget);
-    expect(find.text('Ур. 3 / 3'), findsOneWidget);
-    expect(find.text('Ур. 5 / 5'), findsOneWidget);
+    expect(find.text('Ур. 5 / 5'), findsNWidgets(2));
   });
 
   testWidgets('DebugScreen shows chronicle section and allows clearing chronicle', (tester) async {
